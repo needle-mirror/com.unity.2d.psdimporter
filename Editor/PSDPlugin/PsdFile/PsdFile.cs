@@ -421,9 +421,7 @@ namespace PhotoshopFile
 
             while (reader.BaseStream.Position < endPosition)
             {
-                var info = LayerInfoFactory.Load(reader,
-                        psdFile: this,
-                        globalLayerInfo: true, endPosition);
+                var info = LayerInfoFactory.Load(reader, this, true, endPosition);
                 AdditionalInfo.Add(info);
 
                 if (info is RawLayerInfo)

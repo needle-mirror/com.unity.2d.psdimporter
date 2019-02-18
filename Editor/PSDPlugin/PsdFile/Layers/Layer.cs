@@ -185,9 +185,7 @@ namespace PhotoshopFile
             long adjustmentLayerEndPos = extraDataStartPosition + extraDataSize;
             while (reader.BaseStream.Position < adjustmentLayerEndPos)
             {
-                var layerInfo = LayerInfoFactory.Load(reader,
-                        psdFile: this.PsdFile,
-                        globalLayerInfo: false, adjustmentLayerEndPos);
+                var layerInfo = LayerInfoFactory.Load(reader, this.PsdFile, false, adjustmentLayerEndPos);
                 AdditionalInfo.Add(layerInfo);
             }
 
