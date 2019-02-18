@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.0-preview.1] - 2019-02-19
+### Added
+- Update dependency for 2019.1 support
+
 ## [1.0.0-preview.3] - 2019-02-19
 ### Added
 - Fix compilation error in .NET 3.5
