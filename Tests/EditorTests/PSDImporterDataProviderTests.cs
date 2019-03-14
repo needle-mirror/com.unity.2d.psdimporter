@@ -1,13 +1,10 @@
 using UnityEngine;
-using UnityEditor;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NSubstitute;
-using UnityEditor.Experimental.U2D;
 using UnityEditor.Experimental.U2D.Animation;
-using UnityEditor.Experimental.U2D.PSD;
+using UnityEditor.U2D.Sprites;
 using UnityEngine.Experimental.U2D;
 
 namespace UnityEditor.Experimental.U2D.PSD.Tests

@@ -5,6 +5,7 @@ using PhotoshopFile;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor.Experimental.U2D.Animation;
 using UnityEditor.Experimental.U2D.Common;
+using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
 namespace UnityEditor.Experimental.U2D.PSD
@@ -47,6 +48,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         SerializedProperty m_DocumentPivot;
         SerializedProperty m_DocumentAlignment;
         SerializedProperty m_GenerateGOHierarchy;
+        SerializedProperty m_PaperDollMode;
 
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
 
@@ -60,6 +62,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         TexturePlatformSettingsController m_TexturePlatformSettingsController = new TexturePlatformSettingsController();
         public override void OnEnable()
         {
+            base.OnEnable();
             m_MosaicLayers = serializedObject.FindProperty("m_MosaicLayers");
             m_ImportHiddenLayers = serializedObject.FindProperty("m_ImportHiddenLayers");
             m_ResliceFromLayer = serializedObject.FindProperty("m_ResliceFromLayer");
@@ -67,6 +70,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             m_DocumentPivot = serializedObject.FindProperty("m_DocumentPivot");
             m_DocumentAlignment = serializedObject.FindProperty("m_DocumentAlignment");
             m_GenerateGOHierarchy = serializedObject.FindProperty("m_GenerateGOHierarchy");
+            m_PaperDollMode = serializedObject.FindProperty("m_PaperDollMode");
 
             var textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
             m_TextureType = textureImporterSettingsSP.FindPropertyRelative("m_TextureType");
@@ -125,6 +129,7 @@ namespace UnityEditor.Experimental.U2D.PSD
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             if (s_Styles == null)
                 s_Styles = new Styles();
 
@@ -150,7 +155,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             CommonTextureSettingsGUI();
             GUILayout.Space(10);
             DoPlatformSettings();
-
+            serializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
         }
 
@@ -606,6 +611,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                             EditorGUILayout.PropertyField(m_DocumentPivot, new GUIContent());
                             GUILayout.EndHorizontal();
                         }
+                        //EditorGUILayout.PropertyField(m_PaperDollMode, s_Styles.paperDollMode);
                     }
 
 
@@ -862,7 +868,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             public readonly GUIContent applyButtonLabel = new GUIContent("Apply");
             public readonly GUIContent revertButtonLabel = new GUIContent("Revert");
             public readonly GUIContent spriteEditorButtonLabel = new GUIContent("Sprite Editor");
-            public readonly GUIContent resliceFromLayerWarning = new GUIContent("This will reinitialize and recreate all Sprites based on the file’s layer data. Existing Sprite metadata from previously generated Sprites are copied over.");
+            public readonly GUIContent resliceFromLayerWarning = new GUIContent("This will reinitialize and recreate all Sprites based on the fileâ€™s layer data. Existing Sprite metadata from previously generated Sprites are copied over.");
             public readonly GUIContent alphaIsTransparency = new GUIContent("Alpha Is Transparency", "If the provided alpha channel is transparency, enable this to pre-filter the color to avoid texture filtering artifacts. This is not supported for HDR textures.");
             public readonly GUIContent etc1Compression = new GUIContent("Compress using ETC1 (split alpha channel)|Alpha for this texture will be preserved by splitting the alpha channel to another texture, and both resulting textures will be compressed using ETC1.");
             public readonly GUIContent crunchedCompression = new GUIContent("Use Crunch Compression", "Texture is crunch-compressed to save space on disk when applicable.");
@@ -901,7 +907,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             public readonly GUIContent characterMode = new GUIContent(L10n.Tr("Character Rig"), L10n.Tr("Enable to support 2D Animation character rigging"));
             public readonly GUIContent generateGOHierarchy = new GUIContent(L10n.Tr("Use Layer Grouping"), L10n.Tr("GameObjects are grouped according to source file layer grouping"));
             public readonly GUIContent resliceFromLayer = new GUIContent(L10n.Tr("Reslice"), L10n.Tr("Recreate Sprite rects from file"));
-
+            public readonly GUIContent paperDollMode = new GUIContent(L10n.Tr("Paper Doll Mode"), L10n.Tr("Special mode to generate a Prefab for Paper Doll use case"));
 
             public Styles()
             {

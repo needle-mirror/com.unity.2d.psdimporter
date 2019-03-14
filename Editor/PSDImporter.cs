@@ -8,13 +8,14 @@ using Unity.Collections;
 using System.Linq;
 using UnityEditor.Experimental.U2D.Animation;
 using UnityEditor.Experimental.U2D.Common;
+using UnityEditor.U2D.Sprites;
 using UnityEngine.Assertions;
 using UnityEngine.Experimental.U2D;
 using UnityEngine.Experimental.U2D.Animation;
 
 namespace UnityEditor.Experimental.U2D.PSD
 {
-    [ScriptedImporter(1, "psb")]
+    [ScriptedImporter(2, "psb")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, IAnimationAssetPostProcess
     {
         class GameObjectCreationFactory
@@ -61,7 +62,14 @@ namespace UnityEditor.Experimental.U2D.PSD
         [SerializeField]
         Vector2Int m_DocumentSize;
 
+        [SerializeField]
+        bool m_PaperDollMode = false;
+
+        [SerializeField]
+        SpriteLibrary m_SpriteLibrary = new SpriteLibrary() {categories = new List<SpriteLibCategory>()};
         GameObjectCreationFactory m_GameObjectFactory = new GameObjectCreationFactory();
+
+        internal SpriteLibrary spriteLibrary { get { return m_SpriteLibrary; } set { m_SpriteLibrary = value; } }
 
         [SerializeField]
         int m_TextureActualWidth;
@@ -106,6 +114,9 @@ namespace UnityEditor.Experimental.U2D.PSD
 
         [SerializeField]
         string m_PrefabAssetName = null;
+
+        [SerializeField]
+        string m_SpriteLibAssetName = null;
 
         public PSDImporter()
         {
@@ -541,9 +552,15 @@ namespace UnityEditor.Experimental.U2D.PSD
 
             if (output.sprites != null)
             {
+                var slAsset = ProduceSpriteLibAsset(output.sprites);
+
                 if (shouldProduceGameObject)
                 {
-                    var prefab = OnProducePrefab(m_TextureAssetName, output.sprites);
+                    GameObject prefab = null;
+                    if (m_PaperDollMode)
+                        prefab = OnProducePaperDollPrefab(m_TextureAssetName, output.sprites, slAsset);
+                    else
+                        prefab = OnProducePrefab(m_TextureAssetName, output.sprites, slAsset);
                     if (prefab != null)
                     {
                         if (string.IsNullOrEmpty(m_PrefabAssetName))
@@ -553,13 +570,41 @@ namespace UnityEditor.Experimental.U2D.PSD
                         mainAsset = prefab;
                     }
                 }
+
                 foreach (var s in output.sprites)
                 {
                     var spriteAssetName = GetUniqueName(s.GetSpriteID().ToString(), assetNameHash, false, s);
                     ctx.AddObjectToAsset(spriteAssetName, s);
                 }
+
+                if (slAsset != null)
+                {
+                    if (string.IsNullOrEmpty(m_SpriteLibAssetName))
+                        m_SpriteLibAssetName = GetUniqueName(slAsset.name, assetNameHash, true, slAsset);
+                    ctx.AddObjectToAsset(m_SpriteLibAssetName, slAsset);
+                }
             }
             ctx.SetMainObject(mainAsset);
+        }
+
+        bool SpriteIsMainFromSpriteLib(string spriteId, out string categoryName)
+        {
+            categoryName = "";
+            if (m_SpriteLibrary.categories != null)
+            {
+                foreach (var category in m_SpriteLibrary.categories)
+                {
+                    var index = category.spriteIds.FindIndex(x => x == spriteId);
+                    if (index == 0)
+                    {
+                        categoryName = category.name;
+                        return true;
+                    }
+                    if (index > 0)
+                        return false;
+                }
+            }
+            return true;
         }
 
         void BuildGroupGameObject(List<PSDLayer> psdGroup, int index, Transform root)
@@ -568,7 +613,14 @@ namespace UnityEditor.Experimental.U2D.PSD
             if (psdGroup[index].gameObject == null)
             {
                 if (m_GenerateGOHierarchy || !psdGroup[index].spriteID.Empty())
-                    psdGroup[index].gameObject = m_GameObjectFactory.CreateGameObject(spriteData  != null ? spriteData.name : psdGroup[index].name);
+                {
+                    // Determine if need to create GameObject i.e. if the sprite is not in a SpriteLib or if it is the first one
+                    string categoryName;
+                    var b = SpriteIsMainFromSpriteLib(psdGroup[index].spriteID.ToString(), out categoryName);
+                    string goName = string.IsNullOrEmpty(categoryName) ? spriteData  != null ? spriteData.name : psdGroup[index].name : categoryName;
+                    if (b)
+                        psdGroup[index].gameObject = m_GameObjectFactory.CreateGameObject(goName);
+                }
                 if (psdGroup[index].parentIndex >= 0 && m_GenerateGOHierarchy)
                 {
                     BuildGroupGameObject(psdGroup, psdGroup[index].parentIndex, root);
@@ -683,7 +735,78 @@ namespace UnityEditor.Experimental.U2D.PSD
             return new BoneGO[0];
         }
 
-        GameObject OnProducePrefab(string assetname, Sprite[] sprites)
+        void GetSpriteLibEntry(string spriteId, out string category, out int index)
+        {
+            category = "";
+            index = -1;
+            foreach (var cat in m_SpriteLibrary.categories)
+            {
+                index = cat.spriteIds.FindIndex(x => x == spriteId);
+                if (index != -1)
+                {
+                    category = cat.name;
+                    break;
+                }
+            }
+        }
+
+        GameObject OnProducePaperDollPrefab(string assetname, Sprite[] sprites, SpriteLibraryAsset spriteLib)
+        {
+            GameObject root = null;
+            CharacterData? characterSkeleton = characterMode ? new CharacterData ? (GetDataProvider<ICharacterDataProvider>().GetCharacterData()) : null;
+            if (sprites != null && sprites.Length > 0)
+            {
+                root = new GameObject();
+                root.name = assetname + "_GO";
+                var spriteImportData = GetSpriteImportData();
+                var psdLayers = GetPSDLayers();
+                m_BoneGOs = CreateBonesGO(root.transform);
+                if (spriteLib != null)
+                    root.AddComponent<SpriteLibraryComponent>().spriteLib = spriteLib;
+                for (int i = 0; i < sprites.Length; ++i)
+                {
+                    string categoryName;
+                    if (SpriteIsMainFromSpriteLib(sprites[i].GetSpriteID().ToString(), out categoryName))
+                    {
+                        var spriteBones = m_CharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == sprites[i].GetSpriteID()).bones;
+                        var rootBone = root;
+                        if (spriteBones != null && spriteBones.Any())
+                        {
+                            var b = spriteBones.Where(x => x >= 0 && x < m_BoneGOs.Length).Select(x => m_BoneGOs[x]).OrderBy(x => x.index);
+                            if (b.Any())
+                                rootBone = b.First().go;
+                        }
+
+                        var srGameObject = m_GameObjectFactory.CreateGameObject(string.IsNullOrEmpty(categoryName) ? sprites[i].name : categoryName);
+                        var sr = srGameObject.AddComponent<SpriteRenderer>();
+                        sr.sprite = sprites[i];
+                        sr.sortingOrder = psdLayers.Count - psdLayers.FindIndex(x => x.spriteID == sprites[i].GetSpriteID());
+                        srGameObject.transform.parent = rootBone.transform;
+                        var spriteMetaData = spriteImportData.FirstOrDefault(x => x.spriteID == sprites[i].GetSpriteID());
+                        if (spriteMetaData != null)
+                        {
+                            var uvTransform = spriteMetaData.uvTransform;
+                            var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x + (spriteMetaData.pivot.x * spriteMetaData.rect.width),
+                                    spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprites[i].pixelsPerUnit;
+                            srGameObject.transform.position = new Vector3(outlineOffset.x, outlineOffset.y, 0);
+                        }
+                        var category = "";
+                        var spriteIndex = -1;
+                        GetSpriteLibEntry(sprites[i].GetSpriteID().ToString(), out category, out spriteIndex);
+                        if (!string.IsNullOrEmpty(category) && spriteIndex >= 0)
+                        {
+                            var sresolver = srGameObject.AddComponent<SpriteResolver>();
+                            sresolver.spriteCategory = category;
+                            sresolver.spriteIndex = spriteIndex;
+                            sresolver.RefreshSpriteFromSpriteKey();
+                        }
+                    }
+                }
+            }
+            return root;
+        }
+
+        GameObject OnProducePrefab(string assetname, Sprite[] sprites, SpriteLibraryAsset spriteLib)
         {
             GameObject root = null;
             CharacterData? characterSkeleton = characterMode ? new CharacterData ? (GetDataProvider<ICharacterDataProvider>().GetCharacterData()) : null;
@@ -692,6 +815,8 @@ namespace UnityEditor.Experimental.U2D.PSD
                 var spriteImportData = GetSpriteImportData();
                 root = new GameObject();
                 root.name = assetname + "_GO";
+                if (spriteLib != null)
+                    root.AddComponent<SpriteLibraryComponent>().spriteLib = spriteLib;
                 var psdLayers = GetPSDLayers();
                 for (int i = 0; i < psdLayers.Count; ++i)
                 {
@@ -700,7 +825,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                     GUID layerSpriteID = l.spriteID;
                     var sprite = sprites.FirstOrDefault(x => x.GetSpriteID() == layerSpriteID);
                     var spriteMetaData = spriteImportData.FirstOrDefault(x => x.spriteID == layerSpriteID);
-                    if (sprite != null && spriteMetaData != null)
+                    if (sprite != null && spriteMetaData != null && l.gameObject != null)
                     {
                         var spriteRenderer = l.gameObject.AddComponent<SpriteRenderer>();
                         spriteRenderer.sprite = sprite;
@@ -718,8 +843,20 @@ namespace UnityEditor.Experimental.U2D.PSD
                                 l.gameObject.AddComponent<SpriteSkin>();
                             }
                         }
+
+                        var category = "";
+                        var spriteIndex = -1;
+                        GetSpriteLibEntry(layerSpriteID.ToString(), out category, out spriteIndex);
+                        if (!string.IsNullOrEmpty(category) && spriteIndex >= 0)
+                        {
+                            var sresolver = l.gameObject.AddComponent<SpriteResolver>();
+                            sresolver.spriteCategory = category;
+                            sresolver.spriteIndex = spriteIndex;
+                            sresolver.RefreshSpriteFromSpriteKey();
+                        }
                     }
                 }
+
 
                 m_BoneGOs = CreateBonesGO(root.transform);
 
@@ -906,6 +1043,10 @@ namespace UnityEditor.Experimental.U2D.PSD
             {
                 return characterMode ? new CharacterDataProvider { dataProvider = this } as T : null;
             }
+            if (typeof(T) == typeof(ISpriteLibDataProvider))
+            {
+                return new SpriteLibraryDataProvider() { dataProvider = this } as T;
+            }
             else
                 return this as T;
         }
@@ -918,7 +1059,8 @@ namespace UnityEditor.Experimental.U2D.PSD
                 type == typeof(ISpriteMeshDataProvider) ||
                 type == typeof(ISpriteOutlineDataProvider) ||
                 type == typeof(ISpritePhysicsOutlineDataProvider) ||
-                type == typeof(ITextureDataProvider))
+                type == typeof(ITextureDataProvider) ||
+                type == typeof(ISpriteLibDataProvider))
             {
                 return true;
             }
@@ -1093,6 +1235,22 @@ namespace UnityEditor.Experimental.U2D.PSD
         internal Vector2Int documentSize
         {
             get { return m_DocumentSize; }
+        }
+
+        SpriteLibraryAsset ProduceSpriteLibAsset(Sprite[] sprites)
+        {
+            if (!characterMode || m_SpriteLibrary.categories == null)
+                return null;
+            var sla = ScriptableObject.CreateInstance<SpriteLibraryAsset>();
+            sla.name = "Sprite Lib";
+            sla.entries = m_SpriteLibrary.categories.Select(x =>
+                    new LibEntry()
+            {
+                category = x.name,
+                spriteList = x.spriteIds.Select(y => sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y)).ToList()
+            }).ToList();
+            sla.UpdateHashes();
+            return sla;
         }
     }
 }

@@ -56,9 +56,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                 {
                     BuildTarget.StandaloneWindows,
                     BuildTarget.StandaloneWindows64,
-                    BuildTarget.StandaloneLinux,
                     BuildTarget.StandaloneLinux64,
-                    BuildTarget.StandaloneLinuxUniversal,
                     BuildTarget.StandaloneOSX,
                 }
             },

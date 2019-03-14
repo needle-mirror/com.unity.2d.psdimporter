@@ -4,7 +4,8 @@
         "Unity.2D.Common.Editor",
         "Unity.2D.Psdimporter.Editor",
         "Unity.2D.Animation.Editor",
-        "Unity.2D.Animation.Runtime"
+        "Unity.2D.Animation.Runtime",
+        "Unity.2D.Sprite.Editor"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -12,5 +13,11 @@
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": []
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
 }

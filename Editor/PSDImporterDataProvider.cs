@@ -6,6 +6,7 @@ using UnityEngine.Experimental.U2D;
 using UnityEditor.Experimental.U2D.Common;
 using UnityEditor.Experimental.U2D.Animation;
 using System;
+using UnityEditor.U2D.Sprites;
 
 namespace UnityEditor.Experimental.U2D.PSD
 {
@@ -197,8 +198,25 @@ namespace UnityEditor.Experimental.U2D.PSD
 
     public class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
+        int ParentGroupInFlatten(int parentIndex, List<PSDLayer> psdLayers)
+        {
+            int group = -1;
+            for (int i = 0; i <= parentIndex; ++i)
+                if (psdLayers[i].isGroup)
+                    ++group;
+
+            return group;
+        }
+
         public CharacterData GetCharacterData()
         {
+            var psdLayers = dataProvider.GetPSDLayers();
+            var groups = psdLayers.Where(x => x.isGroup).Select(y => new CharacterGroup()
+            {
+                name = y.name,
+                parentGroup = ParentGroupInFlatten(y.parentIndex, psdLayers)
+            }).ToArray();
+
             var cd = dataProvider.characterData;
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
             var spriteRects = dataProvider.GetSpriteMetaData();
@@ -213,6 +231,15 @@ namespace UnityEditor.Experimental.U2D.PSD
                 var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x, spriteMetaData.rect.y - uvTransform.y);
                 cp.spritePosition.position = new Vector2Int((int)outlineOffset.x, (int)outlineOffset.y);
                 cp.spritePosition.size = new Vector2Int((int)spriteMetaData.rect.width, (int)spriteMetaData.rect.height);
+                cp.parentGroup = -1;
+                //Find group
+                var spritePSDLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteMetaData.spriteID);
+                if (spritePSDLayer != null)
+                {
+                    cp.parentGroup = ParentGroupInFlatten(spritePSDLayer.parentIndex, psdLayers);
+                }
+
+
                 if (srIndex == -1)
                     parts.Add(cp);
                 else
@@ -230,6 +257,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             parts.Reverse();
             cd.parts = parts.ToArray();
             cd.dimension = dataProvider.documentSize;
+            cd.characterGroups = groups.ToArray();
             return cd;
         }
 
@@ -237,6 +265,19 @@ namespace UnityEditor.Experimental.U2D.PSD
         {
             characterData.parts = characterData.parts.Reverse().ToArray();
             dataProvider.characterData = characterData;
+        }
+    }
+
+    public class SpriteLibraryDataProvider : PSDDataProvider, ISpriteLibDataProvider
+    {
+        public SpriteLibrary GetSpriteLibrary()
+        {
+            return dataProvider.spriteLibrary;
+        }
+
+        public void SetSpriteLibrary(SpriteLibrary spriteLibrary)
+        {
+            dataProvider.spriteLibrary = spriteLibrary;
         }
     }
 }

@@ -1,13 +1,24 @@
 fileFormatVersion: 2
 guid: f05fbd7a1a49a6c4a8990a78c1cc7339
 ScriptedImporter:
-  fileIDToRecycleName:
-    2800000: TestPSB
-    21300004: Blue
-    21300008: Pink
-    21300010: Black
-    21300012: Green
+  internalIDToNameTable:
+  - first:
+      28: 2800000
+    second: TestPSB
+  - first:
+      213: 21300004
+    second: Blue
+  - first:
+      213: 21300008
+    second: Pink
+  - first:
+      213: 21300010
+    second: Black
+  - first:
+      213: 21300012
+    second: Green
   externalObjects: {}
+  serializedVersion: 2
   userData: 
   assetBundleName: 
   assetBundleVariant: 
@@ -78,6 +89,7 @@ ScriptedImporter:
       width: 512
       height: 512
     spriteID: 55e123acd9b743145883ba27997b9fda
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -99,6 +111,7 @@ ScriptedImporter:
       width: 128
       height: 132
     spriteID: d70ab4914c290c6479735cdc70b489a4
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -120,6 +133,7 @@ ScriptedImporter:
       width: 81
       height: 85
     spriteID: 632f2828d03121049966a26d713d5f85
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -141,6 +155,7 @@ ScriptedImporter:
       width: 98
       height: 113
     spriteID: 52746de69fa529249bd62fca6b96de2f
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -163,6 +178,7 @@ ScriptedImporter:
       width: 238
       height: 276
     spriteID: c191fd76c1fdda94fb78337fa56f2386
+    internalID: 0
     spriteBone: []
     spriteOutline:
     - outline:
@@ -194,6 +210,7 @@ ScriptedImporter:
       width: 167
       height: 182
     spriteID: 77f3bfb5e0a09fc4b92e705f29834964
+    internalID: 0
     spriteBone: []
     spriteOutline:
     - outline:
@@ -225,6 +242,7 @@ ScriptedImporter:
       width: 138
       height: 377
     spriteID: dc1663c719918bb4a82717aeb7d6b254
+    internalID: 0
     spriteBone:
     - name: bone_1
       position: {x: 80.33257, y: 30.686523, z: 0}
@@ -669,6 +687,7 @@ ScriptedImporter:
       width: 234
       height: 280
     spriteID: 0a5e5d85355bee746989151746d8ef2e
+    internalID: 0
     spriteBone: []
     spriteOutline:
     - outline:
@@ -700,6 +719,7 @@ ScriptedImporter:
       width: 238
       height: 276
     spriteID: fe5dc95b9814d1548b3f56adfc5d84f6
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -721,6 +741,7 @@ ScriptedImporter:
       width: 167
       height: 182
     spriteID: 1b79cdeb9ef9a4d44a709dd930294bdf
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -742,6 +763,7 @@ ScriptedImporter:
       width: 138
       height: 377
     spriteID: 58c317c6611eb3644862842c1101f8a7
+    internalID: 0
     spriteBone:
     - name: bone_1
       position: {x: 85.43567, y: 27.516052, z: 0}
@@ -1178,6 +1200,7 @@ ScriptedImporter:
       width: 234
       height: 280
     spriteID: 18dbe6a80fe762b4fad1e6f329671562
+    internalID: 0
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -1194,6 +1217,10 @@ ScriptedImporter:
   importHiddenLayers: 0
   importedTextureWidth: 512
   importedTextureHeight: 1024
+  documentSize: {x: 512, y: 512}
+  paperDollMode: 0
+  spriteLibrary:
+    categories: []
   textureActualWidth: 512
   textureActualHeight: 1024
   spritePackingTag: 
@@ -1310,6 +1337,7 @@ ScriptedImporter:
         height: 276
       spriteId: fe5dc95b9814d1548b3f56adfc5d84f6
       bones: 
+      parentGroup: 0
     - spritePosition:
         x: 186
         y: 6
@@ -1317,6 +1345,7 @@ ScriptedImporter:
         height: 182
       spriteId: 1b79cdeb9ef9a4d44a709dd930294bdf
       bones: 
+      parentGroup: 0
     - spritePosition:
         x: 154
         y: 28
@@ -1324,6 +1353,7 @@ ScriptedImporter:
         height: 377
       spriteId: 58c317c6611eb3644862842c1101f8a7
       bones: 000000000100000002000000
+      parentGroup: 0
     - spritePosition:
         x: 12
         y: 77
@@ -1331,6 +1361,8 @@ ScriptedImporter:
         height: 280
       spriteId: 18dbe6a80fe762b4fad1e6f329671562
       bones: 
+      parentGroup: 0
+    dimension: {x: 0, y: 0}
+    characterGroups: []
   boneGOs: []
-  firstCreate: 0
   generateGOHierarchy: 0
