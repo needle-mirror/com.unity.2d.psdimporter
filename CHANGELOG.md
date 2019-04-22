@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-preview.4] - 2019-04-23
+### Added
+- Fix potential name clashing issues with ScriptedImporter
+- Fix Prefab asset using wrong name. Note this will break Prefab references if upgrading from previous versions.
+
 ## [1.0.0-preview.3] - 2019-02-19
 ### Added
 - Fix compilation error in .NET 3.5
