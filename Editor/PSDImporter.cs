@@ -17,6 +17,17 @@ namespace UnityEditor.Experimental.U2D.PSD
     [ScriptedImporter(1, "psb")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, IAnimationAssetPostProcess
     {
+        class GameObjectCreationFactory
+        {
+            List<int> m_GameObjectNameHash = new List<int>();
+
+            public GameObject CreateGameObject(string name, params System.Type[] components)
+            {
+                var newName = GetUniqueName(name, m_GameObjectNameHash);
+                return new GameObject(newName, components);
+            }
+        }
+
         [Serializable]
         struct BoneGO
         {
@@ -49,6 +60,8 @@ namespace UnityEditor.Experimental.U2D.PSD
         int m_ImportedTextureHeight;
         [SerializeField]
         Vector2Int m_DocumentSize;
+
+        GameObjectCreationFactory m_GameObjectFactory = new GameObjectCreationFactory();
 
         [SerializeField]
         int m_TextureActualWidth;
@@ -87,6 +100,12 @@ namespace UnityEditor.Experimental.U2D.PSD
 
         [SerializeField]
         bool m_GenerateGOHierarchy = false;
+
+        [SerializeField]
+        string m_TextureAssetName = null;
+
+        [SerializeField]
+        string m_PrefabAssetName = null;
 
         public PSDImporter()
         {
@@ -194,7 +213,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                         {
                             spriteImportData.Add(new SpriteMetaData());
                         }
-                        spriteImportData[0].name = System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath) +"_1";
+                        spriteImportData[0].name = System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath) + "_1";
                         spriteImportData[0].alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
                         spriteImportData[0].border = m_TextureImporterSettings.spriteBorder;
                         spriteImportData[0].pivot = m_TextureImporterSettings.spritePivot;
@@ -512,30 +531,32 @@ namespace UnityEditor.Experimental.U2D.PSD
             {
                 throw new Exception("Texture import fail");
             }
-            var assetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
-            output.texture.name = assetName;
-            ctx.AddObjectToAsset(assetName, output.texture, output.thumbNail);
+
+            if (string.IsNullOrEmpty(m_TextureAssetName))
+                m_TextureAssetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
+            output.texture.name = m_TextureAssetName;
+            ctx.AddObjectToAsset(m_TextureAssetName, output.texture, output.thumbNail);
             UnityEngine.Object mainAsset = output.texture;
 
-            
+
             if (output.sprites != null)
             {
-                foreach (var s in output.sprites)
-                {
-                    assetName = GetUniqueName(s.name, assetNameHash, true, s);
-                    ctx.AddObjectToAsset(assetName, s);
-                }
-
-
                 if (shouldProduceGameObject)
                 {
-                    var prefab = OnProducePrefab(assetName, output.sprites);
+                    var prefab = OnProducePrefab(m_TextureAssetName, output.sprites);
                     if (prefab != null)
                     {
-                        assetName = GetUniqueName(prefab.name, assetNameHash, true, prefab);
-                        ctx.AddObjectToAsset(assetName, prefab);
+                        if (string.IsNullOrEmpty(m_PrefabAssetName))
+                            m_PrefabAssetName = GetUniqueName(prefab.name, assetNameHash, true, prefab);
+
+                        ctx.AddObjectToAsset(m_PrefabAssetName, prefab);
                         mainAsset = prefab;
                     }
+                }
+                foreach (var s in output.sprites)
+                {
+                    var spriteAssetName = GetUniqueName(s.GetSpriteID().ToString(), assetNameHash, false, s);
+                    ctx.AddObjectToAsset(spriteAssetName, s);
                 }
             }
             ctx.SetMainObject(mainAsset);
@@ -547,13 +568,14 @@ namespace UnityEditor.Experimental.U2D.PSD
             if (psdGroup[index].gameObject == null)
             {
                 if (m_GenerateGOHierarchy || !psdGroup[index].spriteID.Empty())
-                    psdGroup[index].gameObject = new GameObject(spriteData  != null ? spriteData.name : psdGroup[index].name);
+                    psdGroup[index].gameObject = m_GameObjectFactory.CreateGameObject(spriteData  != null ? spriteData.name : psdGroup[index].name);
                 if (psdGroup[index].parentIndex >= 0 && m_GenerateGOHierarchy)
                 {
                     BuildGroupGameObject(psdGroup, psdGroup[index].parentIndex, root);
-                    psdGroup[index].gameObject.transform.SetParent(psdGroup[psdGroup[index].parentIndex].gameObject.transform);
+                    root = psdGroup[psdGroup[index].parentIndex].gameObject.transform;
                 }
-                else if (psdGroup[index].gameObject != null)
+
+                if (psdGroup[index].gameObject != null)
                     psdGroup[index].gameObject.transform.SetParent(root);
             }
         }
@@ -628,7 +650,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             if (bone.parentId != -1 && bonesGO[bone.parentId].go == null)
                 CreateBoneGO(bone.parentId, bones, bonesGO, defaultRoot);
 
-            var go = new GameObject(bone.name);
+            var go = m_GameObjectFactory.CreateGameObject(bone.name);
             if (bone.parentId == -1)
                 go.transform.SetParent(defaultRoot);
             else

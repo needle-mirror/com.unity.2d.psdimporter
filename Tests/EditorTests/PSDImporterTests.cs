@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System;
 using UnityEngine.Experimental.U2D.Animation;
-using UnityEngine.Rendering;
 
 namespace UnityEditor.Experimental.U2D.PSD.Tests
 {
@@ -215,6 +214,30 @@ namespace UnityEditor.Experimental.U2D.PSD.Tests
             Assert.AreEqual(4, assets.Count(x => x is Sprite));
             so = new SerializedObject(importer);
             Assert.IsFalse(so.FindProperty("m_ResliceFromLayer").boolValue);
+        }
+
+        [Test]
+        public void PrefabReferenceRemains_AfterAssetRename()
+        {
+            var testAssetPath = CopyTestAssetFile();
+            var importer = AssetImporter.GetAtPath(testAssetPath) as PSDImporter;
+            var so = new SerializedObject(importer);
+            so.FindProperty("m_MosaicLayers").boolValue = true;
+            so.FindProperty("m_CharacterMode").boolValue = true;
+            var textureImporterSettingsSP = so.FindProperty("m_TextureImporterSettings");
+            textureImporterSettingsSP.FindPropertyRelative("m_TextureType").intValue = (int)TextureImporterType.Sprite;
+            textureImporterSettingsSP.FindPropertyRelative("m_SpriteMode").intValue = (int)SpriteImportMode.Multiple;
+            textureImporterSettingsSP.FindPropertyRelative("m_SpriteMode").intValue = (int)SpriteImportMode.Multiple;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            importer.SaveAndReimport();
+
+            var prefabGO = AssetDatabase.LoadAssetAtPath<GameObject>(testAssetPath);
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefabGO);
+            var fileName = System.IO.Path.GetFileNameWithoutExtension(testAssetPath);
+            var extension = System.IO.Path.GetExtension(testAssetPath);
+            var s = AssetDatabase.RenameAsset(testAssetPath, fileName + "-rename" + extension);
+            AssetDatabase.Refresh();
+            Assert.IsFalse(PrefabUtility.IsPrefabAssetMissing(instantiatedPrefab));
         }
     }
 }
