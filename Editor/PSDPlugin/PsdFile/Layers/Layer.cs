@@ -27,7 +27,7 @@ using System.Threading;
 namespace PhotoshopFile
 {
     [DebuggerDisplay("Name = {Name}")]
-    public class Layer
+    internal class Layer
     {
         internal PsdFile PsdFile { get; private set; }
 

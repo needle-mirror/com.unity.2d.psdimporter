@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using UnityEngine;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
     [Serializable]
     class PSDLayer

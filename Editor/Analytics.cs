@@ -3,7 +3,7 @@ using PhotoshopFile;
 using UnityEngine;
 using UnityEngine.Analytics;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
     [Serializable]
     internal struct PSDApplyEvent

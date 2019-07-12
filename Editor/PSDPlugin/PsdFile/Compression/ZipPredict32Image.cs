@@ -16,7 +16,7 @@ using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
-    public class ZipPredict32Image : ImageData
+    internal class ZipPredict32Image : ImageData
     {
         private ZipImage zipImage;
 

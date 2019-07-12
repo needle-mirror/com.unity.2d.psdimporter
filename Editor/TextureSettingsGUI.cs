@@ -4,7 +4,7 @@
 //using UnityEditor;
 //using UnityEngine;
 
-//namespace UnityEditor.Experimental.U2D
+//namespace UnityEditor.U2D
 //{
 //    public class TextureSettingsGUI
 //    {

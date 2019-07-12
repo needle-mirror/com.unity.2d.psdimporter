@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using PhotoshopFile;
 using UnityEditor.Experimental.AssetImporters;
-using UnityEditor.Experimental.U2D.Animation;
-using UnityEditor.Experimental.U2D.Common;
+using UnityEditor.U2D.Animation;
+using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
     [CustomEditor(typeof(PSDImporter))]
-    public class PSDImporterEditor : ScriptedImporterEditor
+    internal class PSDImporterEditor : ScriptedImporterEditor
     {
         SerializedProperty m_TextureType;
         SerializedProperty m_TextureShape;

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
-using UnityEngine.Experimental.U2D;
+using UnityEngine.U2D;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
     [Serializable]
-    public class SpriteMetaData : SpriteRect
+    internal class SpriteMetaData : SpriteRect
     {
         public List<SpriteBone> spriteBone;
         public List<SpriteOutline> spriteOutline;
@@ -86,7 +86,7 @@ namespace UnityEditor.Experimental.U2D.PSD
     }
 
     [Serializable]
-    public class SpriteOutline
+    internal class SpriteOutline
     {
         [SerializeField]
         public Vector2[] outline;

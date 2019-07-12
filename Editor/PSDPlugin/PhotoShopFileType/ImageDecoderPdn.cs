@@ -25,7 +25,7 @@ using UnityEngine;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
-    public static class ImageDecoderPdn
+    internal static class ImageDecoderPdn
     {
         private class DecodeContext
         {

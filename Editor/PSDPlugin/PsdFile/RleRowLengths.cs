@@ -16,7 +16,7 @@ using System.Linq;
 
 namespace PhotoshopFile
 {
-    public class RleRowLengths
+    internal class RleRowLengths
     {
         public int[] Values { get; private set; }
 

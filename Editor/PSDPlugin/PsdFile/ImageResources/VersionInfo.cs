@@ -18,7 +18,7 @@ using System.Text;
 
 namespace PhotoshopFile
 {
-    public class VersionInfo : ImageResource
+    internal class VersionInfo : ImageResource
     {
         public override ResourceID ID
         {

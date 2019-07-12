@@ -23,7 +23,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
     /// <summary>
     /// Controls the loading of a PSD file into a Paint.NET Document.
     /// </summary>
-    public class DocumentLoadContext : LoadContext
+    internal class DocumentLoadContext : LoadContext
     {
         public DocumentLoadContext() : base()
         {

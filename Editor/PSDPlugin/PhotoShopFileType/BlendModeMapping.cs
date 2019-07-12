@@ -23,7 +23,7 @@ using PDNWrapper;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
-    public static class BlendModeMapping
+    internal static class BlendModeMapping
     {
         /// <summary>
         /// Convert between Paint.NET and Photoshop blend modes.

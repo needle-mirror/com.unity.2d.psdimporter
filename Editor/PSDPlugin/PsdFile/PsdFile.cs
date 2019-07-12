@@ -26,7 +26,7 @@ using PaintDotNet.Data.PhotoshopFileType;
 namespace PhotoshopFile
 {
     [Flags]
-    public enum ELoadFlag
+    internal enum ELoadFlag
     {
         Header = 1,
         ColorMode = Header | 1 << 2,
@@ -35,7 +35,7 @@ namespace PhotoshopFile
     }
 
 
-    public enum PsdColorMode
+    internal enum PsdColorMode
     {
         Bitmap = 0,
         Grayscale = 1,
@@ -47,13 +47,13 @@ namespace PhotoshopFile
         Lab = 9
     };
 
-    public enum PsdFileVersion : short
+    internal enum PsdFileVersion : short
     {
         Psd = 1,
         PsbLargeDocument = 2
     }
 
-    public class PsdFile
+    internal class PsdFile
     {
         #region Constructors
 
@@ -903,7 +903,7 @@ namespace PhotoshopFile
     /// <summary>
     /// The possible Compression methods.
     /// </summary>
-    public enum ImageCompression
+    internal enum ImageCompression
     {
         /// <summary>
         /// Raw data

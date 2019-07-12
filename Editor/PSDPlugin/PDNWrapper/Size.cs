@@ -1,7 +1,7 @@
 namespace PDNWrapper
 {
     // Mimics System.Drawing.Size
-    public struct Size
+    internal struct Size
     {
         public static readonly Size Empty = new Size();
 

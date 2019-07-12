@@ -1,4 +1,4 @@
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
     internal static class TexturePlatformSettingsModal
     {

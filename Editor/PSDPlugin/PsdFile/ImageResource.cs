@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace PhotoshopFile
 {
-    public enum ResourceID
+    internal enum ResourceID
     {
         Undefined = 0,
         MacPrintInfo = 1001,
@@ -108,7 +108,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Abstract class for Image Resources
     /// </summary>
-    public abstract class ImageResource
+    internal abstract class ImageResource
     {
         private string signature;
         public string Signature
@@ -171,7 +171,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Creates the appropriate subclass of ImageResource.
     /// </summary>
-    public static class ImageResourceFactory
+    internal static class ImageResourceFactory
     {
         public static ImageResource CreateImageResource(PsdBinaryReader reader)
         {
@@ -228,7 +228,7 @@ namespace PhotoshopFile
         }
     }
 
-    public class ImageResources : List<ImageResource>
+    internal class ImageResources : List<ImageResource>
     {
         public ImageResources() : base()
         {

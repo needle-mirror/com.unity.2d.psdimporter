@@ -25,7 +25,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Summary description for Thumbnail.
     /// </summary>
-    public class Thumbnail : RawImageResource
+    internal class Thumbnail : RawImageResource
     {
         public Thumbnail(ResourceID id, string name)
             : base(id, name)

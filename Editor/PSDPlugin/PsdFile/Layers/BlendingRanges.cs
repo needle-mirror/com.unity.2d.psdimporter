@@ -20,7 +20,7 @@ using System.Globalization;
 
 namespace PhotoshopFile
 {
-    public class BlendingRanges
+    internal class BlendingRanges
     {
         /// <summary>
         /// The layer to which this channel belongs

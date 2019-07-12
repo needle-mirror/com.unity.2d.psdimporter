@@ -1,12 +1,12 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.U2D;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
-    public class PSDImportPostProcessor : AssetPostprocessor
+    internal class PSDImportPostProcessor : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {

@@ -24,7 +24,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Contains settings and callbacks that affect the loading of a PSD file.
     /// </summary>
-    public class LoadContext
+    internal class LoadContext
     {
         public Encoding Encoding { get; set; }
 

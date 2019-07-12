@@ -21,10 +21,10 @@ using System.Text;
 
 namespace PhotoshopFile
 {
-    public static class Util
+    internal static class Util
     {
         [DebuggerDisplay("Top = {Top}, Bottom = {Bottom}, Left = {Left}, Right = {Right}")]
-        public struct RectanglePosition
+        internal struct RectanglePosition
         {
             public int Top { get; set; }
             public int Bottom { get; set; }
@@ -327,7 +327,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Fixed-point decimal, with 16-bit integer and 16-bit fraction.
     /// </summary>
-    public class UFixed16_16
+    internal class UFixed16_16
     {
         public UInt16 Integer { get; set; }
         public UInt16 Fraction { get; set; }

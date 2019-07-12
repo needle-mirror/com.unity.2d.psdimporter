@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
-    public class TexturePlatformSettingsView
+    internal class TexturePlatformSettingsView
     {
         class Styles
         {

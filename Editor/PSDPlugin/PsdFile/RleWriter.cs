@@ -21,7 +21,7 @@ using UnityEngine.Assertions;
 
 namespace PhotoshopFile
 {
-    public class RleWriter
+    internal class RleWriter
     {
         private int maxPacketLength = 128;
 

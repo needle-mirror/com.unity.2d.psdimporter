@@ -17,7 +17,7 @@ using System.IO.Compression;
 
 namespace PhotoshopFile.Compression
 {
-    public abstract class ImageData
+    internal abstract class ImageData
     {
         public int BitDepth { get; private set; }
 

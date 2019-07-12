@@ -2,21 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using PDNWrapper;
-using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 using Unity.Collections;
 using System.Linq;
-using UnityEditor.Experimental.U2D.Animation;
-using UnityEditor.Experimental.U2D.Common;
+using UnityEditor.Experimental.AssetImporters;
+using UnityEditor.U2D.Animation;
+using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine.Assertions;
-using UnityEngine.Experimental.U2D;
 using UnityEngine.Experimental.U2D.Animation;
+using UnityEngine.U2D;
+using UnityEngine.U2D.Animation;
 
-namespace UnityEditor.Experimental.U2D.PSD
+namespace UnityEditor.U2D.PSD
 {
-    [ScriptedImporter(2, "psb")]
-    public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, IAnimationAssetPostProcess
+    [ScriptedImporter(4, "psb")]
+    internal class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, IAnimationAssetPostProcess
     {
         class GameObjectCreationFactory
         {
@@ -66,10 +67,10 @@ namespace UnityEditor.Experimental.U2D.PSD
         bool m_PaperDollMode = false;
 
         [SerializeField]
-        SpriteLibrary m_SpriteLibrary = new SpriteLibrary() {categories = new List<SpriteLibCategory>()};
+        SpriteCategoryList m_SpriteCategoryList = new SpriteCategoryList() {categories = new List<SpriteCategory>()};
         GameObjectCreationFactory m_GameObjectFactory = new GameObjectCreationFactory();
 
-        internal SpriteLibrary spriteLibrary { get { return m_SpriteLibrary; } set { m_SpriteLibrary = value; } }
+        internal SpriteCategoryList spriteCategoryList { get { return m_SpriteCategoryList; } set { m_SpriteCategoryList = value; } }
 
         [SerializeField]
         int m_TextureActualWidth;
@@ -484,7 +485,6 @@ namespace UnityEditor.Experimental.U2D.PSD
                 }
                 oldPsdLayers.Clear();
                 oldPsdLayers.AddRange(psdLayers);
-                m_ResliceFromLayer = false;
                 m_ImportedTextureHeight = textureActualHeight = height;
                 m_ImportedTextureWidth = textureActualWidth = width;
                 var generatedTexture = ImportTexture(ctx, output, width, height, 0, spriteImportData.Count);
@@ -590,11 +590,11 @@ namespace UnityEditor.Experimental.U2D.PSD
         bool SpriteIsMainFromSpriteLib(string spriteId, out string categoryName)
         {
             categoryName = "";
-            if (m_SpriteLibrary.categories != null)
+            if (m_SpriteCategoryList.categories != null)
             {
-                foreach (var category in m_SpriteLibrary.categories)
+                foreach (var category in m_SpriteCategoryList.categories)
                 {
-                    var index = category.spriteIds.FindIndex(x => x == spriteId);
+                    var index = category.labels.FindIndex(x => x.spriteId == spriteId);
                     if (index == 0)
                     {
                         categoryName = category.name;
@@ -735,16 +735,18 @@ namespace UnityEditor.Experimental.U2D.PSD
             return new BoneGO[0];
         }
 
-        void GetSpriteLibEntry(string spriteId, out string category, out int index)
+        void GetSpriteLiblabel(string spriteId, out string category, out string label)
         {
             category = "";
-            index = -1;
-            foreach (var cat in m_SpriteLibrary.categories)
+            label = "";
+            var index = -1;
+            foreach (var cat in m_SpriteCategoryList.categories)
             {
-                index = cat.spriteIds.FindIndex(x => x == spriteId);
+                index = cat.labels.FindIndex(x => x.spriteId == spriteId);
                 if (index != -1)
                 {
                     category = cat.name;
+                    label = cat.labels[index].name;
                     break;
                 }
             }
@@ -762,7 +764,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                 var psdLayers = GetPSDLayers();
                 m_BoneGOs = CreateBonesGO(root.transform);
                 if (spriteLib != null)
-                    root.AddComponent<SpriteLibraryComponent>().spriteLib = spriteLib;
+                    root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
                 for (int i = 0; i < sprites.Length; ++i)
                 {
                     string categoryName;
@@ -791,14 +793,13 @@ namespace UnityEditor.Experimental.U2D.PSD
                             srGameObject.transform.position = new Vector3(outlineOffset.x, outlineOffset.y, 0);
                         }
                         var category = "";
-                        var spriteIndex = -1;
-                        GetSpriteLibEntry(sprites[i].GetSpriteID().ToString(), out category, out spriteIndex);
-                        if (!string.IsNullOrEmpty(category) && spriteIndex >= 0)
+                        var labelName = "";
+                        GetSpriteLiblabel(sprites[i].GetSpriteID().ToString(), out category, out labelName);
+                        if (!string.IsNullOrEmpty(category) && !string.IsNullOrEmpty(labelName))
                         {
                             var sresolver = srGameObject.AddComponent<SpriteResolver>();
-                            sresolver.spriteCategory = category;
-                            sresolver.spriteIndex = spriteIndex;
-                            sresolver.RefreshSpriteFromSpriteKey();
+                            sresolver.SetCategoryAndLabel(category, labelName);
+                            sresolver.ResolveSpriteToSpriteRenderer();
                         }
                     }
                 }
@@ -816,7 +817,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                 root = new GameObject();
                 root.name = assetname + "_GO";
                 if (spriteLib != null)
-                    root.AddComponent<SpriteLibraryComponent>().spriteLib = spriteLib;
+                    root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
                 var psdLayers = GetPSDLayers();
                 for (int i = 0; i < psdLayers.Count; ++i)
                 {
@@ -845,14 +846,13 @@ namespace UnityEditor.Experimental.U2D.PSD
                         }
 
                         var category = "";
-                        var spriteIndex = -1;
-                        GetSpriteLibEntry(layerSpriteID.ToString(), out category, out spriteIndex);
-                        if (!string.IsNullOrEmpty(category) && spriteIndex >= 0)
+                        var labelName = "";
+                        GetSpriteLiblabel(layerSpriteID.ToString(), out category, out labelName);
+                        if (!string.IsNullOrEmpty(category) && !string.IsNullOrEmpty(labelName))
                         {
                             var sresolver = l.gameObject.AddComponent<SpriteResolver>();
-                            sresolver.spriteCategory = category;
-                            sresolver.spriteIndex = spriteIndex;
-                            sresolver.RefreshSpriteFromSpriteKey();
+                            sresolver.SetCategoryAndLabel(category, labelName);
+                            sresolver.ResolveSpriteToSpriteRenderer();
                         }
                     }
                 }
@@ -1239,18 +1239,30 @@ namespace UnityEditor.Experimental.U2D.PSD
 
         SpriteLibraryAsset ProduceSpriteLibAsset(Sprite[] sprites)
         {
-            if (!characterMode || m_SpriteLibrary.categories == null)
+            if (!characterMode || m_SpriteCategoryList.categories == null)
                 return null;
             var sla = ScriptableObject.CreateInstance<SpriteLibraryAsset>();
             sla.name = "Sprite Lib";
-            sla.entries = m_SpriteLibrary.categories.Select(x =>
-                    new LibEntry()
+            sla.labels = m_SpriteCategoryList.categories.Select(x =>
+                    new SpriteLibCategory()
             {
-                category = x.name,
-                spriteList = x.spriteIds.Select(y => sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y)).ToList()
+                name = x.name,
+                categoryList = x.labels.Select(y =>
+                {
+                    var sprite = sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y.spriteId);
+                    return new Categorylabel()
+                    {
+                        name = y.name,
+                        sprite = sprite
+                    };
+                }).ToList()
             }).ToList();
-            sla.UpdateHashes();
-            return sla;
+            if (sla.labels.Count > 0)
+            {
+                sla.UpdateHashes();
+                return sla;
+            }
+            return null;
         }
     }
 }

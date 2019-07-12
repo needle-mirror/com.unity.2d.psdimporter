@@ -15,7 +15,7 @@ using System;
 
 namespace PhotoshopFile.Compression
 {
-    public class EndianReverser : ImageData
+    internal class EndianReverser : ImageData
     {
         private ImageData imageData;
 

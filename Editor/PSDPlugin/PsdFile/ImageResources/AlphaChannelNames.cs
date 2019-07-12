@@ -19,7 +19,7 @@ namespace PhotoshopFile
     /// <summary>
     /// The names of the alpha channels
     /// </summary>
-    public class AlphaChannelNames : ImageResource
+    internal class AlphaChannelNames : ImageResource
     {
         public override ResourceID ID
         {

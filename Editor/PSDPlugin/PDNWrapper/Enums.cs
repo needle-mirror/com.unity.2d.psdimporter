@@ -1,13 +1,13 @@
 namespace PDNWrapper
 {
-    public enum MeasurementUnit
+    internal enum MeasurementUnit
     {
         Pixel = 1,
         Inch = 2,
         Centimeter = 3
     }
 
-    public enum LayerBlendMode
+    internal enum LayerBlendMode
     {
         Normal = 0,
         Multiply = 1,
