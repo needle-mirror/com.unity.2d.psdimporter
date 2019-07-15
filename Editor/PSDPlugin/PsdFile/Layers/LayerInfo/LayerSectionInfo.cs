@@ -15,7 +15,7 @@ using System;
 
 namespace PhotoshopFile
 {
-    public enum LayerSectionType
+    internal enum LayerSectionType
     {
         Layer = 0,
         OpenFolder = 1,
@@ -23,7 +23,7 @@ namespace PhotoshopFile
         SectionDivider = 3
     }
 
-    public enum LayerSectionSubtype
+    internal enum LayerSectionSubtype
     {
         Normal = 0,
         SceneGroup = 1
@@ -32,7 +32,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Layer sections are known as Groups in the Photoshop UI.
     /// </summary>
-    public class LayerSectionInfo : LayerInfo
+    internal class LayerSectionInfo : LayerInfo
     {
         public override string Signature
         {

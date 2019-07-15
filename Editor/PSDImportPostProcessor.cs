@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UnityEditor.Experimental.U2D.PSD
 {
-    public class PSDImportPostProcessor : AssetPostprocessor
+    internal class PSDImportPostProcessor : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {

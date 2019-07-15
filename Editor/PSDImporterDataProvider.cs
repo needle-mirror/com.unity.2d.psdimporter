@@ -10,12 +10,12 @@ using UnityEditor.U2D.Sprites;
 
 namespace UnityEditor.Experimental.U2D.PSD
 {
-    public abstract class PSDDataProvider
+    internal abstract class PSDDataProvider
     {
         public PSDImporter dataProvider;
     }
 
-    public class SpriteBoneDataProvider : PSDDataProvider, ISpriteBoneDataProvider
+    internal class SpriteBoneDataProvider : PSDDataProvider, ISpriteBoneDataProvider
     {
         public List<SpriteBone> GetBones(GUID guid)
         {
@@ -32,7 +32,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         }
     }
 
-    public class TextureDataProvider : PSDDataProvider, ITextureDataProvider
+    internal class TextureDataProvider : PSDDataProvider, ITextureDataProvider
     {
         Texture2D m_ReadableTexture;
         Texture2D m_OriginalTexture;
@@ -72,7 +72,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         }
     }
 
-    public class SpriteOutlineDataProvider : PSDDataProvider, ISpriteOutlineDataProvider
+    internal class SpriteOutlineDataProvider : PSDDataProvider, ISpriteOutlineDataProvider
     {
         public List<Vector2[]> GetOutlines(GUID guid)
         {
@@ -105,7 +105,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         }
     }
 
-    public class SpritePhysicsOutlineProvider : PSDDataProvider, ISpritePhysicsOutlineDataProvider
+    internal class SpritePhysicsOutlineProvider : PSDDataProvider, ISpritePhysicsOutlineDataProvider
     {
         public List<Vector2[]> GetOutlines(GUID guid)
         {
@@ -138,7 +138,7 @@ namespace UnityEditor.Experimental.U2D.PSD
         }
     }
 
-    public class SpriteMeshDataProvider : PSDDataProvider, ISpriteMeshDataProvider
+    internal class SpriteMeshDataProvider : PSDDataProvider, ISpriteMeshDataProvider
     {
         public Vertex2DMetaData[] GetVertices(GUID guid)
         {
@@ -196,7 +196,7 @@ namespace UnityEditor.Experimental.U2D.PSD
     }
 
 
-    public class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
+    internal class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
         int ParentGroupInFlatten(int parentIndex, List<PSDLayer> psdLayers)
         {
@@ -268,16 +268,16 @@ namespace UnityEditor.Experimental.U2D.PSD
         }
     }
 
-    public class SpriteLibraryDataProvider : PSDDataProvider, ISpriteLibDataProvider
+    internal class SpriteLibraryDataProvider : PSDDataProvider, ISpriteLibDataProvider
     {
-        public SpriteLibrary GetSpriteLibrary()
+        public SpriteCategoryList GetSpriteCategoryList()
         {
-            return dataProvider.spriteLibrary;
+            return dataProvider.spriteCategoryList;
         }
 
-        public void SetSpriteLibrary(SpriteLibrary spriteLibrary)
+        public void SetSpriteCategoryList(SpriteCategoryList spriteCategoryList)
         {
-            dataProvider.spriteLibrary = spriteLibrary;
+            dataProvider.spriteCategoryList = spriteCategoryList;
         }
     }
 }

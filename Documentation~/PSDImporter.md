@@ -1,7 +1,3 @@
----
-typora-copy-images-to: images
----
-
 # PSD Importer
 
 ## Summary

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PDNWrapper
 {
-    public static class Layer
+    internal static class Layer
     {
         public static BitmapLayer CreateBackgroundLayer(int w, int h)
         {
@@ -11,7 +11,7 @@ namespace PDNWrapper
         }
     }
 
-    public class BitmapLayer
+    internal class BitmapLayer
     {
         int width, height;
 

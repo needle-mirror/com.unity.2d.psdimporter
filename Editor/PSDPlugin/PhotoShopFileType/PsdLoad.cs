@@ -23,7 +23,7 @@ using PDNWrapper;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
-    public static class PsdLoad
+    internal static class PsdLoad
     {
         public static PsdFile Load(System.IO.Stream input, ELoadFlag loadFlag)
         {

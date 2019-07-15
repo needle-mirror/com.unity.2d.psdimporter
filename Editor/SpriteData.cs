@@ -8,7 +8,7 @@ using UnityEngine.Experimental.U2D;
 namespace UnityEditor.Experimental.U2D.PSD
 {
     [Serializable]
-    public class SpriteMetaData : SpriteRect
+    internal class SpriteMetaData : SpriteRect
     {
         public List<SpriteBone> spriteBone;
         public List<SpriteOutline> spriteOutline;
@@ -86,7 +86,7 @@ namespace UnityEditor.Experimental.U2D.PSD
     }
 
     [Serializable]
-    public class SpriteOutline
+    internal class SpriteOutline
     {
         [SerializeField]
         public Vector2[] outline;

@@ -3,7 +3,7 @@ using System;
 namespace PDNWrapper
 {
     // Mimics System.Drawing.Rectangle
-    public struct Rectangle
+    internal struct Rectangle
     {
         public static readonly Rectangle Empty = new Rectangle();
 

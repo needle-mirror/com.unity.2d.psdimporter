@@ -11,7 +11,7 @@ using UnityEngine;
 namespace UnityEditor.Experimental.U2D.PSD
 {
     [CustomEditor(typeof(PSDImporter))]
-    public class PSDImporterEditor : ScriptedImporterEditor
+    internal class PSDImporterEditor : ScriptedImporterEditor
     {
         SerializedProperty m_TextureType;
         SerializedProperty m_TextureShape;

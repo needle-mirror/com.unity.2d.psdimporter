@@ -20,7 +20,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Stores the raw data for unimplemented image resource types.
     /// </summary>
-    public class RawImageResource : ImageResource
+    internal class RawImageResource : ImageResource
     {
         public byte[] Data { get; private set; }
 

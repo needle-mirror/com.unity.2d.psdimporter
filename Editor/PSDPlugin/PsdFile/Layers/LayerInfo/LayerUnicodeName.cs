@@ -15,7 +15,7 @@ using System;
 
 namespace PhotoshopFile
 {
-    public class LayerUnicodeName : LayerInfo
+    internal class LayerUnicodeName : LayerInfo
     {
         public override string Signature
         {

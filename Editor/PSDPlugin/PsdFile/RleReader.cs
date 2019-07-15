@@ -21,7 +21,7 @@ using System.IO;
 
 namespace PhotoshopFile
 {
-    public class RleReader
+    internal class RleReader
     {
         private Stream stream;
 

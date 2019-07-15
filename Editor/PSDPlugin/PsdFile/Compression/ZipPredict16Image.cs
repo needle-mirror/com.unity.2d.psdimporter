@@ -17,7 +17,7 @@ using System.IO.Compression;
 
 namespace PhotoshopFile.Compression
 {
-    public class ZipPredict16Image : ImageData
+    internal class ZipPredict16Image : ImageData
     {
         private ImageData zipImage;
 

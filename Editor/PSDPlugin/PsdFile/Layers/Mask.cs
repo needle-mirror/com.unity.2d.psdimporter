@@ -22,7 +22,7 @@ using System.Globalization;
 
 namespace PhotoshopFile
 {
-    public class Mask
+    internal class Mask
     {
         /// <summary>
         /// The layer to which this mask belongs
@@ -100,7 +100,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Mask info for a layer.  Contains both the layer and user masks.
     /// </summary>
-    public class MaskInfo
+    internal class MaskInfo
     {
         public Mask LayerMask { get; set; }
 

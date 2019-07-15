@@ -21,7 +21,7 @@ using System.Text;
 namespace PhotoshopFile
 {
     [Serializable]
-    public class PsdInvalidException : Exception
+    internal class PsdInvalidException : Exception
     {
         public PsdInvalidException()
         {
@@ -34,7 +34,7 @@ namespace PhotoshopFile
     }
 
     [Serializable]
-    public class RleException : Exception
+    internal class RleException : Exception
     {
         public RleException() {}
 

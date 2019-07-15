@@ -24,7 +24,7 @@ using PhotoshopFile.Compression;
 
 namespace PhotoshopFile
 {
-    public class ChannelList : List<Channel>
+    internal class ChannelList : List<Channel>
     {
         /// <summary>
         /// Returns channels with nonnegative IDs as an array, so that accessing
@@ -67,7 +67,7 @@ namespace PhotoshopFile
     ///////////////////////////////////////////////////////////////////////////
 
     [DebuggerDisplay("ID = {ID}")]
-    public class Channel
+    internal class Channel
     {
         /// <summary>
         /// The layer to which this channel belongs

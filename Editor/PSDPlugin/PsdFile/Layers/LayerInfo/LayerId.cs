@@ -22,7 +22,7 @@ namespace PhotoshopFile
     /// required.  Photoshop will successfully load a high-bitdepth image that
     /// puts the layers in the Layers section.
     /// </remarks>
-    public class LayerId : LayerInfo
+    internal class LayerId : LayerInfo
     {
         public override string Signature
         {

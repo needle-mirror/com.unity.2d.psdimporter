@@ -18,7 +18,7 @@ using System.IO.Compression;
 
 namespace PhotoshopFile.Compression
 {
-    public class ZipImage : ImageData
+    internal class ZipImage : ImageData
     {
         private MemoryStream zipDataStream;
         private DeflateStream zipStream;

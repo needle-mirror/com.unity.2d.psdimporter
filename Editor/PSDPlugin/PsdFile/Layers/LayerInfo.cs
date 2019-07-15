@@ -17,7 +17,7 @@ using System.IO;
 
 namespace PhotoshopFile
 {
-    public static class LayerInfoFactory
+    internal static class LayerInfoFactory
     {
         /// <summary>
         /// Loads the next LayerInfo record.
@@ -159,7 +159,7 @@ namespace PhotoshopFile
         }
     }
 
-    public abstract class LayerInfo
+    internal abstract class LayerInfo
     {
         public abstract string Signature { get; }
 

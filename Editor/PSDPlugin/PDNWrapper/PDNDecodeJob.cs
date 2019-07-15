@@ -12,7 +12,7 @@ struct PDNDecodeJobOut
     NativeArray<byte> buffer;
 }
 
-public class PDNDecodeJob : IJob
+internal class PDNDecodeJob : IJob
 {
     PDNDecodeJobOut output;
     public void Execute()

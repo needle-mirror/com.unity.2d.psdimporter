@@ -24,7 +24,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Reads PSD data types in big-endian byte order.
     /// </summary>
-    public class PsdBinaryReader : IDisposable
+    internal class PsdBinaryReader : IDisposable
     {
         private BinaryReader reader;
         private Encoding encoding;

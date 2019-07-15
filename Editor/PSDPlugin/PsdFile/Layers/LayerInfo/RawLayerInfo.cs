@@ -17,7 +17,7 @@ using System.Diagnostics;
 namespace PhotoshopFile
 {
     [DebuggerDisplay("Layer Info: { key }")]
-    public class RawLayerInfo : LayerInfo
+    internal class RawLayerInfo : LayerInfo
     {
         private string signature;
         public override string Signature

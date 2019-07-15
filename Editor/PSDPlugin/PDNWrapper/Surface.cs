@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PDNWrapper
 {
-    public class Surface
+    internal class Surface
     {
         NativeArray<Color32> m_Color;
         public Surface(int w, int h)

@@ -21,7 +21,7 @@ namespace PhotoshopFile
     /// <summary>
     /// Summary description for ResolutionInfo.
     /// </summary>
-    public class ResolutionInfo : ImageResource
+    internal class ResolutionInfo : ImageResource
     {
         public override ResourceID ID
         {
@@ -41,7 +41,7 @@ namespace PhotoshopFile
         /// <summary>
         /// 1 = pixels per inch, 2 = pixels per centimeter
         /// </summary>
-        public enum ResUnit
+        internal enum ResUnit
         {
             PxPerInch = 1,
             PxPerCm = 2
@@ -62,7 +62,7 @@ namespace PhotoshopFile
         /// <summary>
         /// Physical units.
         /// </summary>
-        public enum Unit
+        internal enum Unit
         {
             Inches = 1,
             Centimeters = 2,

@@ -18,7 +18,7 @@ using System.Text;
 
 namespace PhotoshopFile
 {
-    public static class PsdBlendMode
+    internal static class PsdBlendMode
     {
         public const string Normal = "norm";
         public const string Darken = "dark";

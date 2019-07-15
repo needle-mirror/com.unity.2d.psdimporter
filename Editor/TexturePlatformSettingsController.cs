@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEditor.Experimental.U2D.PSD
 {
-    public class TexturePlatformSettingsController
+    internal class TexturePlatformSettingsController
     {
         public bool HandleDefaultSettings(List<TextureImporterPlatformSettings> platformSettings, TexturePlatformSettingsView view)
         {

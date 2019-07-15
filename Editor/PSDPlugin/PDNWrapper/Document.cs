@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PDNWrapper
 {
-    public class Document
+    internal class Document
     {
         public int width, height;
 

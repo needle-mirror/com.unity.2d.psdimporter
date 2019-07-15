@@ -17,7 +17,7 @@ using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
-    public static class ImageDataFactory
+    internal static class ImageDataFactory
     {
         /// <summary>
         /// Creates an ImageData object to compress or decompress image data.
