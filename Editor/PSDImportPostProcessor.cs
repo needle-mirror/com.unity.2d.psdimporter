@@ -8,60 +8,40 @@ namespace UnityEditor.U2D.PSD
 {
     internal class PSDImportPostProcessor : AssetPostprocessor
     {
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+        void OnPostprocessSprites(Texture2D texture, Sprite[] sprites)
         {
-            List<string> assetPathModified = new List<string>();
-            foreach (var importedAsset in importedAssets)
+            var dataProviderFactories = new SpriteDataProviderFactories();
+            dataProviderFactories.Init();
+            ISpriteEditorDataProvider importer = dataProviderFactories.GetSpriteEditorDataProviderFromObject(AssetImporter.GetAtPath(assetPath));
+            if (importer != null)
             {
-                PSDImporter importer = AssetImporter.GetAtPath(importedAsset) as PSDImporter;
-                if (importer != null)
+                importer.InitSpriteEditorDataProvider();
+                var physicsOutlineDataProvider = importer.GetDataProvider<ISpritePhysicsOutlineDataProvider>();
+                var textureDataProvider = importer.GetDataProvider<ITextureDataProvider>();
+                int actualWidth = 0, actualHeight = 0;
+                textureDataProvider.GetTextureActualWidthAndHeight(out actualWidth, out actualHeight);
+                float definitionScaleW = (float)texture.width / actualWidth;
+                float definitionScaleH = (float)texture.height / actualHeight;
+                float definitionScale = Mathf.Min(definitionScaleW, definitionScaleH);
+                foreach (var sprite in sprites)
                 {
-                    var texture = AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(importedAsset);
-                    var sprites = AssetDatabase.LoadAllAssetsAtPath(importedAsset).OfType<Sprite>().ToArray();
-                    if (texture == null || sprites.Length == 0)
-                        continue;
-
-                    importer.InitSpriteEditorDataProvider();
-                    var physicsOutlineDataProvider = importer.GetDataProvider<ISpritePhysicsOutlineDataProvider>();
-                    var textureDataProvider = importer.GetDataProvider<ITextureDataProvider>();
-                    int actualWidth = 0, actualHeight = 0;
-                    textureDataProvider.GetTextureActualWidthAndHeight(out actualWidth, out actualHeight);
-                    float definitionScaleW = (float)texture.width / actualWidth;
-                    float definitionScaleH = (float)texture.height / actualHeight;
-                    float definitionScale = Mathf.Min(definitionScaleW, definitionScaleH);
-                    var dataChanged = false;
-                    foreach (var sprite in sprites)
+                    var guid = sprite.GetSpriteID();
+                    var outline = physicsOutlineDataProvider.GetOutlines(guid);
+                    var outlineOffset = sprite.rect.size / 2;
+                    if (outline != null && outline.Count > 0)
                     {
-                        var guid = sprite.GetSpriteID();
-                        var outline = physicsOutlineDataProvider.GetOutlines(guid);
-                        var outlineOffset = sprite.rect.size / 2;
-                        if (outline != null && outline.Count > 0)
+                        var convertedOutline = new Vector2[outline.Count][];
+                        for (int i = 0; i < outline.Count; ++i)
                         {
-                            var convertedOutline = new Vector2[outline.Count][];
-                            for (int i = 0; i < outline.Count; ++i)
+                            convertedOutline[i] = new Vector2[outline[i].Length];
+                            for (int j = 0; j < outline[i].Length; ++j)
                             {
-                                convertedOutline[i] = new Vector2[outline[i].Length];
-                                for (int j = 0; j < outline[i].Length; ++j)
-                                {
-                                    convertedOutline[i][j] = outline[i][j] * definitionScale + outlineOffset;
-                                }
+                                convertedOutline[i][j] = outline[i][j] * definitionScale + outlineOffset;
                             }
-                            sprite.OverridePhysicsShape(convertedOutline);
-                            dataChanged = true;
                         }
+                        sprite.OverridePhysicsShape(convertedOutline);
                     }
-
-                    if (dataChanged)
-                        assetPathModified.Add(importedAsset);
                 }
-            }
-
-            if (assetPathModified.Count > 0)
-            {
-                var originalValue = EditorPrefs.GetBool("VerifySavingAssets", false);
-                EditorPrefs.SetBool("VerifySavingAssets", false);
-                AssetDatabase.ForceReserializeAssets(assetPathModified, ForceReserializeAssetsOptions.ReserializeMetadata);
-                EditorPrefs.SetBool("VerifySavingAssets", originalValue);
             }
         }
     }

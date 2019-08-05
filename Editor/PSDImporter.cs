@@ -17,7 +17,7 @@ using UnityEngine.U2D.Animation;
 namespace UnityEditor.U2D.PSD
 {
     [ScriptedImporter(4, "psb")]
-    internal class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, IAnimationAssetPostProcess
+    internal class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
         class GameObjectCreationFactory
         {
@@ -30,7 +30,6 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        [Serializable]
         struct BoneGO
         {
             public GameObject go;
@@ -65,6 +64,9 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         bool m_PaperDollMode = false;
+
+        [SerializeField]
+        bool m_KeepDupilcateSpriteName = false;
 
         [SerializeField]
         SpriteCategoryList m_SpriteCategoryList = new SpriteCategoryList() {categories = new List<SpriteCategory>()};
@@ -103,9 +105,6 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         CharacterData m_CharacterData = new CharacterData();
-
-        [SerializeField]
-        BoneGO[] m_BoneGOs;
 
         [SerializeField]
         bool m_GenerateGOHierarchy = false;
@@ -180,8 +179,6 @@ namespace UnityEditor.U2D.PSD
             string ext = System.IO.Path.GetExtension(ctx.assetPath).ToLower();
             if (ext != ".psb")
                 throw new Exception("File does not have psb extension");
-
-            m_BoneGOs = null;
 
             FileStream fileStream = new FileStream(ctx.assetPath, FileMode.Open, FileAccess.Read);
             Document doc = null;
@@ -269,7 +266,7 @@ namespace UnityEditor.U2D.PSD
 
             var textureSettings = m_TextureImporterSettings.ExtractTextureSettings();
             textureSettings.assetPath = ctx.assetPath;
-            textureSettings.enablePostProcessor = false;
+            textureSettings.enablePostProcessor = true;
             textureSettings.containsAlpha = true;
             textureSettings.hdr = false;
 
@@ -359,6 +356,13 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        string GetUniqueSpriteName(string name, List<int> namehash)
+        {
+            if (m_KeepDupilcateSpriteName)
+                return name;
+            return GetUniqueName(name, namehash);
+        }
+
         void ImportFromLayers(AssetImportContext ctx, Document doc)
         {
             NativeArray<Color32> output = default(NativeArray<Color32>);
@@ -420,7 +424,7 @@ namespace UnityEditor.U2D.PSD
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
                         }
 
-                        psdLayers[layerIndex[i]].spriteName = GetUniqueName(psdLayers[layerIndex[i]].name, spriteNameHash);
+                        psdLayers[layerIndex[i]].spriteName = GetUniqueSpriteName(psdLayers[layerIndex[i]].name, spriteNameHash);
                         spriteSheet.name = psdLayers[layerIndex[i]].spriteName;
                         spriteSheet.rect = new Rect(spritedata[i].x, spritedata[i].y, spritedata[i].width, spritedata[i].height);
                         spriteSheet.uvTransform = uvTransform[i];
@@ -450,7 +454,7 @@ namespace UnityEditor.U2D.PSD
                         // layer name is still unique and use it as the sprite name
                         if (psdLayer != null && psdLayer.spriteName == spriteData.name)
                         {
-                            psdLayer.spriteName = GetUniqueName(psdLayer.name, spriteNameHash);
+                            psdLayer.spriteName = GetUniqueSpriteName(psdLayer.name, spriteNameHash);
                             spriteData.name = psdLayer.spriteName;
                         }
                     }
@@ -469,7 +473,7 @@ namespace UnityEditor.U2D.PSD
                             spriteSheet.border = Vector4.zero;
                             spriteSheet.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
-                            psdLayers[i].spriteName = GetUniqueName(psdLayers[i].name, spriteNameHash);
+                            psdLayers[i].spriteName = GetUniqueSpriteName(psdLayers[i].name, spriteNameHash);
                             spriteSheet.name = psdLayers[i].spriteName;
                         }
                         else if (spriteSheet != null)
@@ -494,6 +498,7 @@ namespace UnityEditor.U2D.PSD
                 var generatedTexture = ImportTexture(ctx, output, width, height, 0, spriteImportData.Count);
                 m_ImportedTextureHeight = generatedTexture.texture.height;
                 m_ImportedTextureWidth = generatedTexture.texture.width;
+
                 RegisterAssets(ctx, generatedTexture);
             }
             finally
@@ -769,7 +774,7 @@ namespace UnityEditor.U2D.PSD
                 root.name = assetname + "_GO";
                 var spriteImportData = GetSpriteImportData();
                 var psdLayers = GetPSDLayers();
-                m_BoneGOs = CreateBonesGO(root.transform);
+                var boneGOs = CreateBonesGO(root.transform);
                 if (spriteLib != null)
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
                 for (int i = 0; i < sprites.Length; ++i)
@@ -781,7 +786,7 @@ namespace UnityEditor.U2D.PSD
                         var rootBone = root;
                         if (spriteBones != null && spriteBones.Any())
                         {
-                            var b = spriteBones.Where(x => x >= 0 && x < m_BoneGOs.Length).Select(x => m_BoneGOs[x]).OrderBy(x => x.index);
+                            var b = spriteBones.Where(x => x >= 0 && x < boneGOs.Length).Select(x => boneGOs[x]).OrderBy(x => x.index);
                             if (b.Any())
                                 rootBone = b.First().go;
                         }
@@ -825,10 +830,15 @@ namespace UnityEditor.U2D.PSD
                 root.name = assetname + "_GO";
                 if (spriteLib != null)
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
+
                 var psdLayers = GetPSDLayers();
                 for (int i = 0; i < psdLayers.Count; ++i)
                 {
                     BuildGroupGameObject(psdLayers, i, root.transform);
+                }
+                var boneGOs = CreateBonesGO(root.transform);
+                for (int i = 0; i < psdLayers.Count; ++i)
+                {
                     var l = psdLayers[i];
                     GUID layerSpriteID = l.spriteID;
                     var sprite = sprites.FirstOrDefault(x => x.GetSpriteID() == layerSpriteID);
@@ -848,7 +858,18 @@ namespace UnityEditor.U2D.PSD
                             var part = characterSkeleton.Value.parts.FirstOrDefault(x => x.spriteId == spriteMetaData.spriteID.ToString());
                             if (part.bones != null && part.bones.Length > 0)
                             {
-                                l.gameObject.AddComponent<SpriteSkin>();
+                                var spriteSkin = l.gameObject.AddComponent<SpriteSkin>();
+                                if (spriteRenderer.sprite != null && spriteRenderer.sprite.GetBindPoses().Length > 0)
+                                {
+                                    var spriteBones = m_CharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == spriteRenderer.sprite.GetSpriteID()).bones.Where(x => x >= 0 && x < boneGOs.Length).Select(x => boneGOs[x]);
+                                    if (spriteBones.Any())
+                                    {
+                                        spriteSkin.rootBone = spriteBones.OrderBy(x => x.index).First().go.transform;
+                                        spriteSkin.boneTransforms = spriteBones.Select(x => x.go.transform).ToArray();
+                                        if (spriteSkin.isValid)
+                                            spriteSkin.CalculateBounds();
+                                    }
+                                }
                             }
                         }
 
@@ -864,9 +885,6 @@ namespace UnityEditor.U2D.PSD
                     }
                 }
 
-
-                m_BoneGOs = CreateBonesGO(root.transform);
-
                 var prefabBounds = new Rect(0 , 0, m_DocumentSize.x / pixelsPerUnit, m_DocumentSize.y / pixelsPerUnit);
                 var documentPivot = (Vector3)GetPivotPoint(prefabBounds, m_DocumentAlignment);
                 for (int i = 0; i < psdLayers.Count; ++i)
@@ -878,13 +896,13 @@ namespace UnityEditor.U2D.PSD
                     p -= documentPivot;
                     l.gameObject.transform.localPosition = p;
                 }
-                for (int i = 0; i < m_BoneGOs.Length; ++i)
+                for (int i = 0; i < boneGOs.Length; ++i)
                 {
-                    if (m_BoneGOs[i].go.transform.parent != root.transform)
+                    if (boneGOs[i].go.transform.parent != root.transform)
                         continue;
-                    var p = m_BoneGOs[i].go.transform.position;
+                    var p = boneGOs[i].go.transform.position;
                     p -= documentPivot;
-                    m_BoneGOs[i].go.transform.position = p;
+                    boneGOs[i].go.transform.position = p;
                 }
             }
 
@@ -1205,37 +1223,6 @@ namespace UnityEditor.U2D.PSD
         bool mosaicMode
         {
             get { return spriteImportMode == SpriteImportMode.Multiple && m_MosaicLayers; }
-        }
-
-        bool IAnimationAssetPostProcess.OnAfterPostProcess()
-        {
-            var gameObjects = AssetDatabase.LoadAllAssetsAtPath(this.assetPath).OfType<GameObject>().ToArray();
-            foreach (var go in gameObjects)
-            {
-                PostProcessPrefab(go);
-            }
-
-            return gameObjects.Length > 0;
-        }
-
-        internal void PostProcessPrefab(GameObject go)
-        {
-            var sr = go.GetComponent<SpriteRenderer>();
-            if (sr != null && sr.sprite != null && sr.sprite.GetBindPoses().Length > 0)
-            {
-                var spriteSkin = go.GetComponent<SpriteSkin>();
-                if (spriteSkin != null)
-                {
-                    var spriteBones = m_CharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == sr.sprite.GetSpriteID()).bones.Where(x => x >= 0 && x < m_BoneGOs.Length).Select(x => m_BoneGOs[x]);
-                    if (spriteBones.Any())
-                    {
-                        spriteSkin.rootBone = spriteBones.OrderBy(x => x.index).First().go.transform;
-                        spriteSkin.boneTransforms = spriteBones.Select(x => x.go.transform).ToArray();
-                        if (spriteSkin.isValid)
-                            spriteSkin.CalculateBounds();
-                    }
-                }
-            }
         }
 
         internal CharacterData characterData

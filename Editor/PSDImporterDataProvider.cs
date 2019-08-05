@@ -220,11 +220,19 @@ namespace UnityEditor.U2D.PSD
         public CharacterData GetCharacterData()
         {
             var psdLayers = dataProvider.GetPSDLayers();
-            var groups = psdLayers.Where(x => x.isGroup).Select(y => new CharacterGroup()
+            var groups = new List<CharacterGroup>();
+            for (int i = 0; i < psdLayers.Count; ++i)
             {
-                name = y.name,
-                parentGroup = ParentGroupInFlatten(y.parentIndex, psdLayers)
-            }).ToArray();
+                if (psdLayers[i].isGroup)
+                {
+                    groups.Add(new CharacterGroup()
+                    {
+                        name = psdLayers[i].name,
+                        parentGroup = ParentGroupInFlatten(psdLayers[i].parentIndex, psdLayers),
+                        order = i
+                    });
+                }
+            }
 
             var cd = dataProvider.characterData;
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
@@ -235,6 +243,7 @@ namespace UnityEditor.U2D.PSD
                 var srIndex = parts.FindIndex(x => new GUID(x.spriteId) == spriteMetaData.spriteID);
                 CharacterPart cp = srIndex == -1 ? new CharacterPart() : parts[srIndex];
                 cp.spriteId = spriteMetaData.spriteID.ToString();
+                cp.order = psdLayers.FindIndex(l => l.spriteID == spriteMetaData.spriteID);
                 cp.spritePosition = new RectInt();
                 var uvTransform = spriteMetaData.uvTransform;
                 var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x, spriteMetaData.rect.y - uvTransform.y);
@@ -258,9 +267,7 @@ namespace UnityEditor.U2D.PSD
             var layers = dataProvider.GetPSDLayers();
             parts.Sort((x, y) =>
             {
-                var xIndex = layers.FindIndex(l => l.spriteID == new GUID(x.spriteId));
-                var yIndex = layers.FindIndex(l => l.spriteID == new GUID(y.spriteId));
-                return xIndex.CompareTo(yIndex);
+                return x.order.CompareTo(y.order);
             });
 
             parts.Reverse();

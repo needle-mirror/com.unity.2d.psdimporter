@@ -27,30 +27,32 @@ This is the default __Texture Type__ usage when an image is imported without a s
 
 ### Texture Type - Sprite (2D and UI)
 
-![PSD Importer inspect settings](images/PSDImporter_settings.png)
+![PSD Importer inspect settings](images/PSDImporter_2.0.5_Inspector.png)
 
-To import a PSB file for character animation with the __2D Animation V2__ package, set the __Texture Type__ to __Sprite (2D and UI)__ to do so. 
+When importing a PSB file for character animation with the __2D Animation__ package, set the __Texture Type__ to __Sprite (2D and UI)__.
 
 Property settings that are specific to the __PSD Importer__ are marked by an *.
 
-| Property                        | Function                                                     |
-| ------------------------------- | ------------------------------------------------------------ |
-| __Texture Type__                | Select __Sprite (2D and UI)__ to import the Texture as a [Sprite](https://docs.unity3d.com/Manual/Sprites.html). This is required to begin using the imported images with the 2D Animation V2 package. |
-| __Sprite Mode__                 | Use this setting to specify how the the Sprite graphic is extracted from the image. The default for this option is **Multiple**. |
-| Single                          | Select this option if there is only a single element in the imported image. |
-| Multiple                        | Select this option if there are multiple elements in the imported image. Select this option when importing a character meant for animation with the 2D Animation V2 package. |
-| __Pixels Per Unit__             | The number of pixels that equal 1 Unity unit.                |
-| __Mesh Type__                   | This defines the __Mesh__ type that is generated for the __Sprite__. The default for this option is 'Tight'. |
-| Full Rect                       | The Sprite is mapped onto a mesh generated as a quad.        |
-| Tight                           | This generates a Mesh based on pixel alpha value of the image, generating a shape that follows the shape of the Sprite.<br />Note that any Sprite that is smaller than 32x32 pixels is generated on a quad Mesh, even if Tight is specified. |
-| __Extrude Edges__               | Use the slider to determine how much area to leave around the Sprite in the generated Mesh. |
-| * [Import Hidden](#ImportHidde) | Select this property to specify that hidden layers in the PSB file should be imported. Clear this option to not import the hidden layers. |
-| * [Mosaic](#Mosaic)             | This option is only available if Texture Type is set to ‘Multiple’. Enable this to allow Unity to create a Sprite from each imported layer and arrange them into a Sprite Sheet layout. |
-| * [Character Rig](#CharRig)     | Select the imported image(s) is to be used for a multi-Sprite character.  When selected, a Prefab containing the imported images is generated. |
-| * [Use Layer Grouping](#Hierarchy)   | Select to have the generated Prefab mimic the layer hierarchy of the imported PSB file. |
-| __Pivot__                       | Select the pivot point of the Sprite from the dropdown menu options. |
-| Custom                          | Define the X and Y coordinates of a custom __Pivot__ location. |
-| * [Reslice](#Reslice)           | Available only when __Mosaic__ is enabled.<br />Select this to clear away all previous Sprite metadata and recreate the Sprite from the imported PSB layers. |
+| Property &nbsp;&nbsp;&nbsp;&nbsp;                            | Function                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| __Texture Type__                                             | Select __Sprite (2D and UI)__ to import the Texture as a [Sprite](https://docs.unity3d.com/Manual/Sprites.html). This is required to begin using the imported images with the 2D Animation package. |
+| __Sprite Mode__                                              | Use this property to specify how Unity extracts the Sprite graphic from the image. The default option is __Multiple__. |
+| &nbsp; &nbsp; &nbsp; &nbsp; Single                           | Select this option if there is only a single element in the imported image. |
+| &nbsp; &nbsp; &nbsp; &nbsp; Multiple                         | Select this option if there are multiple elements in the imported image. Select this option when importing a character meant for animation with the 2D Animation package. |
+| __Pixels Per Unit__                                          | The number of pixels that equal 1 Unity unit.                |
+| __Mesh Type__                                                | This defines the __Mesh__ type that is generated for the __Sprite__. This is set to __Tight__ by default. |
+| &nbsp; &nbsp; &nbsp; &nbsp; [Full Rect](https://docs.unity3d.com/Documentation/ScriptReference/SpriteMeshType.FullRect.html) | The Sprite is mapped onto a mesh generated as a quad.        |
+| &nbsp; &nbsp; &nbsp; &nbsp; [Tight](https://docs.unity3d.com/Documentation/ScriptReference/SpriteMeshType.Tight.html) | This generates a Mesh based on pixel alpha value of the image, generating a shape that follows the shape of the Sprite. Note that any Sprite that is smaller than 32x32 pixels is generated on a quad Mesh, even if Tight is specified. |
+| __Extrude Edges__                                            | Use the slider to determine how much area to leave around the Sprite in the generated Mesh. |
+| __Import Hidden__                                            | Enable this property to include hidden layers when importing the PSB. This produces the same import result as unhiding all layers in the source file before importing it into Unity. Clear this option to only import visible layers. |
+| __Mosaic__                                                   | This option is only available if Texture Type is set to __Multiple__. Enable this to have Unity generate a Sprite from each imported layer and arrange them into a Sprite Sheet layout. |
+| __[Character Rig](#CharRig)__                                | Enable this property to generate a Prefab from the imported source file for a multi-Sprite character. |
+| __Use Layer Grouping__                                       | Enable this setting to have Unity generate a Prefab that follows the layer and grouping hierarchy of the imported PSB file. |
+| __Pivot__                                                    | Select the pivot point of the Sprite from the dropdown menu options. |
+| &nbsp; &nbsp; &nbsp; &nbsp; Custom                           | Define the X and Y coordinates of a custom __Pivot__ location. |
+| __[Reslice](#Reslice)__                                      | Available only when __Mosaic__ is enabled. Select this to clear away any usermade changes to the Sprite previous Sprite metadata and recreate the Sprite from the imported PSB layers. |
+| __Experimental__                                             | This feature is experimental and may be changed or removed in the future. It is only available for the following Editor and package versions:<br />- __Unity 2019.2__: 2D PSD Importer version 1.2.0-preview.4 onwards<br />- __Unity 2019.3__: 2D PSD Importer version 2.0.5 onwards |
+| &nbsp; &nbsp; &nbsp; &nbsp; [Keep Duplicate Name](#Duplicate) | Enable this to have Unity generate Sprites from the source files with the exact same name as their source Layers, even when there are multiple Layers with the same exact name. |
 
 ## SpriteRect data
 
@@ -95,25 +97,17 @@ If the generated SpriteRect is deleted, it is regenerated when its source layer 
 
 ## Property Details
 
-### Import Hidden<a name="ImportHidden"></a>
-
-When this is selected, layers that are hidden are imported. The behavior is identical to the user unhiding all layers in the PSB file before import.
-
-### Mosaic<a name="Mosaic"></a>
-
-When __Mosaic__ is selected, all layers in the PSB file will be imported as separate Sprites. 
-
 ### Character Rig<a name="CharRig"></a>
 
-When this is selected, a Prefab is generated containing a Sprite GameObject with the SpriteRenderer component. If the Sprite contains bone and skin data, the __Sprite Skin__ component is added as well. The name of the GameObject is the same as the name specified in it's SpriteRect.
-
-### Use Layer Grouping<a name="Hierarchy"></a>
-
-When this is selected, the generated GameObjects  mimic the layer grouping in the imported file. When the Asset hierarchy is modified, it is reflected on the next import.
+Enable this setting to generate a Prefab containing a Sprite GameObject with the SpriteRenderer component when importing the source file. If the Sprite contains bone and skin data, the __Sprite Skin__ component is added as well. The name of the GameObject is the same as the name specified in its SpriteRect.
 
 ### Reslice<a name="Reslice"></a>
 
 When this is selected, all user modification is discarded and SpriteRects are regenerated based on the current source file data. Extra SpriteRect meta data (e.g. Weights, Bones) persist if they remain valid after the SpriteRects are regenerated.
+
+### (Experimental) Keep Duplicate Names<a name="Duplicate"></a>
+
+Enable this feature to have Unity generate Sprites with exactly the same name as their source Layer, even when there are multiple Layers in the source file with the same names. This replaces the default import behavior where Unity appends “_[number]” to each Sprite when generating them from multiple source Layers with the same name.
 
 ## Name collision errors
 

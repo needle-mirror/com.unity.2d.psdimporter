@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.5] - 2019-08-06
+### Fixed
+- Physics Shape not saved into Sprite when importing with AssetDatabase V2
+
+### Added
+- Experimental feature to have Sprites with same name generated from source file
+- Support for providing Layer and Group order to Animation Skinning Module
+
 ## [2.0.4] - 2019-08-09
 ### Added
 - Add related test packages
