@@ -753,6 +753,26 @@ namespace UnityEditor.U2D.PSD
                 System.Enum.GetValues(type) as int[]);
         }
 
+        void ExportMosaicTexture()
+        {
+            var assetPath = ((AssetImporter)target).assetPath;
+            var texture2D = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (texture2D == null)
+                return;
+            if (!texture2D.isReadable)
+                texture2D = InternalEditorBridge.CreateTemporaryDuplicate(texture2D, texture2D.width, texture2D.height);
+            var pixelData = texture2D.GetPixels();
+            texture2D = new Texture2D(texture2D.width, texture2D.height);
+            texture2D.SetPixels(pixelData);
+            texture2D.Apply();
+            byte[] bytes = texture2D.EncodeToPNG();
+            var fileName = Path.GetFileNameWithoutExtension(assetPath);
+            var filePath = Path.GetDirectoryName(assetPath);
+            var savePath = Path.Combine(filePath, fileName + ".png");
+            File.WriteAllBytes(savePath, bytes);
+            AssetDatabase.Refresh();
+        }
+
         internal class Styles
         {
             public readonly GUIContent textureTypeTitle = new GUIContent("Texture Type", "What will this texture be used for?");

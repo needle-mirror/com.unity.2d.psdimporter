@@ -60,7 +60,7 @@ namespace UnityEditor.U2D.PSD
             {
                 m_ReadableTexture = InternalEditorBridge.CreateTemporaryDuplicate(texture, texture.width, texture.height);
                 if (m_ReadableTexture != null)
-                    m_ReadableTexture.filterMode = FilterMode.Point;
+                    m_ReadableTexture.filterMode = texture.filterMode;
             }
             return m_ReadableTexture;
         }
@@ -69,6 +69,15 @@ namespace UnityEditor.U2D.PSD
         {
             width = dataProvider.textureActualWidth;
             height = dataProvider.textureActualHeight;
+        }
+    }
+
+    internal class SecondaryTextureDataProvider : PSDDataProvider, ISecondaryTextureDataProvider
+    {
+        public SecondarySpriteTexture[] textures
+        {
+            get { return dataProvider.secondaryTextures; }
+            set { dataProvider.secondaryTextures = value; }
         }
     }
 

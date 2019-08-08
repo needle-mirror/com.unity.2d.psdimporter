@@ -14,6 +14,14 @@ namespace UnityEditor.U2D.PSD
             TextureImporterFormat.ETC2_RGB4,
             TextureImporterFormat.ETC2_RGB4_PUNCHTHROUGH_ALPHA,
             TextureImporterFormat.ETC2_RGBA8,
+#if UNITY_2019_1_OR_NEWER
+            TextureImporterFormat.ASTC_4x4,
+            TextureImporterFormat.ASTC_5x5,
+            TextureImporterFormat.ASTC_6x6,
+            TextureImporterFormat.ASTC_8x8,
+            TextureImporterFormat.ASTC_10x10,
+            TextureImporterFormat.ASTC_12x12,
+#else
             TextureImporterFormat.ASTC_RGB_4x4,
             TextureImporterFormat.ASTC_RGB_5x5,
             TextureImporterFormat.ASTC_RGB_6x6,
@@ -26,6 +34,7 @@ namespace UnityEditor.U2D.PSD
             TextureImporterFormat.ASTC_RGBA_8x8,
             TextureImporterFormat.ASTC_RGBA_10x10,
             TextureImporterFormat.ASTC_RGBA_12x12
+        #endif
         };
 
         public struct BuildPlatformData
@@ -93,6 +102,14 @@ namespace UnityEditor.U2D.PSD
             (int)TextureImporterFormat.PVRTC_RGB4,
             (int)TextureImporterFormat.PVRTC_RGBA4,
 
+#if UNITY_2019_1_OR_NEWER
+            (int)TextureImporterFormat.ASTC_4x4,
+            (int)TextureImporterFormat.ASTC_5x5,
+            (int)TextureImporterFormat.ASTC_6x6,
+            (int)TextureImporterFormat.ASTC_8x8,
+            (int)TextureImporterFormat.ASTC_10x10,
+            (int)TextureImporterFormat.ASTC_12x12,
+#else
             (int)TextureImporterFormat.ASTC_RGB_4x4,
             (int)TextureImporterFormat.ASTC_RGB_5x5,
             (int)TextureImporterFormat.ASTC_RGB_6x6,
@@ -105,6 +122,7 @@ namespace UnityEditor.U2D.PSD
             (int)TextureImporterFormat.ASTC_RGBA_8x8,
             (int)TextureImporterFormat.ASTC_RGBA_10x10,
             (int)TextureImporterFormat.ASTC_RGBA_12x12,
+#endif
 
             (int)TextureImporterFormat.RGB16,
             (int)TextureImporterFormat.RGB24,
@@ -137,6 +155,14 @@ namespace UnityEditor.U2D.PSD
             (int)TextureImporterFormat.ETC_RGB4,
             (int)TextureImporterFormat.ETC2_RGBA8,
 
+#if UNITY_2019_1_OR_NEWER
+            (int)TextureImporterFormat.ASTC_4x4,
+            (int)TextureImporterFormat.ASTC_5x5,
+            (int)TextureImporterFormat.ASTC_6x6,
+            (int)TextureImporterFormat.ASTC_8x8,
+            (int)TextureImporterFormat.ASTC_10x10,
+            (int)TextureImporterFormat.ASTC_12x12,
+#else
             (int)TextureImporterFormat.ASTC_RGB_4x4,
             (int)TextureImporterFormat.ASTC_RGB_5x5,
             (int)TextureImporterFormat.ASTC_RGB_6x6,
@@ -149,6 +175,7 @@ namespace UnityEditor.U2D.PSD
             (int)TextureImporterFormat.ASTC_RGBA_8x8,
             (int)TextureImporterFormat.ASTC_RGBA_10x10,
             (int)TextureImporterFormat.ASTC_RGBA_12x12,
+#endif
 
             (int)TextureImporterFormat.RGB16,
             (int)TextureImporterFormat.RGB24,
@@ -306,6 +333,21 @@ namespace UnityEditor.U2D.PSD
                     return "RGB + 1-bit Alpha Compressed ETC2 4 bits";
                 case TextureImporterFormat.ETC2_RGBA8:
                     return "RGBA Compressed ETC2 8 bits";
+
+#if UNITY_2019_1_OR_NEWER
+                case TextureImporterFormat.ASTC_4x4:
+                    return "RGB(A) Compressed ASTC 4 x 4 block";
+                case TextureImporterFormat.ASTC_5x5:
+                    return "RGB(A) Compressed ASTC 5 x 5 block";
+                case TextureImporterFormat.ASTC_6x6:
+                    return "RGB(A) Compressed ASTC 6 x 6 block";
+                case TextureImporterFormat.ASTC_8x8:
+                    return "RGB(A) Compressed ASTC 8 x 8 block";
+                case TextureImporterFormat.ASTC_10x10:
+                    return "RGB(A) Compressed ASTC 10 x 10 block";
+                case TextureImporterFormat.ASTC_12x12:
+                    return "RGB(A) Compressed ASTC 12 x 12 block";
+#else
                 case TextureImporterFormat.ASTC_RGB_4x4:
                     return "RGB Compressed ASTC 4 x 4 block";
                 case TextureImporterFormat.ASTC_RGB_5x5:
@@ -330,6 +372,7 @@ namespace UnityEditor.U2D.PSD
                     return "RGBA Compressed ASTC 10 x 10 block";
                 case TextureImporterFormat.ASTC_RGBA_12x12:
                     return "RGBA Compressed ASTC 12 x 12 block";
+#endif
             }
             return "Unsupported";
         }

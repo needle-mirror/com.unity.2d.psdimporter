@@ -119,6 +119,9 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         string m_SpriteLibAssetName = null;
 
+        [SerializeField]
+        SecondarySpriteTexture[] m_SecondarySpriteTextures;
+
         public PSDImporter()
         {
             m_TextureImporterSettings = new TextureImporterSettings();
@@ -294,6 +297,7 @@ namespace UnityEditor.U2D.PSD
                     textureSpriteSettings.qualifyForPacking = !string.IsNullOrEmpty(m_SpritePackingTag);
                     textureSpriteSettings.spriteSheetData = new UnityEditor.Experimental.AssetImporters.SpriteImportData[spriteCount];
                     textureSettings.npotScale = TextureImporterNPOTScale.None;
+                    textureSettings.secondaryTextures = secondaryTextures;
                     var spriteImportData = GetSpriteImportData();
                     for (int i = 0; i < spriteCount; ++i)
                     {
@@ -543,9 +547,16 @@ namespace UnityEditor.U2D.PSD
                 throw new Exception("Texture import fail");
             }
 
+            var assetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
+            // Setup all fixed name on the hash table
             if (string.IsNullOrEmpty(m_TextureAssetName))
-                m_TextureAssetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
-            output.texture.name = m_TextureAssetName;
+                m_TextureAssetName = GetUniqueName(string.Format("{0} Texture",assetName), assetNameHash, true);
+            if (string.IsNullOrEmpty(m_PrefabAssetName))
+                m_PrefabAssetName = GetUniqueName(string.Format("{0} Prefab", assetName), assetNameHash, true);
+            if (string.IsNullOrEmpty(m_SpriteLibAssetName))
+                m_SpriteLibAssetName = GetUniqueName(string.Format("{0} Sprite Lib", assetName), assetNameHash, true);
+
+            output.texture.name = assetName;
             ctx.AddObjectToAsset(m_TextureAssetName, output.texture, output.thumbNail);
             UnityEngine.Object mainAsset = output.texture;
 
@@ -563,9 +574,6 @@ namespace UnityEditor.U2D.PSD
                         prefab = OnProducePrefab(m_TextureAssetName, output.sprites, slAsset);
                     if (prefab != null)
                     {
-                        if (string.IsNullOrEmpty(m_PrefabAssetName))
-                            m_PrefabAssetName = GetUniqueName(prefab.name, assetNameHash, true, prefab);
-
                         ctx.AddObjectToAsset(m_PrefabAssetName, prefab);
                         mainAsset = prefab;
                     }
@@ -579,8 +587,7 @@ namespace UnityEditor.U2D.PSD
 
                 if (slAsset != null)
                 {
-                    if (string.IsNullOrEmpty(m_SpriteLibAssetName))
-                        m_SpriteLibAssetName = GetUniqueName(slAsset.name, assetNameHash, true, slAsset);
+                    slAsset.name = assetName;
                     ctx.AddObjectToAsset(m_SpriteLibAssetName, slAsset);
                 }
             }
@@ -789,7 +796,7 @@ namespace UnityEditor.U2D.PSD
                         {
                             var uvTransform = spriteMetaData.uvTransform;
                             var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x + (spriteMetaData.pivot.x * spriteMetaData.rect.width),
-                                    spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprites[i].pixelsPerUnit;
+                                spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprites[i].pixelsPerUnit;
                             srGameObject.transform.position = new Vector3(outlineOffset.x, outlineOffset.y, 0);
                         }
                         var category = "";
@@ -833,7 +840,7 @@ namespace UnityEditor.U2D.PSD
                         spriteRenderer.sortingOrder = psdLayers.Count - i;
                         var uvTransform = spriteMetaData.uvTransform;
                         var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x + (spriteMetaData.pivot.x * spriteMetaData.rect.width),
-                                spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprite.pixelsPerUnit;
+                            spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprite.pixelsPerUnit;
                         l.gameObject.transform.position = new Vector3(outlineOffset.x, outlineOffset.y, 0);
 
                         if (characterSkeleton != null)
@@ -1047,6 +1054,10 @@ namespace UnityEditor.U2D.PSD
             {
                 return new SpriteLibraryDataProvider() { dataProvider = this } as T;
             }
+            if (typeof(T) == typeof(ISecondaryTextureDataProvider))
+            {
+                return new SecondaryTextureDataProvider() { dataProvider = this } as T;
+            }
             else
                 return this as T;
         }
@@ -1060,7 +1071,8 @@ namespace UnityEditor.U2D.PSD
                 type == typeof(ISpriteOutlineDataProvider) ||
                 type == typeof(ISpritePhysicsOutlineDataProvider) ||
                 type == typeof(ITextureDataProvider) ||
-                type == typeof(ISpriteLibDataProvider))
+                type == typeof(ISpriteLibDataProvider) ||
+                type == typeof(ISecondaryTextureDataProvider))
             {
                 return true;
             }
@@ -1243,26 +1255,33 @@ namespace UnityEditor.U2D.PSD
                 return null;
             var sla = ScriptableObject.CreateInstance<SpriteLibraryAsset>();
             sla.name = "Sprite Lib";
-            sla.labels = m_SpriteCategoryList.categories.Select(x =>
-                    new SpriteLibCategory()
-            {
-                name = x.name,
-                categoryList = x.labels.Select(y =>
+            sla.categories = m_SpriteCategoryList.categories.Select(x =>
+                new SpriteLibCategory()
                 {
-                    var sprite = sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y.spriteId);
-                    return new Categorylabel()
+                    name = x.name,
+                    categoryList = x.labels.Select(y =>
                     {
-                        name = y.name,
-                        sprite = sprite
-                    };
-                }).ToList()
-            }).ToList();
-            if (sla.labels.Count > 0)
+                        var sprite = sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y.spriteId);
+                        return new Categorylabel()
+                        {
+                            name = y.name,
+                            sprite = sprite
+                        };
+                    }).ToList()
+                }).ToList();
+            sla.categories.RemoveAll(x => x.categoryList.Count == 0);
+            if (sla.categories.Count > 0)
             {
                 sla.UpdateHashes();
                 return sla;
             }
             return null;
+        }
+
+        internal SecondarySpriteTexture[] secondaryTextures
+        {
+            get { return m_SecondarySpriteTextures; }
+            set { m_SecondarySpriteTextures = value; }
         }
     }
 }
