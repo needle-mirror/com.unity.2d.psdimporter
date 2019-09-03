@@ -66,6 +66,9 @@ namespace UnityEditor.Experimental.U2D.PSD
         bool m_PaperDollMode = false;
 
         [SerializeField]
+        bool m_KeepDupilcateSpriteName = false;
+
+        [SerializeField]
         SpriteCategoryList m_SpriteCategoryList = new SpriteCategoryList() {categories = new List<SpriteCategory>()};
         GameObjectCreationFactory m_GameObjectFactory = new GameObjectCreationFactory();
 
@@ -354,6 +357,13 @@ namespace UnityEditor.Experimental.U2D.PSD
             }
         }
 
+        string GetUniqueSpriteName(string name, List<int> namehash)
+        {
+            if (m_KeepDupilcateSpriteName)
+                return name;
+            return GetUniqueName(name, namehash);
+        }
+
         void ImportFromLayers(AssetImportContext ctx, Document doc)
         {
             NativeArray<Color32> output = default(NativeArray<Color32>);
@@ -415,7 +425,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
                         }
 
-                        psdLayers[layerIndex[i]].spriteName = GetUniqueName(psdLayers[layerIndex[i]].name, spriteNameHash);
+                        psdLayers[layerIndex[i]].spriteName = GetUniqueSpriteName(psdLayers[layerIndex[i]].name, spriteNameHash);
                         spriteSheet.name = psdLayers[layerIndex[i]].spriteName;
                         spriteSheet.rect = new Rect(spritedata[i].x, spritedata[i].y, spritedata[i].width, spritedata[i].height);
                         spriteSheet.uvTransform = uvTransform[i];
@@ -445,7 +455,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                         // layer name is still unique and use it as the sprite name
                         if (psdLayer != null && psdLayer.spriteName == spriteData.name)
                         {
-                            psdLayer.spriteName = GetUniqueName(psdLayer.name, spriteNameHash);
+                            psdLayer.spriteName = GetUniqueSpriteName(psdLayer.name, spriteNameHash);
                             spriteData.name = psdLayer.spriteName;
                         }
                     }
@@ -464,7 +474,7 @@ namespace UnityEditor.Experimental.U2D.PSD
                             spriteSheet.border = Vector4.zero;
                             spriteSheet.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
-                            psdLayers[i].spriteName = GetUniqueName(psdLayers[i].name, spriteNameHash);
+                            psdLayers[i].spriteName = GetUniqueSpriteName(psdLayers[i].name, spriteNameHash);
                             spriteSheet.name = psdLayers[i].spriteName;
                         }
                         else if (spriteSheet != null)
@@ -542,9 +552,16 @@ namespace UnityEditor.Experimental.U2D.PSD
                 throw new Exception("Texture import fail");
             }
 
+            var assetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
+            // Setup all fixed name on the hash table
             if (string.IsNullOrEmpty(m_TextureAssetName))
-                m_TextureAssetName = GetUniqueName(System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath), assetNameHash, true);
-            output.texture.name = m_TextureAssetName;
+                m_TextureAssetName = GetUniqueName(string.Format("{0} Texture",assetName), assetNameHash, true);
+            if (string.IsNullOrEmpty(m_PrefabAssetName))
+                m_PrefabAssetName = GetUniqueName(string.Format("{0} Prefab", assetName), assetNameHash, true);
+            if (string.IsNullOrEmpty(m_SpriteLibAssetName))
+                m_SpriteLibAssetName = GetUniqueName(string.Format("{0} Sprite Lib", assetName), assetNameHash, true);
+
+            output.texture.name = assetName;
             ctx.AddObjectToAsset(m_TextureAssetName, output.texture, output.thumbNail);
             UnityEngine.Object mainAsset = output.texture;
 
@@ -562,9 +579,6 @@ namespace UnityEditor.Experimental.U2D.PSD
                         prefab = OnProducePrefab(m_TextureAssetName, output.sprites, slAsset);
                     if (prefab != null)
                     {
-                        if (string.IsNullOrEmpty(m_PrefabAssetName))
-                            m_PrefabAssetName = GetUniqueName(prefab.name, assetNameHash, true, prefab);
-
                         ctx.AddObjectToAsset(m_PrefabAssetName, prefab);
                         mainAsset = prefab;
                     }
@@ -578,8 +592,7 @@ namespace UnityEditor.Experimental.U2D.PSD
 
                 if (slAsset != null)
                 {
-                    if (string.IsNullOrEmpty(m_SpriteLibAssetName))
-                        m_SpriteLibAssetName = GetUniqueName(slAsset.name, assetNameHash, true, slAsset);
+                    slAsset.name = assetName;
                     ctx.AddObjectToAsset(m_SpriteLibAssetName, slAsset);
                 }
             }

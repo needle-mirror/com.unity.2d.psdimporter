@@ -49,11 +49,13 @@ namespace UnityEditor.Experimental.U2D.PSD
         SerializedProperty m_DocumentAlignment;
         SerializedProperty m_GenerateGOHierarchy;
         SerializedProperty m_PaperDollMode;
+        SerializedProperty m_KeepDupilcateSpriteName;
 
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
 
         bool    m_IsPOT = false;
         bool m_ShowAdvanced = false;
+        bool m_ShowExperimental = false;
         Dictionary<TextureImporterType, Action[]> m_AdvanceInspectorGUI = new Dictionary<TextureImporterType, Action[]>();
         int m_PlatformSettingsIndex;
         bool m_ShowPerAxisWrapModes = false;
@@ -71,6 +73,7 @@ namespace UnityEditor.Experimental.U2D.PSD
             m_DocumentAlignment = serializedObject.FindProperty("m_DocumentAlignment");
             m_GenerateGOHierarchy = serializedObject.FindProperty("m_GenerateGOHierarchy");
             m_PaperDollMode = serializedObject.FindProperty("m_PaperDollMode");
+            m_KeepDupilcateSpriteName = serializedObject.FindProperty("m_KeepDupilcateSpriteName");
 
             var textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
             m_TextureType = textureImporterSettingsSP.FindPropertyRelative("m_TextureType");
@@ -596,7 +599,6 @@ namespace UnityEditor.Experimental.U2D.PSD
             if (m_SpriteMode.intValue == (int)SpriteImportMode.Multiple && !m_SpriteMode.hasMultipleDifferentValues)
             {
                 EditorGUILayout.PropertyField(m_MosaicLayers, s_Styles.mosaicLayers);
-
                 using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue))
                 {
                     EditorGUILayout.PropertyField(m_CharacterMode, s_Styles.characterMode);
@@ -620,6 +622,13 @@ namespace UnityEditor.Experimental.U2D.PSD
                     {
                         EditorGUILayout.HelpBox(s_Styles.resliceFromLayerWarning.text, MessageType.Info, true);
                     }
+                }
+                m_ShowExperimental = EditorGUILayout.Foldout(m_ShowExperimental, s_Styles.experimental, true);
+                if (m_ShowExperimental)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, s_Styles.keepDuplicateSpriteName);
+                    EditorGUI.indentLevel--;
                 }
             }
 
@@ -752,6 +761,28 @@ namespace UnityEditor.Experimental.U2D.PSD
                 System.Enum.GetNames(type),
                 System.Enum.GetValues(type) as int[]);
         }
+
+        void ExportMosaicTexture()
+        {
+            var assetPath = ((AssetImporter)target).assetPath;
+            var texture2D = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (texture2D == null)
+                return;
+            if (!texture2D.isReadable)
+                texture2D = InternalEditorBridge.CreateTemporaryDuplicate(texture2D, texture2D.width, texture2D.height);
+            var pixelData = texture2D.GetPixels();
+            texture2D = new Texture2D(texture2D.width, texture2D.height);
+            texture2D.SetPixels(pixelData);
+            texture2D.Apply();
+            byte[] bytes = texture2D.EncodeToPNG();
+            var fileName = Path.GetFileNameWithoutExtension(assetPath);
+            var filePath = Path.GetDirectoryName(assetPath);
+            var savePath = Path.Combine(filePath, fileName + ".png");
+            File.WriteAllBytes(savePath, bytes);
+            AssetDatabase.Refresh();
+        }
+
+        public override bool showImportedObject { get => false; }
 
         internal class Styles
         {
@@ -908,6 +939,8 @@ namespace UnityEditor.Experimental.U2D.PSD
             public readonly GUIContent generateGOHierarchy = new GUIContent(L10n.Tr("Use Layer Grouping"), L10n.Tr("GameObjects are grouped according to source file layer grouping"));
             public readonly GUIContent resliceFromLayer = new GUIContent(L10n.Tr("Reslice"), L10n.Tr("Recreate Sprite rects from file"));
             public readonly GUIContent paperDollMode = new GUIContent(L10n.Tr("Paper Doll Mode"), L10n.Tr("Special mode to generate a Prefab for Paper Doll use case"));
+            public readonly GUIContent experimental =  new GUIContent(L10n.Tr("Experimental"));
+            public readonly GUIContent keepDuplicateSpriteName = new GUIContent(L10n.Tr("Keep Duplicate Name"), L10n.Tr("Keep Sprite name same as Layer Name even if there are duplicated Layer Name"));
 
             public Styles()
             {
