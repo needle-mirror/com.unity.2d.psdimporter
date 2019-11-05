@@ -440,6 +440,14 @@ namespace UnityEditor.U2D.PSD
                 {
                     spriteImportData.RemoveAll(x => removedLayersSprite.Contains(x.spriteID));
 
+                    // First look for any user created SpriteRect and add those into the name hash
+                    foreach (var spriteData in spriteImportData)
+                    {
+                        var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteData.spriteID);
+                        if (psdLayer == null)
+                            spriteNameHash.Add(spriteData.name.GetHashCode());
+                    }
+
                     foreach (var spriteData in spriteImportData)
                     {
                         var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteData.spriteID);

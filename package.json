@@ -1,8 +1,8 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "2.0.5",
+  "version": "2.0.7",
   "unity": "2019.3",
-  "unityRelease": "0b3",
+  "unityRelease": "0b11",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
   "keywords": [
@@ -13,15 +13,15 @@
   "category": "2D",
   "dependencies": {
     "com.unity.2d.common": "2.0.2",
-    "com.unity.2d.animation": "3.0.5",
+    "com.unity.2d.animation": "3.0.8",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "2.0.5"
+    "com.unity.2d.psdimporter.tests": "2.0.7"
   },
   "repository": {
     "type": "git",
     "url": "git@github.cds.internal.unity3d.com:unity/2d.git",
-    "revision": "32fbfc4d3040a10e35abd2efee35086c77b66837"
+    "revision": "740bdb49d924b1dbaf3a34d2514cc09ff86be782"
   }
 }
