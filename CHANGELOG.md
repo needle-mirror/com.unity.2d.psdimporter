@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.0.0] - 2019-11-06
+### Changed
+- Update version number for Unity 2020.1
+- Update documentation
+
+## [2.0.6] - 2019-10-18
+### Fixed
+- Fixed SpriteRect name clash when Photoshop layer is renamed to the same name as an exisiting user created SpriteRect
+
 ## [2.0.5] - 2019-08-06
 ### Fixed
 - Physics Shape not saved into Sprite when importing with AssetDatabase V2
