@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0] - 2019-12-16
+### Added
+- Expose PSDImporter class to be accessible via scripting
+- Added example in manual to show how to set PSDImporter as default importer for PSD files.
+
 ## [2.0.7] - 2019-11-06
 ### Changed
 - Update documentation
