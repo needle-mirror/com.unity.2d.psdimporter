@@ -10,8 +10,11 @@ using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
+    /// <summary>
+    /// Inspector for PSDImporter
+    /// </summary>
     [CustomEditor(typeof(PSDImporter))]
-    internal class PSDImporterEditor : ScriptedImporterEditor
+    public class PSDImporterEditor : ScriptedImporterEditor
     {
         SerializedProperty m_TextureType;
         SerializedProperty m_TextureShape;
@@ -62,6 +65,10 @@ namespace UnityEditor.U2D.PSD
 
         TexturePlatformSettingsView m_TexturePlatformSettingsView = new TexturePlatformSettingsView();
         TexturePlatformSettingsController m_TexturePlatformSettingsController = new TexturePlatformSettingsController();
+
+        /// <summary>
+        /// Implementation of AssetImporterEditor.OnEnable
+        /// </summary>
         public override void OnEnable()
         {
             base.OnEnable();
@@ -130,6 +137,9 @@ namespace UnityEditor.U2D.PSD
             LoadPlatformSettings();
         }
 
+        /// <summary>
+        /// Implementation of AssetImporterEditor.OnInspectorGUI
+        /// </summary>
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -162,6 +172,9 @@ namespace UnityEditor.U2D.PSD
             ApplyRevertGUI();
         }
 
+        /// <summary>
+        /// Implementation of AssetImporterEditor.Apply
+        /// </summary>
         protected override void Apply()
         {
             FileStream fileStream = new FileStream(((AssetImporter)target).assetPath, FileMode.Open, FileAccess.Read);
@@ -546,7 +559,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        protected void DoWrapModePopup()
+        void DoWrapModePopup()
         {
             WrapModePopup(m_WrapU, m_WrapV, m_WrapW, IsVolume(), ref m_ShowPerAxisWrapModes);
         }
@@ -782,6 +795,11 @@ namespace UnityEditor.U2D.PSD
             AssetDatabase.Refresh();
         }
 
+        /// <summary>
+        /// Override of AssetImporterEditor.showImportedObject
+        /// The property always returns false so that imported objects does not show up in the Inspector.
+        /// </summary>
+        /// <returns>false</returns>
         public override bool showImportedObject { get => false; }
 
         internal class Styles

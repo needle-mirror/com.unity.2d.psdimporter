@@ -157,6 +157,65 @@ When a name collision occurs, one SpriteRect retains the original name while the
 
 3. Currently existing SpriteRects in the Project.
 
-### Experimental feature: Keep duplicate names <a name="Duplicate"></a>
+## Experimental feature: Keep duplicate names <a name="Duplicate"></a>
 
 Unity’s default import behavior when there are duplicate names is to append "_[number]" to Sprites and SpriteRects it generates from source layers with identical names. Enable this experimental feature to instead have Unity give both Sprites/SpriteRects the exact same name as their source layer even if they have duplicate names.
+
+
+## PSD File Importer Override
+
+In Unity 2019.30f1, it is possible to use PSDImporter to import files with 'psd' extensions.
+To do that you will need to have custom scripts that allows you to do that by calling the `AssetDatabaseExperimental.SetImporterOverride` method.
+The following is an example on how to use the API
+
+#### PSDImporterOverride.cs
+```
+using System.IO;
+using UnityEditor.Experimental;
+using UnityEditor.Experimental.AssetImporters;
+using UnityEngine;
+
+namespace UnityEditor.U2D.PSD
+{
+    [ScriptedImporter(1, "psd", AutoSelect = false)]
+    internal class PSDImporterOverride : PSDImporter
+    {
+
+        [MenuItem("Assets/2D Importer", false, 30)]
+        [MenuItem("Assets/2D Importer/Change PSD File Importer", false, 30)]
+        static void ChangeImporter()
+        {
+            foreach (var obj in Selection.objects)
+            {
+                var path = AssetDatabase.GetAssetPath(obj);
+                var ext = Path.GetExtension(path);
+                if (ext == ".psd")
+                {
+                    var importer = AssetImporter.GetAtPath(path);
+                    if (importer is PSDImporterOverride)
+                    {
+                        Debug.Log(string.Format("{0} is now imported with TextureImporter", path));
+                        AssetDatabaseExperimental.ClearImporterOverride(path);
+                    }
+                    else
+                    {
+                        Debug.Log(string.Format("{0} is now imported with PSDImporter", path));
+                        AssetDatabaseExperimental.SetImporterOverride<PSDImporterOverride>(path);
+                    }
+                }
+            }
+        }
+    }
+```
+
+#### PSDImporterOverrideEditor.cs
+```
+namespace UnityEditor.U2D.PSD
+{
+    [CustomEditor(typeof(UnityEditor.U2D.PSD.PSDImporterOverride))]
+    internal class PSDImporterOverrideEditor : PSDImporterEditor
+    {
+    }
+
+}
+```

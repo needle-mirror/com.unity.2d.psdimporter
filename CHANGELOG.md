@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.1.1] - 2020-01-09
+### Fixed
+- Fix wrong dependency version
+
+## [3.1.0] - 2019-12-16
+### Added
+- Expose PSDImporter class to be accessible via scripting
+- Added example in manual to show how to set PSDImporter as default importer for PSD files.
+
 ## [3.0.0] - 2019-11-06
 ### Changed
 - Update version number for Unity 2020.1

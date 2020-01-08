@@ -16,8 +16,11 @@ using UnityEngine.U2D.Animation;
 
 namespace UnityEditor.U2D.PSD
 {
+    /// <summary>
+    /// ScriptedImporter to import Photoshop files
+    /// </summary>
     [ScriptedImporter(4, "psb")]
-    internal class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
+    public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
         class GameObjectCreationFactory
         {
@@ -37,7 +40,57 @@ namespace UnityEditor.U2D.PSD
         }
 
         [SerializeField]
-        TextureImporterSettings m_TextureImporterSettings;
+        TextureImporterSettings m_TextureImporterSettings = new TextureImporterSettings() {
+            mipmapEnabled = true,
+            mipmapFilter = TextureImporterMipFilter.BoxFilter,
+            sRGBTexture = true,
+            borderMipmap = false,
+            mipMapsPreserveCoverage = false,
+            alphaTestReferenceValue = 0.5f,
+            readable = false,
+
+#if ENABLE_TEXTURE_STREAMING
+            streamingMipmaps = true,
+#endif
+
+            fadeOut = false,
+            mipmapFadeDistanceStart = 1,
+            mipmapFadeDistanceEnd = 3,
+
+            convertToNormalMap = false,
+            heightmapScale = 0.25F,
+            normalMapFilter = 0,
+
+            generateCubemap = TextureImporterGenerateCubemap.AutoCubemap,
+            cubemapConvolution = 0,
+
+            seamlessCubemap = false,
+
+            npotScale = TextureImporterNPOTScale.ToNearest,
+
+            spriteMode = (int)SpriteImportMode.Multiple,
+            spriteExtrude = 1,
+            spriteMeshType = SpriteMeshType.Tight,
+            spriteAlignment = (int)SpriteAlignment.Center,
+            spritePivot = new Vector2(0.5f, 0.5f),
+            spritePixelsPerUnit = 100.0f,
+            spriteBorder = new Vector4(0.0f, 0.0f, 0.0f, 0.0f),
+
+            alphaSource = TextureImporterAlphaSource.FromInput,
+            alphaIsTransparency = true,
+            spriteTessellationDetail = -1.0f,
+
+            textureType = TextureImporterType.Sprite,
+            textureShape = TextureImporterShape.Texture2D,
+
+            filterMode = FilterMode.Bilinear,
+            aniso = 1,
+            mipmapBias = 0.0f,
+            wrapModeU = TextureWrapMode.Repeat,
+            wrapModeV = TextureWrapMode.Repeat,
+            wrapModeW = TextureWrapMode.Repeat,
+        };
+        
         [SerializeField]
         List<SpriteMetaData> m_SpriteImportData = new List<SpriteMetaData>(); // we use index 0 for single sprite and the rest for multiple sprites
         [SerializeField]
@@ -76,7 +129,7 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         int m_TextureActualWidth;
-        public int textureActualWidth
+        internal int textureActualWidth
         {
             get { return m_TextureActualWidth; }
             private set { m_TextureActualWidth = value; }
@@ -84,7 +137,7 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         int m_TextureActualHeight;
-        public int textureActualHeight
+        internal int textureActualHeight
         {
             get { return m_TextureActualHeight; }
             private set { m_TextureActualHeight = value; }
@@ -121,59 +174,13 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         SecondarySpriteTexture[] m_SecondarySpriteTextures;
 
-        public PSDImporter()
-        {
-            m_TextureImporterSettings = new TextureImporterSettings();
-            m_TextureImporterSettings.mipmapEnabled = true;
-            m_TextureImporterSettings.mipmapFilter = TextureImporterMipFilter.BoxFilter;
-            m_TextureImporterSettings.sRGBTexture = true;
-            m_TextureImporterSettings.borderMipmap = false;
-            m_TextureImporterSettings.mipMapsPreserveCoverage = false;
-            m_TextureImporterSettings.alphaTestReferenceValue = 0.5f;
-            m_TextureImporterSettings.readable = false;
-
-#if ENABLE_TEXTURE_STREAMING
-            m_TextureImporterSettings.streamingMipmaps = true;
-#endif
-
-            m_TextureImporterSettings.fadeOut = false;
-            m_TextureImporterSettings.mipmapFadeDistanceStart = 1;
-            m_TextureImporterSettings.mipmapFadeDistanceEnd = 3;
-
-            m_TextureImporterSettings.convertToNormalMap = false;
-            m_TextureImporterSettings.heightmapScale = 0.25F;
-            m_TextureImporterSettings.normalMapFilter = 0;
-
-            m_TextureImporterSettings.generateCubemap = TextureImporterGenerateCubemap.AutoCubemap;
-            m_TextureImporterSettings.cubemapConvolution = 0;
-
-            m_TextureImporterSettings.seamlessCubemap = false;
-
-            m_TextureImporterSettings.npotScale = TextureImporterNPOTScale.ToNearest;
-
-            m_TextureImporterSettings.spriteMode = (int)SpriteImportMode.Multiple;
-            m_TextureImporterSettings.spriteExtrude = 1;
-            m_TextureImporterSettings.spriteMeshType = SpriteMeshType.Tight;
-            m_TextureImporterSettings.spriteAlignment = (int)SpriteAlignment.Center;
-            m_TextureImporterSettings.spritePivot = new Vector2(0.5f, 0.5f);
-            m_TextureImporterSettings.spritePixelsPerUnit = 100.0f;
-            m_TextureImporterSettings.spriteBorder = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-
-            m_TextureImporterSettings.alphaSource = TextureImporterAlphaSource.FromInput;
-            m_TextureImporterSettings.alphaIsTransparency = true;
-            m_TextureImporterSettings.spriteTessellationDetail = -1.0f;
-
-            m_TextureImporterSettings.textureType = TextureImporterType.Sprite;
-            m_TextureImporterSettings.textureShape = TextureImporterShape.Texture2D;
-
-            m_TextureImporterSettings.filterMode = FilterMode.Bilinear;
-            m_TextureImporterSettings.aniso = 1;
-            m_TextureImporterSettings.mipmapBias = 0.0f;
-            m_TextureImporterSettings.wrapModeU = TextureWrapMode.Repeat;
-            m_TextureImporterSettings.wrapModeV = TextureWrapMode.Repeat;
-            m_TextureImporterSettings.wrapModeW = TextureWrapMode.Repeat;
-        }
-
+        /// <summary>
+        /// Implementation of ScriptedImporter.OnImportAsset
+        /// </summary>
+        /// <param name="ctx">
+        /// This argument contains all the contextual information needed to process the import
+        /// event and is also used by the custom importer to store the resulting Unity Asset.
+        /// </param>
         public override void OnImportAsset(AssetImportContext ctx)
         {
             string ext = System.IO.Path.GetExtension(ctx.assetPath).ToLower();
@@ -524,7 +531,7 @@ namespace UnityEditor.U2D.PSD
                 m_SpriteImportData.Add(new SpriteMetaData()); // insert default for single sprite mode
         }
 
-        public TextureImporterPlatformSettings GetPlatformTextureSettings(BuildTarget buildTarget)
+        internal TextureImporterPlatformSettings GetPlatformTextureSettings(BuildTarget buildTarget)
         {
             var buildTargetName = TexturePlatformSettingsModal.kValidBuildPlatform.FirstOrDefault(x => x.buildTarget.Contains(buildTarget));
             var defaultTargetName = TexturePlatformSettingsModal.kValidBuildPlatform.FirstOrDefault(x => x.buildTarget.Contains(BuildTarget.NoTarget));
@@ -1017,7 +1024,7 @@ namespace UnityEditor.U2D.PSD
         }
 
         // ISpriteEditorDataProvider interface
-        public SpriteImportMode spriteImportMode
+        internal SpriteImportMode spriteImportMode
         {
             get
             {
@@ -1027,7 +1034,9 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public int spriteDataCount
+        SpriteImportMode ISpriteEditorDataProvider.spriteImportMode => spriteImportMode;
+
+        internal int spriteDataCount
         {
             get
             {
@@ -1040,17 +1049,20 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public UnityEngine.Object targetObject
+        internal UnityEngine.Object targetObject
         {
             get { return this; }
         }
+        UnityEngine.Object ISpriteEditorDataProvider.targetObject => targetObject;
 
-        public float pixelsPerUnit
+        internal float pixelsPerUnit
         {
             get { return m_TextureImporterSettings.spritePixelsPerUnit; }
         }
 
-        public T GetDataProvider<T>() where T : class
+        float ISpriteEditorDataProvider.pixelsPerUnit =>pixelsPerUnit;
+
+        internal T GetDataProvider<T>() where T : class
         {
             if (typeof(T) == typeof(ISpriteBoneDataProvider))
             {
@@ -1088,7 +1100,12 @@ namespace UnityEditor.U2D.PSD
                 return this as T;
         }
 
-        public bool HasDataProvider(Type type)
+        T ISpriteEditorDataProvider.GetDataProvider<T>()
+        {
+            return GetDataProvider<T>();
+        }
+
+        internal bool HasDataProvider(Type type)
         {
             if (characterMode && type == typeof(ICharacterDataProvider))
                 return true;
@@ -1106,7 +1123,12 @@ namespace UnityEditor.U2D.PSD
                 return type.IsAssignableFrom(GetType());
         }
 
-        public void AddSpriteData(SpriteRect spriteRect)
+        bool ISpriteEditorDataProvider.HasDataProvider(Type type)
+        {
+            return HasDataProvider(type);
+        }
+
+        internal void AddSpriteData(SpriteRect spriteRect)
         {
             if (spriteImportMode != SpriteImportMode.Multiple)
                 Debug.LogWarning("Can only add sprite data when import mode is multiple");
@@ -1116,7 +1138,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public void DeleteSpriteData(SpriteRect spriteRect)
+        internal void DeleteSpriteData(SpriteRect spriteRect)
         {
             if (spriteImportMode != SpriteImportMode.Multiple)
                 Debug.LogWarning("Can only add sprite data when import mode is multiple");
@@ -1129,7 +1151,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public int GetSpriteDataIndex(GUID guid)
+        internal int GetSpriteDataIndex(GUID guid)
         {
             switch (spriteImportMode)
             {
@@ -1146,7 +1168,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public void Apply()
+        internal void Apply()
         {
             // Do this so that asset change save dialog will not show
             var originalValue = EditorPrefs.GetBool("VerifySavingAssets", false);
@@ -1155,13 +1177,27 @@ namespace UnityEditor.U2D.PSD
             EditorPrefs.SetBool("VerifySavingAssets", originalValue);
         }
 
-        public void InitSpriteEditorDataProvider() {}
+        void ISpriteEditorDataProvider.Apply()
+        {
+            Apply();
+        }
 
-        public SpriteRect[] GetSpriteRects()
+        internal void InitSpriteEditorDataProvider() {}
+        void ISpriteEditorDataProvider.InitSpriteEditorDataProvider()
+        {
+            InitSpriteEditorDataProvider();
+        } 
+
+        internal SpriteRect[] GetSpriteRects()
         {
             var spriteImportData = GetSpriteImportData();
             var skip = mosaicMode ? 0 : 1;
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).Select(x => new SpriteMetaData(x) as SpriteRect).ToArray() : new[] {new SpriteMetaData(spriteImportData[0]) };
+        }
+
+        SpriteRect[] ISpriteEditorDataProvider.GetSpriteRects()
+        {
+            return GetSpriteRects();
         }
 
         List<SpriteMetaData> GetSpriteImportData()
@@ -1181,14 +1217,14 @@ namespace UnityEditor.U2D.PSD
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).ToArray() : new[] { new SpriteMetaData(spriteImportData[0]) };
         }
 
-        public SpriteRect GetSpriteData(GUID guid)
+        internal SpriteRect GetSpriteData(GUID guid)
         {
             var spriteImportData = GetSpriteImportData();
             var skip = mosaicMode ? 0 : 1;
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).FirstOrDefault(x => x.spriteID == guid) : spriteImportData[0];
         }
 
-        public void SetSpriteRects(SpriteRect[] spriteRects)
+        internal void SetSpriteRects(SpriteRect[] spriteRects)
         {
             var spriteImportData = GetSpriteImportData();
             if (spriteImportMode == SpriteImportMode.Multiple)
@@ -1226,6 +1262,11 @@ namespace UnityEditor.U2D.PSD
                     spriteImportData[0] = new SpriteMetaData(spriteRects[0]);
                 }
             }
+        }
+
+        void ISpriteEditorDataProvider.SetSpriteRects(SpriteRect[] spriteRects)
+        {
+            SetSpriteRects(spriteRects);
         }
 
         bool mosaicMode
