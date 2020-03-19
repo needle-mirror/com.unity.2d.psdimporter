@@ -20,6 +20,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     [ScriptedImporter(4, "psb")]
+    [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@2.1/manual/index.html")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
         class GameObjectCreationFactory
@@ -639,7 +640,7 @@ namespace UnityEditor.U2D.PSD
             var spriteData = GetSpriteImportData().FirstOrDefault(x => x.spriteID == psdGroup[index].spriteID);
             if (psdGroup[index].gameObject == null)
             {
-                if (m_GenerateGOHierarchy || !psdGroup[index].spriteID.Empty())
+                if (m_GenerateGOHierarchy || (!psdGroup[index].spriteID.Empty() && psdGroup[index].isGroup == false))
                 {
                     // Determine if need to create GameObject i.e. if the sprite is not in a SpriteLib or if it is the first one
                     string categoryName;

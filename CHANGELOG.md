@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.3] - 2020-03-20
+### Changed
+- Update 2D Animation dependency
+
+## [2.1.2] - 2020-02-27
+### Fixed
+- Fixed broken documentation links in inspectors
+- Fixed empty GameObjects created in certain cases
+
 ## [2.1.0] - 2019-12-16
 ### Added
 - Expose PSDImporter class to be accessible via scripting
