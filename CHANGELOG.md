@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.1.3] - 2020-03-20
+### Changed
+- Update 2D Animation dependency
+
+## [3.1.2] - 2020-02-27
+### Fixed
+- Fixed broken documentation links in inspectors
+- Fixed empty GameObjects created in certain cases
+
 ## [3.1.1] - 2020-01-09
 ### Fixed
 - Fix wrong dependency version

@@ -1,4 +1,4 @@
-com.unity.2d.psdimporter copyright © 2019 Unity Technologies ApS
+com.unity.2d.psdimporter copyright © 2020 Unity Technologies ApS
 
 Unity hereby grants to you a worldwide, non-exclusive, no-charge, and royalty-free copyright license to reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute the software that is made available with this License ("**_Software_**"), subject to the following terms and conditions:
 
