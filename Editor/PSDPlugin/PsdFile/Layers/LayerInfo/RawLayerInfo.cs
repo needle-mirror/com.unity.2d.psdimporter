@@ -48,10 +48,5 @@ namespace PhotoshopFile
             Util.CheckByteArrayLength(dataLength);
             Data = reader.ReadBytes((int)dataLength);
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  writer.Write(Data);
-        //}
     }
 }

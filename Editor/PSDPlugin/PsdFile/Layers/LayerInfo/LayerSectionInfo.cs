@@ -90,17 +90,5 @@ namespace PhotoshopFile
                 }
             }
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  writer.Write((Int32)SectionType);
-        //  if (BlendModeKey != null)
-        //  {
-        //    writer.WriteAsciiChars("8BIM");
-        //    writer.WriteAsciiChars(BlendModeKey);
-        //    if (subtype != null)
-        //      writer.Write((Int32)Subtype);
-        //  }
-        //}
     }
 }

@@ -53,28 +53,5 @@ namespace PhotoshopFile.Compression
         /// Reads compressed image data.
         /// </summary>
         public abstract byte[] ReadCompressed();
-
-        /// <summary>
-        /// Writes rows of image data into compressed format.
-        /// </summary>
-        /// <param name="array">An array containing the data to be compressed.</param>
-        public void Write(byte[] array)
-        {
-            var imageLength = (long)BytesPerRow * Size.Height;
-            if (array.Length != imageLength)
-            {
-                throw new ArgumentException(
-                    "Array length is not equal to image length array.");
-            }
-
-            if (AltersWrittenData)
-            {
-                array = (byte[])array.Clone();
-            }
-
-            WriteInternal(array);
-        }
-
-        internal abstract void WriteInternal(byte[] array);
     }
 }

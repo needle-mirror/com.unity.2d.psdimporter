@@ -111,28 +111,6 @@ namespace PhotoshopFile
             }
         }
 
-        public void Save(string fileName, Encoding encoding)
-        {
-            using (var stream = new FileStream(fileName, FileMode.Create))
-            {
-                Save(stream, encoding);
-            }
-        }
-
-        public void Save(Stream stream, Encoding encoding)
-        {
-            PrepareSave();
-
-            //using (var writer = new PsdBinaryWriter(stream, encoding))
-            //{
-            //  SaveHeader(writer);
-            //  SaveColorModeData(writer);
-            //  SaveImageResources(writer);
-            //  SaveLayerAndMaskInfo(writer);
-            //  SaveImage(writer);
-            //}
-        }
-
         #endregion
 
         #region Header
@@ -263,25 +241,6 @@ namespace PhotoshopFile
             Util.DebugMessage(reader.BaseStream, "Load, End, File header");
         }
 
-        ///////////////////////////////////////////////////////////////////////////
-
-        //private void SaveHeader(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, File header");
-
-        //  string signature = "8BPS";
-        //  writer.WriteAsciiChars(signature);
-        //  writer.Write((Int16)Version);
-        //  writer.Write(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, });
-        //  writer.Write(ChannelCount);
-        //  writer.Write(RowCount);
-        //  writer.Write(ColumnCount);
-        //  writer.Write((Int16)BitDepth);
-        //  writer.Write((Int16)ColorMode);
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, File header");
-        //}
-
         #endregion
 
         ///////////////////////////////////////////////////////////////////////////
@@ -309,16 +268,6 @@ namespace PhotoshopFile
 
             Util.DebugMessage(reader.BaseStream, "Load, End, ColorModeData");
         }
-
-        //private void SaveColorModeData(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, ColorModeData");
-
-        //  writer.Write((UInt32)ColorModeData.Length);
-        //  writer.Write(ColorModeData);
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, ColorModeData");
-        //}
 
         #endregion
 
@@ -370,21 +319,6 @@ namespace PhotoshopFile
             // manually
             reader.BaseStream.Position = startPosition + imageResourcesLength;
         }
-
-        ///////////////////////////////////////////////////////////////////////////
-
-        //private void SaveImageResources(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, ImageResources");
-
-        //  using (new PsdBlockLengthWriter(writer))
-        //  {
-        //    foreach (var imgRes in ImageResources)
-        //      imgRes.Save(writer);
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, ImageResources");
-        //}
 
         #endregion
 
@@ -443,32 +377,6 @@ namespace PhotoshopFile
             // manually
             reader.BaseStream.Position = startPosition + layersAndMaskLength;
         }
-
-        ///////////////////////////////////////////////////////////////////////////
-
-        //private void SaveLayerAndMaskInfo(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Layer and mask info");
-
-        //  using (new PsdBlockLengthWriter(writer, IsLargeDocument))
-        //  {
-        //    var startPosition = writer.BaseStream.Position;
-
-        //    SaveLayers(writer);
-        //    SaveGlobalLayerMask(writer);
-
-        //    foreach (var info in AdditionalInfo)
-        //    {
-        //      info.Save(writer,
-        //        globalLayerInfo: true,
-        //        isLargeDocument: IsLargeDocument);
-        //    }
-
-        //    writer.WritePadding(startPosition, 2);
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Layer and mask info");
-        //}
 
         ///////////////////////////////////////////////////////////////////////////
 
@@ -557,6 +465,23 @@ namespace PhotoshopFile
         ///////////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// Cleanup
+        /// </summary>
+        public void Cleanup()
+        {
+            var layersAndComposite = Layers.Concat(new[] { BaseLayer });
+
+            foreach (var lac in layersAndComposite)
+            {
+                foreach (var c in lac.Channels)
+                {
+                    c.Cleanup();
+                }
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////////
+
+        /// <summary>
         /// Decompress the document image data and all the layers' image data, in parallel.
         /// </summary>
         private void DecompressImages()
@@ -585,26 +510,6 @@ namespace PhotoshopFile
                         layer.Masks.UserMask.ImageData = channel.ImageData;
                 }
             }
-        }
-
-        /// <summary>
-        /// Check the validity of the PSD file and generate necessary data.
-        /// </summary>
-        public void PrepareSave()
-        {
-            CheckDimension(ColumnCount);
-            CheckDimension(RowCount);
-            VerifyInfoLayers();
-            VerifyLayerSections();
-
-            var imageLayers = Layers.Concat(new List<Layer>() { this.BaseLayer }).ToList();
-
-            foreach (var layer in imageLayers)
-            {
-                layer.PrepareSave();
-            }
-
-            SetVersionInfo();
         }
 
         /// <summary>
@@ -686,83 +591,7 @@ namespace PhotoshopFile
                 versionInfo.FileVersion = 1;
             }
         }
-
-        /// <summary>
-        /// Saves the Layers Info section, including headers and padding.
-        /// </summary>
-        /// <param name="writer">The PSD writer.</param>
-        //internal void SaveLayers(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Layers Info section");
-
-        //  using (new PsdBlockLengthWriter(writer, IsLargeDocument))
-        //  {
-        //    var startPosition = writer.BaseStream.Position;
-
-        //    // Only one set of Layers can exist in the file.  If layers will be
-        //    // written to the Additional Info section, then the Layers section
-        //    // must be empty to avoid conflict.
-        //    var hasInfoLayers = AdditionalInfo.Exists(x => x is InfoLayers);
-        //    if (!hasInfoLayers)
-        //    {
-        //      SaveLayersData(writer);
-        //    }
-
-        //    // Documentation states that the Layers Info section is even-padded,
-        //    // but it is actually padded to a multiple of 4.
-        //    writer.WritePadding(startPosition, 4);
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Layers Info section");
-        //}
-
-        ///// <summary>
-        ///// Saves the layer data, excluding headers and padding.
-        ///// </summary>
-        ///// <param name="writer">The PSD writer.</param>
-        //internal void SaveLayersData(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Layers");
-
-        //  var numLayers = (Int16)Layers.Count;
-        //  if (AbsoluteAlpha)
-        //  {
-        //    numLayers = (Int16)(-numLayers);
-        //  }
-
-        //  // Photoshop will not load files that have a layer count of 0 in the
-        //  // compatible Layers section.  Instead, the Layers section must be
-        //  // entirely empty.
-        //  if (numLayers == 0)
-        //  {
-        //    return;
-        //  }
-
-        //  writer.Write(numLayers);
-
-        //  foreach (var layer in Layers)
-        //  {
-        //    layer.Save(writer);
-        //  }
-
-        //  foreach (var layer in Layers)
-        //  {
-        //    Util.DebugMessage(writer.BaseStream,
-        //      "Save, Begin, Layer image, layer.Name");
-        //    foreach (var channel in layer.Channels)
-        //    {
-        //      channel.SavePixelData(writer);
-        //    }
-        //    Util.DebugMessage(writer.BaseStream,
-        //      "Save, End, Layer image, layer.Name");
-        //  }
-
-        //  // The caller is responsible for padding.  Photoshop writes padded
-        //  // lengths for compatible layers, but unpadded lengths for Additional
-        //  // Info layers.
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Layers");
-        //}
+        
 
         ///////////////////////////////////////////////////////////////////////////
 
@@ -788,26 +617,6 @@ namespace PhotoshopFile
         {
             get { return m_GlobalLayerMaskData; }
         }
-        ///////////////////////////////////////////////////////////////////////////
-
-        //private void SaveGlobalLayerMask(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, GlobalLayerMask");
-
-        //  if (AdditionalInfo.Exists(x => x.Key == "LMsk"))
-        //  {
-        //    writer.Write((UInt32)0);
-        //    Util.DebugMessage(writer.BaseStream, "Save, End, GlobalLayerMask");
-        //    return;
-        //  }
-
-        //  writer.Write((UInt32)GlobalLayerMaskData.Length);
-        //  writer.Write(GlobalLayerMaskData);
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, GlobalLayerMask");
-        //}
-
-        ///////////////////////////////////////////////////////////////////////////
 
         #endregion
 
@@ -869,32 +678,6 @@ namespace PhotoshopFile
 
             Util.DebugMessage(reader.BaseStream, "Load, End, Composite image");
         }
-
-        ///////////////////////////////////////////////////////////////////////////
-
-        //private void SaveImage(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Composite image");
-
-        //  writer.Write((short)this.ImageCompression);
-        //  if (this.ImageCompression == PhotoshopFile.ImageCompression.Rle)
-        //  {
-        //    foreach (var channel in this.BaseLayer.Channels)
-        //    {
-        //      Util.DebugMessage(writer.BaseStream, "Save, Begin, RLE header");
-        //      channel.RleRowLengths.Write(writer, IsLargeDocument);
-        //      Util.DebugMessage(writer.BaseStream, "Save, End, RLE header");
-        //    }
-        //  }
-        //  foreach (var channel in this.BaseLayer.Channels)
-        //  {
-        //    Util.DebugMessage(writer.BaseStream, "Save, Begin, Channel image data");
-        //    writer.Write(channel.ImageDataRaw);
-        //    Util.DebugMessage(writer.BaseStream, "Save, End, Channel image data");
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Composite image");
-        //}
 
         #endregion
     }

@@ -194,7 +194,7 @@ namespace UnityEditor.U2D.PSD
                 is_psd = IsPSD(doc),
                 color_mode = FileColorMode(doc)
             };
-
+            doc.Cleanup();
             AnalyticFactory.analytics.SendApplyEvent(evt);
             base.Apply();
         }

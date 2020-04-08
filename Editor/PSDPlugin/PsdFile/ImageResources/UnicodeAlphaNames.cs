@@ -55,15 +55,5 @@ namespace PhotoshopFile
                 ChannelNames.Add(channelName);
             }
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  foreach (var channelName in ChannelNames)
-        //  {
-        //    // We must add a null terminator because Photoshop always strips the
-        //    // last character of a Unicode alpha name, even if it is not null.
-        //    writer.WriteUnicodeString(channelName + "\0");
-        //  }
-        //}
     }
 }

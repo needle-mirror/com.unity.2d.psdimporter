@@ -40,10 +40,5 @@ namespace PhotoshopFile.Compression
         {
             return data;
         }
-
-        internal override void WriteInternal(byte[] array)
-        {
-            data = array;
-        }
     }
 }

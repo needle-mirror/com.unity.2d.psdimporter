@@ -67,10 +67,5 @@ namespace PhotoshopFile
             else
                 throw new PsdInvalidException("LayerId data length should be 4");
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  PsdFile.SaveLayersData(writer);
-        //}
     }
 }

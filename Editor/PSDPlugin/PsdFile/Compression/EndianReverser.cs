@@ -46,17 +46,5 @@ namespace PhotoshopFile.Compression
         {
             return imageData.ReadCompressed();
         }
-
-        internal override void WriteInternal(byte[] array)
-        {
-            // Reverse endianness before passing on to underlying compressor
-            if (array.Length > 0)
-            {
-                var numPixels = array.Length / BytesPerRow * Size.Width;
-                Util.SwapByteArray(BitDepth, array, 0, numPixels);
-            }
-
-            imageData.Write(array);
-        }
     }
 }

@@ -83,10 +83,5 @@ namespace PhotoshopFile
                     "Incorrect length for InfoLayers.");
             }
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  PsdFile.SaveLayersData(writer);
-        //}
     }
 }

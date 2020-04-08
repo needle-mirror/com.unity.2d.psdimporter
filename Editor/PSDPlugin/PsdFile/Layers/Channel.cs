@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using PDNWrapper;
 using System.Linq;
-
+using Unity.Collections;
 using PhotoshopFile.Compression;
 
 namespace PhotoshopFile
@@ -124,7 +124,7 @@ namespace PhotoshopFile
         /// When making changes to the ImageData, set ImageDataRaw to null so that
         /// the correct data will be compressed during save.
         /// </remarks>
-        public byte[] ImageData { get; set; }
+        public NativeArray<byte> ImageData { get; set; }
 
         /// <summary>
         /// Image compression method used.
@@ -156,24 +156,12 @@ namespace PhotoshopFile
 
             Util.DebugMessage(reader.BaseStream, "Load, End, Channel, {0}", ID);
         }
-
-        //internal void Save(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Channel");
-
-        //  writer.Write(ID);
-        //  if (Layer.PsdFile.IsLargeDocument)
-        //  {
-        //    writer.Write(Length);
-        //  }
-        //  else
-        //  {
-        //    writer.Write((Int32)Length);
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Channel, {0}", ID);
-        //}
-
+        
+        internal void Cleanup()
+        {
+            if (ImageData.IsCreated)
+                ImageData.Dispose();
+        }
         //////////////////////////////////////////////////////////////////
 
         internal void LoadPixelData(PsdBinaryReader reader)
@@ -200,8 +188,7 @@ namespace PhotoshopFile
                     break;
                 case ImageCompression.Rle:
                     // RLE row lengths
-                    RleRowLengths = new RleRowLengths(reader, Rect.Height,
-                            Layer.PsdFile.IsLargeDocument);
+                    RleRowLengths = new RleRowLengths(reader, Rect.Height, Layer.PsdFile.IsLargeDocument);
                     var rleDataLength = (int)(endPosition - reader.BaseStream.Position);
                     Debug.Assert(rleDataLength == RleRowLengths.Total,
                     "RLE row lengths do not sum to length of channel image data.");
@@ -217,10 +204,8 @@ namespace PhotoshopFile
                     break;
             }
 
-            Util.DebugMessage(reader.BaseStream, "Load, End, Channel image, {0}",
-                ID, Layer.Name);
-            Debug.Assert(reader.BaseStream.Position == endPosition,
-                "Pixel data was not fully read in.");
+            Util.DebugMessage(reader.BaseStream, "Load, End, Channel image, {0}", ID, Layer.Name);
+            Debug.Assert(reader.BaseStream.Position == endPosition, "Pixel data was not fully read in.");
         }
 
         /// <summary>
@@ -229,67 +214,19 @@ namespace PhotoshopFile
         /// </summary>
         public void DecodeImageData()
         {
-            if ((ImageCompression == ImageCompression.Raw)
-                && (Layer.PsdFile.BitDepth <= 8))
+            if ((ImageCompression == ImageCompression.Raw) && (Layer.PsdFile.BitDepth <= 8))
             {
-                ImageData = ImageDataRaw;
+                ImageData = new NativeArray<byte>(ImageDataRaw, Allocator.TempJob);
                 return;
             }
 
             var image = ImageDataFactory.Create(this, ImageDataRaw);
             var longLength = (long)image.BytesPerRow * Rect.Height;
             Util.CheckByteArrayLength(longLength);
-            ImageData = new byte[longLength];
-            image.Read(ImageData);
+            var LocalImageData = new byte[longLength];
+            image.Read(LocalImageData);
+            ImageData = new NativeArray<byte>(LocalImageData, Allocator.TempJob);
+            ImageDataRaw = null; // no longer needed.
         }
-
-        /// <summary>
-        /// Compresses the image data.
-        /// </summary>
-        public void CompressImageData()
-        {
-            // Do not recompress if compressed data is already present.
-            if (ImageDataRaw != null)
-                return;
-
-            if (ImageData == null)
-                return;
-
-            if (ImageCompression == ImageCompression.Rle)
-            {
-                RleRowLengths = new RleRowLengths(Rect.Height);
-            }
-
-            var compressor = ImageDataFactory.Create(this, null);
-            compressor.Write(ImageData);
-            ImageDataRaw = compressor.ReadCompressed();
-
-            Length = 2 + ImageDataRaw.Length;
-            if (ImageCompression == ImageCompression.Rle)
-            {
-                var rowLengthSize = Layer.PsdFile.IsLargeDocument ? 4 : 2;
-                Length += rowLengthSize * Rect.Height;
-            }
-        }
-
-        //internal void SavePixelData(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Channel image");
-
-        //  writer.Write((short)ImageCompression);
-        //  if (ImageDataRaw == null)
-        //  {
-        //    return;
-        //  }
-
-        //  if (ImageCompression == PhotoshopFile.ImageCompression.Rle)
-        //  {
-        //    RleRowLengths.Write(writer, Layer.PsdFile.IsLargeDocument);
-        //  }
-        //  writer.Write(ImageDataRaw);
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Channel image, {0}",
-        //    ID, Layer.Name);
-        //}
     }
 }

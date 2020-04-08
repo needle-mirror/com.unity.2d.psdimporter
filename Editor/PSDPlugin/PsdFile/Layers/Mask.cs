@@ -19,6 +19,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using PDNWrapper;
 using System.Globalization;
+using Unity.Collections;
 
 namespace PhotoshopFile
 {
@@ -80,7 +81,7 @@ namespace PhotoshopFile
         /// <summary>
         /// Mask image data.
         /// </summary>
-        public byte[] ImageData { get; set; }
+        public NativeArray<byte> ImageData { get; set; }
 
         public Mask(Layer layer)
         {
@@ -136,8 +137,7 @@ namespace PhotoshopFile
                 var userFlagsByte = reader.ReadByte();
                 var userBackgroundColor = reader.ReadByte();
                 var userRectangle = reader.ReadRectangle();
-                UserMask = new Mask(layer, userRectangle, userBackgroundColor,
-                        new BitVector32(userFlagsByte));
+                UserMask = new Mask(layer, userRectangle, userBackgroundColor, new BitVector32(userFlagsByte));
             }
 
             // 20-byte mask data will end with padding.
@@ -145,39 +145,5 @@ namespace PhotoshopFile
 
             Util.DebugMessage(reader.BaseStream, "Load, End, MaskInfo");
         }
-
-        ///////////////////////////////////////////////////////////////////////////
-
-        //public void Save(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, MaskInfo");
-
-        //  if (LayerMask == null)
-        //  {
-        //    writer.Write((UInt32)0);
-        //    return;
-        //  }
-
-        //  using (new PsdBlockLengthWriter(writer))
-        //  {
-        //    writer.Write(LayerMask.Rect);
-        //    writer.Write(LayerMask.BackgroundColor);
-        //    writer.Write((byte)LayerMask.Flags.Data);
-
-        //    if (UserMask == null)
-        //    {
-        //      // Pad by 2 bytes to make the block length 20
-        //      writer.Write((UInt16)0);
-        //    }
-        //    else
-        //    {
-        //      writer.Write((byte)UserMask.Flags.Data);
-        //      writer.Write(UserMask.BackgroundColor);
-        //      writer.Write(UserMask.Rect);
-        //    }
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, MaskInfo");
-        //}
     }
 }

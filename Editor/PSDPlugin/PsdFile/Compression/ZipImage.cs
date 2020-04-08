@@ -97,10 +97,5 @@ namespace PhotoshopFile.Compression
                 : zipDataStream.ToArray();
             return result;
         }
-
-        internal override void WriteInternal(byte[] array)
-        {
-            zipStream.Write(array, 0, array.Length);
-        }
     }
 }
