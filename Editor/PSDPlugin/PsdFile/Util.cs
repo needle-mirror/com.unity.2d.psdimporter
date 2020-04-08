@@ -18,6 +18,7 @@ using PDNWrapper;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Unity.Collections;
 
 namespace PhotoshopFile
 {
@@ -62,6 +63,27 @@ namespace PhotoshopFile
             }
         }
 
+        /// <summary>
+        /// Fills a buffer with a byte value.
+        /// </summary>
+        static public void Fill(NativeArray<byte> ptr, int start, int end, byte value)
+        {
+            while (start < end)
+            {
+                ptr[start] = value;
+                start++;
+            }
+        }
+
+        static public void Invert(NativeArray<byte> ptr, int ptrStart, int ptrEnd)
+        {
+            while (ptrStart < ptrEnd)
+            {
+                ptr[ptrStart] = (byte)(ptr[ptrStart] ^ 0xff);
+                ptrStart++;
+            }
+        }        
+        
         ///////////////////////////////////////////////////////////////////////////
 
         /// <summary>

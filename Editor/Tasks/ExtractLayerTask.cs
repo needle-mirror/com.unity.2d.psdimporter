@@ -62,7 +62,7 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 job.original[jobIndex] = new IntPtr(el.texture.GetUnsafeReadOnlyPtr());
-                el.texture = new NativeArray<Color32>(el.texture.Length, Allocator.Temp);
+                el.texture = new NativeArray<Color32>(el.texture.Length, Allocator.Persistent);
                 extractedLayer.Add(el);
                 job.output[jobIndex] = new IntPtr(el.texture.GetUnsafePtr());
                 job.width[jobIndex] = el.width;
@@ -88,7 +88,7 @@ namespace UnityEditor.U2D.PSD
                     continue;
                 if (l.IsGroup)
                 {
-                    extractedLayer.Add(new PSDLayer(new NativeArray<Color32>(0, Allocator.Temp), parentGroupIndex, l.IsGroup, l.Name, 0, 0, l.LayerID));
+                    extractedLayer.Add(new PSDLayer(new NativeArray<Color32>(0, Allocator.Persistent), parentGroupIndex, l.IsGroup, l.Name, 0, 0, l.LayerID));
                     actualLayerWithBuffer += ExtractLayer(extractedLayer, l.ChildLayer, importHiddenLayer);
                 }
                 else

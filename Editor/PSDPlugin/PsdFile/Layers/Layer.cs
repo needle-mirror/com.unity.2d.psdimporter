@@ -23,6 +23,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace PhotoshopFile
 {
@@ -222,94 +224,17 @@ namespace PhotoshopFile
                     var size = this.Rect.Height * this.Rect.Width;
 
                     var ch = new Channel(id, this);
-                    ch.ImageData = new byte[size];
-
+                    ch.ImageData = new NativeArray<byte>(size, Allocator.TempJob);
+                    unsafe
                     {
-                        //fixed (byte* ptr = &ch.ImageData[0])
-                        {
-                            Util.Fill(ch.ImageData, 0, size, (byte)255);
-                        }
+                        UnsafeUtility.MemSet(ch.ImageData.GetUnsafePtr(), (byte)255, size);
                     }
-
                     this.Channels.Add(ch);
                 }
             }
         }
 
         ///////////////////////////////////////////////////////////////////////////
-
-        public void PrepareSave()
-        {
-            foreach (var ch in Channels)
-            {
-                ch.CompressImageData();
-            }
-
-            // Create or update the Unicode layer name to be consistent with the
-            // ANSI layer name.
-            var layerUnicodeNames = AdditionalInfo.Where(x => x is LayerUnicodeName);
-            if (layerUnicodeNames.Count() > 1)
-            {
-                throw new PsdInvalidException(
-                    "Layer can only have one LayerUnicodeName.");
-            }
-
-            var layerUnicodeName = (LayerUnicodeName)layerUnicodeNames.FirstOrDefault();
-            if (layerUnicodeName == null)
-            {
-                layerUnicodeName = new LayerUnicodeName(Name);
-                AdditionalInfo.Add(layerUnicodeName);
-            }
-            else if (layerUnicodeName.Name != Name)
-            {
-                layerUnicodeName.Name = Name;
-            }
-        }
-
-        //public void Save(PsdBinaryWriter writer)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, Layer");
-
-        //  writer.Write(Rect);
-
-        //  //-----------------------------------------------------------------------
-
-        //  writer.Write((short)Channels.Count);
-        //  foreach (var ch in Channels)
-        //    ch.Save(writer);
-
-        //  //-----------------------------------------------------------------------
-
-        //  writer.WriteAsciiChars("8BIM");
-        //  writer.WriteAsciiChars(BlendModeKey);
-        //  writer.Write(Opacity);
-        //  writer.Write(Clipping);
-
-        //  writer.Write((byte)flags.Data);
-        //  writer.Write((byte)0);
-
-        //  //-----------------------------------------------------------------------
-
-        //  using (new PsdBlockLengthWriter(writer))
-        //  {
-        //    Masks.Save(writer);
-        //    BlendingRangesData.Save(writer);
-
-        //    var namePosition = writer.BaseStream.Position;
-
-        //    // Legacy layer name is limited to 31 bytes.  Unicode layer name
-        //    // can be much longer.
-        //    writer.WritePascalString(Name, 4, 31);
-
-        //    foreach (LayerInfo info in AdditionalInfo)
-        //    {
-        //      info.Save(writer,
-        //        globalLayerInfo: false,
-        //        isLargeDocument: PsdFile.IsLargeDocument);
-        //    }
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, Layer, {0}", Name);
-        //}
+        
     }
 }

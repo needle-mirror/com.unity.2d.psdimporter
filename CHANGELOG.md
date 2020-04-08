@@ -1,4 +1,13 @@
 # Changelog
+## [3.1.4] - 2020-04-09
+### Fixed
+- Fix PSD import issues with PSD file without unique layer id
+- Fix crash on importing huge PSD files
+- Fix metafile not updated when reimporting
+- Fix error when importing PSB files with 32-bit color
+
+### Changed
+- Improve PSD file import performance
 
 ## [3.1.3] - 2020-03-20
 ### Changed

@@ -38,13 +38,5 @@ namespace PhotoshopFile
         {
             Name = reader.ReadUnicodeString();
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  var startPosition = writer.BaseStream.Position;
-
-        //  writer.WriteUnicodeString(Name);
-        //  writer.WritePadding(startPosition, 4);
-        //}
     }
 }

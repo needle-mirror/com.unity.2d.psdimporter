@@ -188,7 +188,7 @@ namespace UnityEditor.U2D.PSD
             foreach (var obj in Selection.objects)
             {
                 var path = AssetDatabase.GetAssetPath(obj);
-                var ext = Path.GetExtension(path);
+                var ext = System.IO.Path.GetExtension(path);
                 if (ext == ".psd")
                 {
                     var importer = AssetImporter.GetAtPath(path);
@@ -206,6 +206,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
     }
+}
 ```
 
 #### PSDImporterOverrideEditor.cs

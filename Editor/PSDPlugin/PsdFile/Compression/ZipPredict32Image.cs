@@ -58,26 +58,6 @@ namespace PhotoshopFile.Compression
             return zipImage.ReadCompressed();
         }
 
-        internal override void WriteInternal(byte[] array)
-        {
-            if (array.Length == 0)
-            {
-                return;
-            }
-
-            var predictedData = new byte[array.Length];
-
-            {
-                //fixed (byte* ptrData = &array[0])
-                //fixed (byte* ptrOutput = &predictedData[0])
-                {
-                    Predict(array, predictedData);
-                }
-            }
-
-            zipImage.WriteInternal(predictedData);
-        }
-
         private void Predict(byte[] ptrData, byte[] ptrOutput /*Int32* ptrData, byte* ptrOutput*/)
         {
             int size = sizeof(Int32);
@@ -175,6 +155,7 @@ namespace PhotoshopFile.Compression
                         ptrOutput[outputIndex] = rr[k];
                         outputIndex++;
                     }
+                    startIndex++;
                     //*ptrOutput = *(ptrData) << 24
                     //  | *(ptrData + offset1) << 16
                     //  | *(ptrData + offset2) << 8

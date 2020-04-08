@@ -13,6 +13,8 @@ using UnityEngine.Assertions;
 using UnityEngine.Experimental.U2D.Animation;
 using UnityEngine.U2D;
 using UnityEngine.U2D.Animation;
+using UnityEditor.MemoryProfiler;
+using UnityEngine.Profiling.Memory.Experimental;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -23,13 +25,32 @@ namespace UnityEditor.U2D.PSD
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@3.1/manual/index.html")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
-        class GameObjectCreationFactory
+        class UniqueNameGenerator
         {
-            List<int> m_GameObjectNameHash = new List<int>();
+            List<int> m_NameHash = new List<int>();
+
+            public bool ContainHash(int i)
+            {
+                return m_NameHash.Contains(i);
+            }
+
+            public void AddHash(int i)
+            {
+                m_NameHash.Add(i);
+            }
+            
+            public string GetUniqueName(string name)
+            {
+                return PSDImporter.GetUniqueName(name, m_NameHash);
+            }
+        }
+        
+        class GameObjectCreationFactory : UniqueNameGenerator
+        {
 
             public GameObject CreateGameObject(string name, params System.Type[] components)
             {
-                var newName = GetUniqueName(name, m_GameObjectNameHash);
+                var newName = GetUniqueName(name);
                 return new GameObject(newName, components);
             }
         }
@@ -184,10 +205,6 @@ namespace UnityEditor.U2D.PSD
         /// </param>
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            string ext = System.IO.Path.GetExtension(ctx.assetPath).ToLower();
-            if (ext != ".psb")
-                throw new Exception("File does not have psb extension");
-
             FileStream fileStream = new FileStream(ctx.assetPath, FileMode.Open, FileAccess.Read);
             Document doc = null;
             try
@@ -198,21 +215,8 @@ namespace UnityEditor.U2D.PSD
                 doc = PaintDotNet.Data.PhotoshopFileType.PsdLoad.Load(fileStream);
                 UnityEngine.Profiling.Profiler.EndSample();
 
-                // Is layer id truely unique?
-                for (int i = 0; i < doc.Layers.Count; ++i)
-                {
-                    for (int j = 0; j < doc.Layers.Count; ++j)
-                    {
-                        if (i == j)
-                            continue;
-                        if (doc.Layers[i].LayerID == doc.Layers[j].LayerID)
-                        {
-                            Debug.LogWarning("File's Layer ID is not unique. Please report to developer. " + doc.Layers[i].LayerID + " " + doc.Layers[i].Name + "::" + doc.Layers[j].Name);
-                            doc.Layers[i].LayerID = doc.Layers[i].Name.GetHashCode();
-                        }
-                    }
-                }
-
+                ValidatePSDLayerId(doc);
+                
                 m_DocumentSize = new Vector2Int(doc.width, doc.height);
                 bool singleSpriteMode = m_TextureImporterSettings.textureType == TextureImporterType.Sprite && m_TextureImporterSettings.spriteMode != (int)SpriteImportMode.Multiple;
                 EnsureSingleSpriteExist();
@@ -220,7 +224,7 @@ namespace UnityEditor.U2D.PSD
                 if (m_TextureImporterSettings.textureType != TextureImporterType.Sprite ||
                     m_MosaicLayers == false || singleSpriteMode)
                 {
-                    var image = new NativeArray<Color32>(doc.width * doc.height, Allocator.Temp);
+                    var image = new NativeArray<Color32>(doc.width * doc.height, Allocator.Persistent);
                     try
                     {
                         var spriteImportData = GetSpriteImportData();
@@ -264,11 +268,49 @@ namespace UnityEditor.U2D.PSD
                 if (doc != null)
                     doc.Dispose();
                 UnityEngine.Profiling.Profiler.EndSample();
+                EditorUtility.SetDirty(this);
             }
+
+
+            // Debug Profiler.
+            // UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot("snapshot.snap", MemorySnapshotFinish, CaptureFlags.ManagedObjects | CaptureFlags.NativeObjects | CaptureFlags.NativeAllocations | CaptureFlags.NativeStackTraces);
         }
 
+        static void ValidatePSDLayerId(List<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
+        {
+            for (int i = 0; i < layers.Count; ++i)
+            {
+                if (uniqueNameGenerator.ContainHash(layers[i].LayerID))
+                {
+                    var importWarning = string.Format("Layer {0}: LayerId is not unique. Mapping will be done by Layer's name.", layers[i].Name);
+                    var layerName = uniqueNameGenerator.GetUniqueName(layers[i].Name);
+                    if (layerName != layers[i].Name)
+                        importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
+                    layers[i].LayerID = layerName.GetHashCode();
+                    Debug.LogWarning(importWarning);
+                }
+                else
+                    uniqueNameGenerator.AddHash(layers[i].LayerID);
+                if (layers[i].ChildLayer != null)
+                {
+                    ValidatePSDLayerId(layers[i].ChildLayer, uniqueNameGenerator);
+                }
+            }
+        }
+        
+        
+        void ValidatePSDLayerId(Document doc)
+        {
+            UniqueNameGenerator uniqueNameGenerator = new UniqueNameGenerator();
+
+            ValidatePSDLayerId(doc.Layers, uniqueNameGenerator);
+        }
+        
         TextureGenerationOutput ImportTexture(AssetImportContext ctx, NativeArray<Color32> imageData, int textureWidth, int textureHeight, int spriteStart, int spriteCount)
         {
+            if (!imageData.IsCreated || imageData.Length == 0)
+                return new TextureGenerationOutput();
+            
             UnityEngine.Profiling.Profiler.BeginSample("ImportTexture");
             var platformSettings = GetPlatformTextureSettings(ctx.selectedBuildTarget);
 
@@ -507,13 +549,21 @@ namespace UnityEditor.U2D.PSD
                         }
                     }
                 }
+
+                foreach (var l in oldPsdLayers)
+                    l.Dispose();
                 oldPsdLayers.Clear();
+
                 oldPsdLayers.AddRange(psdLayers);
                 m_ImportedTextureHeight = textureActualHeight = height;
                 m_ImportedTextureWidth = textureActualWidth = width;
                 var generatedTexture = ImportTexture(ctx, output, width, height, 0, spriteImportData.Count);
-                m_ImportedTextureHeight = generatedTexture.texture.height;
-                m_ImportedTextureWidth = generatedTexture.texture.width;
+                
+                if (generatedTexture.texture)
+                {
+                    m_ImportedTextureHeight = generatedTexture.texture.height;
+                    m_ImportedTextureWidth = generatedTexture.texture.width;
+                }
 
                 RegisterAssets(ctx, generatedTexture);
             }
@@ -524,6 +574,12 @@ namespace UnityEditor.U2D.PSD
                 foreach (var l in oldPsdLayers)
                     l.Dispose();
             }
+            
+        }
+
+        void MemorySnapshotFinish(string path, bool done)
+        {
+
         }
 
         void EnsureSingleSpriteExist()

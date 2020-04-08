@@ -20,6 +20,8 @@ using System.Threading;
 using PhotoshopFile;
 using UnityEngine;
 using PDNWrapper;
+using Unity.Collections;
+using Unity.Jobs;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
@@ -30,7 +32,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
             var loadContext = new DocumentLoadContext();
             return new PsdFile(input, loadContext, loadFlag);
         }
-
+        
         public static Document Load(System.IO.Stream input)
         {
             // Load and decompress Photoshop file structures
@@ -77,6 +79,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 }
                 */
                 BitmapLayer parent = null;
+                JobHandle jobHandle = default(JobHandle);
                 foreach (var l in Enumerable.Reverse(psdFile.Layers))
                 {
                     if (l.IsEndGroupMarker)
@@ -84,7 +87,8 @@ namespace PaintDotNet.Data.PhotoshopFileType
                         parent = parent != null ? parent.ParentLayer : null;
                         continue;
                     }
-                    var b = l.DecodeToPdnLayer();
+                    BitmapLayer b = null;
+                    jobHandle = l.DecodeToPdnLayer(jobHandle, out b);
                     b.ParentLayer = parent;
                     if (parent != null)
                         parent.ChildLayer.Add(b);
@@ -94,28 +98,26 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     if (b.IsGroup)
                         parent = b;
                 }
+                jobHandle.Complete();
             }
             SetPdnResolutionInfo(psdFile, document);
-
+            psdFile.Cleanup();
             return document;
         }
 
-        internal static BitmapLayer DecodeToPdnLayer(
-            this PhotoshopFile.Layer psdLayer)
+        internal static JobHandle DecodeToPdnLayer(this PhotoshopFile.Layer psdLayer, JobHandle inputDeps, out BitmapLayer pdnLayer)
         {
             var psdFile = psdLayer.PsdFile;
             psdLayer.CreateMissingChannels();
 
-            var pdnLayer = new BitmapLayer(psdFile.ColumnCount, psdFile.RowCount);
+            pdnLayer = new BitmapLayer(psdFile.ColumnCount, psdFile.RowCount);
             pdnLayer.Name = psdLayer.Name;
             pdnLayer.Opacity = psdLayer.Opacity;
             pdnLayer.Visible = psdLayer.Visible;
             pdnLayer.IsGroup = psdLayer.IsGroup;
             pdnLayer.LayerID = psdLayer.LayerID;
             pdnLayer.BlendMode = BlendModeMapping.FromPsdBlendMode(psdLayer.BlendModeKey);
-            ImageDecoderPdn.DecodeImage(pdnLayer, psdLayer);
-
-            return pdnLayer;
+            return ImageDecoderPdn.DecodeImage(pdnLayer, psdLayer, inputDeps);
         }
 
         /// <summary>
@@ -166,7 +168,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 // Copy channel image data into the new grayscale layer
                 var layerChannel = new Channel(0, layer);
                 layerChannel.ImageCompression = channel.ImageCompression;
-                layerChannel.ImageData = channel.ImageData;
+                layerChannel.ImageData = new NativeArray<byte>(channel.ImageData, Allocator.Persistent);
                 layer.Channels.Add(layerChannel);
 
                 psdFile.Layers.Add(layer);

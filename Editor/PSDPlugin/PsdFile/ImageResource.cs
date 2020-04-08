@@ -134,38 +134,6 @@ namespace PhotoshopFile
             Signature = "8BIM";
             Name = name;
         }
-
-        /// <summary>
-        /// Write out the image resource block: header and data.
-        /// </summary>
-        //  public void Save(PsdBinaryWriter writer)
-        //  {
-        //    Util.DebugMessage(writer.BaseStream, "Save, Begin, ImageResource");
-
-        //    writer.WriteAsciiChars(Signature);
-        //    writer.Write((UInt16)ID);
-        //    writer.WritePascalString(Name, 2);
-
-        //    // Length is unpadded, but data is even-padded
-        //    var startPosition = writer.BaseStream.Position;
-        //    using (new PsdBlockLengthWriter(writer))
-        //    {
-        //      WriteData(writer);
-        //    }
-        //    writer.WritePadding(startPosition, 2);
-
-        //    Util.DebugMessage(writer.BaseStream, "Save, End, ImageResource, {0}", ID);
-        //  }
-
-        //  /// <summary>
-        //  /// Write the data for this image resource.
-        //  /// </summary>
-        //  protected abstract void WriteData(PsdBinaryWriter writer);
-
-        //  public override string ToString()
-        //  {
-        //    return String.Format(CultureInfo.InvariantCulture, "{0} {1}", ID, Name);
-        //  }
     }
 
     /// <summary>

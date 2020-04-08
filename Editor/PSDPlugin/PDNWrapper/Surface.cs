@@ -10,7 +10,7 @@ namespace PDNWrapper
         {
             width = w;
             height = h;
-            m_Color = new NativeArray<Color32>(width * height, Allocator.Temp);
+            m_Color = new NativeArray<Color32>(width * height, Allocator.Persistent);
         }
 
         public void Dispose()

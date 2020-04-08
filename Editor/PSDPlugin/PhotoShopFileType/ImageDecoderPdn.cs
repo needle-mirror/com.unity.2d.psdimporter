@@ -21,20 +21,39 @@ using System.Text;
 
 using PhotoshopFile;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+using Unity.Jobs;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
+
+    internal enum DecodeType
+    {
+        RGB32 = 0,
+        Grayscale32 = 1,
+        RGB = 2,
+        CMYK = 3,
+        Bitmap = 4,
+        Grayscale = 5,
+        Indexed = 6,
+        Lab = 7
+    };
+
     internal static class ImageDecoderPdn
     {
+        private static double rgbExponent = 1 / 2.19921875;
+
         private class DecodeContext
         {
             public PhotoshopFile.Layer Layer { get; private set; }
             public int ByteDepth { get; private set; }
+            public int HasAlphaChannel { get; private set; }
             public Channel[] Channels { get; private set; }
-            public Channel AlphaChannel { get; private set; }
+            public NativeArray<byte> AlphaChannel { get; private set; }
             public PsdColorMode ColorMode { get; private set; }
-            public byte[] ColorModeData { get; private set; }
+            public NativeArray<byte> ColorModeData { get; private set; }
 
             public Rectangle Rectangle { get; private set; }
             public MaskDecodeContext LayerMaskContext { get; private set; }
@@ -44,10 +63,22 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 Layer = layer;
                 ByteDepth = Util.BytesFromBitDepth(layer.PsdFile.BitDepth);
+                HasAlphaChannel = 0;
                 Channels = layer.Channels.ToIdArray();
-                AlphaChannel = layer.AlphaChannel;
+
+                var alphaSize = 4;
+                if (layer.AlphaChannel != null && layer.AlphaChannel.ImageData.Length > 0)
+                {
+                    HasAlphaChannel = 1;
+                    alphaSize = layer.AlphaChannel.ImageData.Length;
+                    alphaSize = (alphaSize / 4) + (alphaSize % 4 > 0 ? 1 : 0);
+                    alphaSize = alphaSize * 4;
+                } 
+                AlphaChannel = new NativeArray<byte>(alphaSize, Allocator.TempJob);
+                if (HasAlphaChannel > 0)
+                    NativeArray<byte>.Copy(layer.AlphaChannel.ImageData, AlphaChannel, layer.AlphaChannel.ImageData.Length);
                 ColorMode = layer.PsdFile.ColorMode;
-                ColorModeData = layer.PsdFile.ColorModeData;
+                ColorModeData = new NativeArray<byte>(layer.PsdFile.ColorModeData, Allocator.TempJob);
 
                 // Clip the layer to the specified bounds
                 Rectangle = Layer.Rect.IntersectWith(bounds);
@@ -59,6 +90,12 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 }
             }
 
+            internal void Cleanup()
+            {
+                AlphaChannel.Dispose();
+                ColorModeData.Dispose();
+            }
+            
             private MaskDecodeContext GetMaskContext(Mask mask)
             {
                 if ((mask == null) || (mask.Disabled))
@@ -74,8 +111,6 @@ namespace PaintDotNet.Data.PhotoshopFileType
         {
             public Mask Mask { get; private set; }
             public Rectangle Rectangle { get; private set; }
-            public byte[] AlphaBuffer { get; private set; }
-
             public MaskDecodeContext(Mask mask, DecodeContext layerContext)
             {
                 Mask = mask;
@@ -84,7 +119,6 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 // relative to the layer, but Photoshop treats the position as
                 // absolute.  So that's what we do, too.
                 Rectangle = mask.Rect.IntersectWith(layerContext.Rectangle);
-                AlphaBuffer = new byte[layerContext.Rectangle.Width];
             }
 
             public bool IsRowEmpty(int row)
@@ -97,43 +131,36 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
         }
 
-        /// <summary>
-        /// Decode image from Photoshop's channel-separated formats to BGRA.
-        /// </summary>
-        public static void DecodeImage(BitmapLayer pdnLayer,
-            PhotoshopFile.Layer psdLayer)
+        ///////////////////////////////////////////////////////////////////////////////
+
+        internal static byte RGBByteFromHDRFloat(float ptr)
         {
-            UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
-            var decodeContext = new DecodeContext(psdLayer, pdnLayer.Bounds);
-            DecodeDelegate decoder = null;
-
-            if (decodeContext.ByteDepth == 4)
-                decoder = GetDecodeDelegate32(decodeContext.ColorMode);
-            else
-                decoder = GetDecodeDelegate(decodeContext.ColorMode);
-
-            DecodeImage(pdnLayer, decodeContext, decoder);
-            UnityEngine.Profiling.Profiler.EndSample();
+            var result = (byte)(255 * Math.Pow(ptr, rgbExponent));
+            return result;
         }
 
-        private delegate void DecodeDelegate(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, DecodeContext context);
-
-        private static DecodeDelegate GetDecodeDelegate(PsdColorMode psdColorMode)
+        private static DecodeDelegate GetDecodeDelegate(PsdColorMode psdColorMode, ref DecodeType decoderType)
         {
             switch (psdColorMode)
             {
                 case PsdColorMode.Bitmap:
+                    decoderType = DecodeType.Bitmap;
                     return SetPDNRowBitmap;
                 case PsdColorMode.Grayscale:
                 case PsdColorMode.Duotone:
+                    decoderType = DecodeType.Grayscale;
                     return SetPDNRowGrayscale;
                 case PsdColorMode.Indexed:
+                    decoderType = DecodeType.Indexed;
                     return SetPDNRowIndexed;
                 case PsdColorMode.RGB:
+                    decoderType = DecodeType.RGB;
                     return SetPDNRowRgb;
                 case PsdColorMode.CMYK:
+                    decoderType = DecodeType.CMYK;
                     return SetPDNRowCmyk;
                 case PsdColorMode.Lab:
+                    decoderType = DecodeType.Lab;
                     return SetPDNRowLab;
                 case PsdColorMode.Multichannel:
                     throw new Exception("Cannot decode multichannel.");
@@ -142,13 +169,15 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
         }
 
-        private static DecodeDelegate GetDecodeDelegate32(PsdColorMode psdColorMode)
+        private static DecodeDelegate GetDecodeDelegate32(PsdColorMode psdColorMode, ref DecodeType decoderType)
         {
             switch (psdColorMode)
             {
                 case PsdColorMode.Grayscale:
+                    decoderType = DecodeType.Grayscale32;
                     return SetPDNRowGrayscale32;
                 case PsdColorMode.RGB:
+                    decoderType = DecodeType.RGB32;
                     return SetPDNRowRgb32;
                 default:
                     throw new PsdInvalidException(
@@ -157,11 +186,32 @@ namespace PaintDotNet.Data.PhotoshopFileType
         }
 
         /// <summary>
+        /// Decode image from Photoshop's channel-separated formats to BGRA.
+        /// </summary>
+        public static JobHandle DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer, JobHandle inputDeps)
+        {
+            UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
+            var decodeContext = new DecodeContext(psdLayer, pdnLayer.Bounds);
+            DecodeDelegate decoder = null;
+            DecodeType decoderType = 0;
+
+            if (decodeContext.ByteDepth == 4)
+                decoder = GetDecodeDelegate32(decodeContext.ColorMode, ref decoderType);
+            else
+                decoder = GetDecodeDelegate(decodeContext.ColorMode, ref decoderType);
+
+            JobHandle jobHandle = DecodeImage(pdnLayer, decodeContext, decoderType, inputDeps);
+            UnityEngine.Profiling.Profiler.EndSample();
+            return jobHandle;
+        }
+
+        /// <summary>
         /// Decode image from Photoshop's channel-separated formats to BGRA,
         /// using the specified decode delegate on each row.
         /// </summary>
-        private static void DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeDelegate decoder)
+        private static JobHandle DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeType decoderType, JobHandle inputDeps)
         {
+
             var psdLayer = decodeContext.Layer;
             var surface = pdnLayer.Surface;
             var rect = decodeContext.Rectangle;
@@ -169,6 +219,119 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Convert rows from the Photoshop representation, writing the
             // resulting ARGB values to to the Paint.NET Surface.
 
+            int jobCount = Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
+            int execCount = (rect.Bottom - rect.Top);
+            int sliceCount = execCount / jobCount;
+            PDNDecoderJob decoderJob = new PDNDecoderJob();
+
+            decoderJob.Data.Rect = rect;
+            decoderJob.Data.LayerRect = psdLayer.Rect;
+            decoderJob.Data.ClippedRect = rect;
+            decoderJob.Data.SurfaceWidth = surface.width;
+            decoderJob.Data.SurfaceHeight = surface.height;
+            decoderJob.Data.SurfaceByteDepth = decodeContext.ByteDepth;
+            decoderJob.Data.DecoderType = decoderType;
+
+            decoderJob.Data.ColorChannel0 = decodeContext.Channels[0].ImageData;
+            decoderJob.Data.ColorChannel1 = decodeContext.Channels.Length > 1 ? decodeContext.Channels[1].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.Data.ColorChannel2 = decodeContext.Channels.Length > 2 ? decodeContext.Channels[2].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.Data.ColorChannel3 = decodeContext.Channels.Length > 3 ? decodeContext.Channels[3].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.Data.ColorModeData = decodeContext.ColorModeData;
+            decoderJob.Data.DecodedImage  = surface.color;
+
+            // Schedule the job, returns the JobHandle which can be waited upon later on
+            JobHandle jobHandle = decoderJob.Schedule(execCount, sliceCount, inputDeps);
+
+            // Mask and Alpha.
+            int userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            int layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            var userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
+            var layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
+            var userAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
+            var layerAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
+
+            PDNAlphaMaskJob alphaMaskJob = new PDNAlphaMaskJob();
+
+            for (int y = rect.Top; y < rect.Bottom; ++y)
+            {
+                if (decodeContext.UserMaskContext != null)
+                    userAlphaMaskEmpty[y] = decodeContext.UserMaskContext.IsRowEmpty(y) ? (byte)1 : (byte)0;
+                if (decodeContext.LayerMaskContext != null)
+                    layerAlphaMaskEmpty[y] = decodeContext.LayerMaskContext.IsRowEmpty(y) ? (byte)1 : (byte)0;
+            }
+
+            alphaMaskJob.Data.Rect = rect;
+            alphaMaskJob.Data.LayerRect = psdLayer.Rect;
+            alphaMaskJob.Data.ClippedRect = rect;
+            alphaMaskJob.Data.SurfaceWidth = surface.width;
+            alphaMaskJob.Data.SurfaceHeight = surface.height;
+            alphaMaskJob.Data.SurfaceByteDepth = decodeContext.ByteDepth;
+            alphaMaskJob.Data.HasAlphaChannel = decodeContext.HasAlphaChannel;
+
+            alphaMaskJob.Data.HasUserAlphaMask = decodeContext.UserMaskContext != null ? 1 : 0;
+            alphaMaskJob.Data.UserMaskInvertOnBlend = decodeContext.UserMaskContext != null ? (decodeContext.UserMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
+            alphaMaskJob.Data.UserMaskRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.Rect : rect;
+            alphaMaskJob.Data.UserMaskContextRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Rectangle : rect;
+            alphaMaskJob.Data.HasLayerAlphaMask = decodeContext.LayerMaskContext != null ? 1 : 0;
+            alphaMaskJob.Data.LayerMaskInvertOnBlend = decodeContext.LayerMaskContext != null ? (decodeContext.LayerMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
+            alphaMaskJob.Data.LayerMaskRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.Rect : rect;
+            alphaMaskJob.Data.LayerMaskContextRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Rectangle : rect;
+
+            alphaMaskJob.Data.AlphaChannel0 = decodeContext.AlphaChannel;
+            alphaMaskJob.Data.UserMask = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
+            alphaMaskJob.Data.UserAlphaMask = userAlphaMask;
+            alphaMaskJob.Data.UserAlphaMaskEmpty = userAlphaMaskEmpty;
+            alphaMaskJob.Data.LayerMask = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
+            alphaMaskJob.Data.LayerAlphaMask = layerAlphaMask;
+            alphaMaskJob.Data.LayerAlphaMaskEmpty = layerAlphaMaskEmpty;
+            alphaMaskJob.Data.DecodedImage = surface.color;
+            alphaMaskJob.Data.UserMaskBackgroundColor = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.BackgroundColor : (byte)0;
+            alphaMaskJob.Data.LayerMaskBackgroundColor = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.BackgroundColor : (byte)0;
+
+            jobHandle = alphaMaskJob.Schedule(jobHandle);
+            return jobHandle;
+
+        }
+
+        ///////////////////////////////////////////////////////////////////////////
+        /// SINGLE THREADED - KEPT FOR REFERENCE
+        ///////////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Decode image from Photoshop's channel-separated formats to BGRA.
+        /// </summary>
+        public static void DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer)
+        {
+            UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
+            var decodeContext = new DecodeContext(psdLayer, pdnLayer.Bounds);
+            DecodeDelegate decoder = null;
+            DecodeType decoderType = 0;
+
+            if (decodeContext.ByteDepth == 4)
+                decoder = GetDecodeDelegate32(decodeContext.ColorMode, ref decoderType);
+            else
+                decoder = GetDecodeDelegate(decodeContext.ColorMode, ref decoderType);
+
+            DecodeImage(pdnLayer, decodeContext, decoder);
+            decodeContext.Cleanup();
+            UnityEngine.Profiling.Profiler.EndSample();
+        }
+
+        private delegate void DecodeDelegate(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, DecodeContext context);
+
+        /// <summary>
+        /// Decode image from Photoshop's channel-separated formats to BGRA,
+        /// using the specified decode delegate on each row.
+        /// </summary>
+        private static void DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeDelegate decoder)
+        {
+
+            var psdLayer = decodeContext.Layer;
+            var surface = pdnLayer.Surface;
+            var rect = decodeContext.Rectangle;
+
+            // Convert rows from the Photoshop representation, writing the
+            // resulting ARGB values to to the Paint.NET Surface.
             for (int y = rect.Top; y < rect.Bottom; y++)
             {
                 // Calculate index into ImageData source from row and column.
@@ -190,24 +353,103 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
                 // Decode the color and alpha channels
                 decoder(pDestStart, pDestEnd, surface.width, surface.color, idxSrcByte, decodeContext);
-                SetPDNAlphaRow(pDestStart, pDestEnd, surface.width, surface.color, idxSrcByte,
-                    decodeContext.ByteDepth, decodeContext.AlphaChannel);
+            }
 
+            // Mask and Alpha.
+            int userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            int layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            var userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
+            var layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
+
+            for (int y = rect.Top; y < rect.Bottom; y++)
+            {
+                // Calculate index into ImageData source from row and column.
+                int idxSrcPixel = (y - psdLayer.Rect.Top) * psdLayer.Rect.Width + (rect.Left - psdLayer.Rect.Left);
+                int idxSrcByte = idxSrcPixel * decodeContext.ByteDepth;
+
+                // Calculate pointers to destination Surface.
+                //var pDestRow = surface.GetRowAddress(y);
+                //var pDestStart = pDestRow + decodeContext.Rectangle.Left;
+                //var pDestEnd = pDestRow + decodeContext.Rectangle.Right;
+                var pDestStart = y * surface.width + decodeContext.Rectangle.Left;
+                var pDestEnd = y * surface.width + decodeContext.Rectangle.Right;
+
+                // For 16-bit images, take the higher-order byte from the image
+                // data, which is now in little-endian order.
+                if (decodeContext.ByteDepth == 2)
+                    idxSrcByte++;
+
+                // Decode the color and alpha channels
+                SetPDNAlphaRow(pDestStart, pDestEnd, surface.width, surface.color, idxSrcByte, decodeContext.ByteDepth, decodeContext.HasAlphaChannel, decodeContext.AlphaChannel);
                 // Apply layer masks(s) to the alpha channel
-                var layerMaskAlphaRow = GetMaskAlphaRow(y,
-                        decodeContext, decodeContext.LayerMaskContext);
-                var userMaskAlphaRow = GetMaskAlphaRow(y,
-                        decodeContext, decodeContext.UserMaskContext);
-                ApplyPDNMask(pDestStart, pDestEnd, surface.width, surface.color, layerMaskAlphaRow, userMaskAlphaRow);
+                GetMaskAlphaRow(y, decodeContext, decodeContext.LayerMaskContext, ref layerAlphaMask);
+                GetMaskAlphaRow(y, decodeContext, decodeContext.UserMaskContext, ref userAlphaMask);
+                ApplyPDNMask(pDestStart, pDestEnd, surface.width, surface.color, layerAlphaMask, userAlphaMask);
+            }
+            userAlphaMask.Dispose();
+            layerAlphaMask.Dispose();
+        }
+
+        private static unsafe void GetMaskAlphaRow(int y, DecodeContext layerContext, MaskDecodeContext maskContext, ref NativeArray<byte> alphaBuffer)
+        {
+            if (maskContext == null)
+                return;
+            var mask = maskContext.Mask;
+
+            // Background color for areas not covered by the mask
+            byte backgroundColor = mask.InvertOnBlend
+                ? (byte)(255 - mask.BackgroundColor)
+                : mask.BackgroundColor;
+            {
+                var alphaBufferPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(alphaBuffer);
+                UnsafeUtility.MemSet(alphaBufferPtr, backgroundColor, alphaBuffer.Length);
+            }
+            if (maskContext.IsRowEmpty(y))
+            {
+                return;
+            }
+
+            //////////////////////////////////////
+            // Transfer mask into the alpha array
+            var pMaskData = mask.ImageData;
+            {
+                // Get pointers to starting positions
+                int alphaColumn = maskContext.Rectangle.X - layerContext.Rectangle.X;
+                var pAlpha = alphaColumn;
+                var pAlphaEnd = pAlpha + maskContext.Rectangle.Width;
+
+                int maskRow = y - mask.Rect.Y;
+                int maskColumn = maskContext.Rectangle.X - mask.Rect.X;
+                int idxMaskPixel = (maskRow * mask.Rect.Width) + maskColumn;
+                var pMask = idxMaskPixel * layerContext.ByteDepth;
+
+                // Take the high-order byte if values are 16-bit (little-endian)
+                if (layerContext.ByteDepth == 2)
+                    pMask++;
+
+                // Decode mask into the alpha array.
+                if (layerContext.ByteDepth == 4)
+                {
+                    DecodeMaskAlphaRow32(alphaBuffer, pAlpha, pAlphaEnd, pMaskData, pMask);
+                }
+                else
+                {
+                    DecodeMaskAlphaRow(alphaBuffer, pAlpha, pAlphaEnd, pMaskData, pMask, layerContext.ByteDepth);
+                }
+
+                // Obsolete since Photoshop CS6, but retained for compatibility with
+                // older versions.  Note that the background has already been inverted.
+                if (mask.InvertOnBlend)
+                {
+                    Util.Invert(alphaBuffer, pAlpha, pAlphaEnd);
+                }
             }
         }
 
-        ///////////////////////////////////////////////////////////////////////////
-
-        private static void SetPDNAlphaRow(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, int byteDepth, Channel alphaChannel)
+        private static void SetPDNAlphaRow(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, int byteDepth, int hasAlphaChannel, NativeArray<byte> alphaChannel)
         {
             // Set alpha to fully-opaque if there is no alpha channel
-            if (alphaChannel == null)
+            if (0 == hasAlphaChannel)
             {
                 var pDest = pDestStart;
                 while (pDest < pDestEnd)
@@ -221,15 +463,13 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Set the alpha channel data
             else
             {
-                var pSrcAlphaChannel = alphaChannel.ImageData;
+                NativeArray<float> srcAlphaChannel = alphaChannel.Reinterpret<float>(1);
                 {
                     var pDest = pDestStart;
                     while (pDest < pDestEnd)
                     {
                         var c = color[pDest];
-                        c.a = (byteDepth < 4)
-                            ? pSrcAlphaChannel[idxSrc]
-                            : RGBByteFromHDRFloat(System.BitConverter.ToSingle(pSrcAlphaChannel, idxSrc));
+                        c.a = (byteDepth < 4) ? alphaChannel[idxSrc] : RGBByteFromHDRFloat(srcAlphaChannel[idxSrc / 4]);
 
                         color[pDest] = c;
                         pDest++;
@@ -239,91 +479,21 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
         }
 
-        ///////////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Gets one row of alpha values from the mask.
-        /// </summary>
-        /// <param name="y">The y-coordinate of the row.</param>
-        /// <param name="layerContext">The decode context for the layer containing
-        ///   the mask.</param>
-        /// <param name="maskContext">The decode context for the mask.</param>
-        /// <returns>An array of alpha values for the row, corresponding to the
-        ///   width of the layer decode context.</returns>
-        private static byte[] GetMaskAlphaRow(
-            int y, DecodeContext layerContext, MaskDecodeContext maskContext)
+        private static void DecodeMaskAlphaRow32(NativeArray<byte> pAlpha, int pAlphaStart, int pAlphaEnd, NativeArray<byte> pMask, int pMaskStart)
         {
-            if (maskContext == null)
-            {
-                return null;
-            }
-            var mask = maskContext.Mask;
 
-            // Background color for areas not covered by the mask
-            byte backgroundColor = mask.InvertOnBlend
-                ? (byte)(255 - mask.BackgroundColor)
-                : mask.BackgroundColor;
-            {
-                Util.Fill(maskContext.AlphaBuffer, 0, maskContext.AlphaBuffer.Length,
-                    backgroundColor);
-            }
-            if (maskContext.IsRowEmpty(y))
-            {
-                return maskContext.AlphaBuffer;
-            }
+            NativeArray<float> floatArray = pMask.Reinterpret<float>(1);
 
-            //////////////////////////////////////
-            // Transfer mask into the alpha array
-            var pAlphaRow = maskContext.AlphaBuffer;
-            var pMaskData = mask.ImageData;
-            {
-                // Get pointers to starting positions
-                int alphaColumn = maskContext.Rectangle.X - layerContext.Rectangle.X;
-                var pAlpha = alphaColumn;
-                var pAlphaEnd = pAlpha + maskContext.Rectangle.Width;
-
-                int maskRow = y - maskContext.Mask.Rect.Y;
-                int maskColumn = maskContext.Rectangle.X - maskContext.Mask.Rect.X;
-                int idxMaskPixel = (maskRow * mask.Rect.Width) + maskColumn;
-                var pMask = idxMaskPixel * layerContext.ByteDepth;
-
-                // Take the high-order byte if values are 16-bit (little-endian)
-                if (layerContext.ByteDepth == 2)
-                    pMask++;
-
-                // Decode mask into the alpha array.
-                if (layerContext.ByteDepth == 4)
-                {
-                    DecodeMaskAlphaRow32(pAlphaRow, pAlpha, pAlphaEnd, pMaskData, pMask);
-                }
-                else
-                {
-                    DecodeMaskAlphaRow(pAlphaRow, pAlpha, pAlphaEnd, pMaskData, pMask, layerContext.ByteDepth);
-                }
-
-                // Obsolete since Photoshop CS6, but retained for compatibility with
-                // older versions.  Note that the background has already been inverted.
-                if (mask.InvertOnBlend)
-                {
-                    Util.Invert(pAlphaRow, pAlpha, pAlphaEnd);
-                }
-            }
-
-            return maskContext.AlphaBuffer;
-        }
-
-        private static void DecodeMaskAlphaRow32(byte[] pAlpha, int pAlphaStart, int pAlphaEnd, byte[] pMask, int pMaskStart)
-        {
             while (pAlphaStart < pAlphaEnd)
             {
-                pAlpha[pAlphaStart] = RGBByteFromHDRFloat(BitConverter.ToSingle(pMask, pMaskStart));
+                pAlpha[pAlphaStart] = RGBByteFromHDRFloat(floatArray[pMaskStart * 4]);
 
                 pAlphaStart++;
                 pMaskStart += 4;
             }
         }
 
-        private static void DecodeMaskAlphaRow(byte[] pAlpha, int pAlphaStart, int pAlphaEnd, byte[] pMask, int pMaskStart, int byteDepth)
+        private static void DecodeMaskAlphaRow(NativeArray<byte> pAlpha, int pAlphaStart, int pAlphaEnd, NativeArray<byte> pMask, int pMaskStart, int byteDepth)
         {
             while (pAlphaStart < pAlphaEnd)
             {
@@ -333,19 +503,18 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 pMaskStart += byteDepth;
             }
         }
-
-        ///////////////////////////////////////////////////////////////////////////
-
-        private static void ApplyPDNMask(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, byte[] layerMaskAlpha, byte[] userMaskAlpha)
+        
+        private static void ApplyPDNMask(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, NativeArray<byte> layerMaskAlpha, NativeArray<byte> userMaskAlpha)
         {
             // Do nothing if there are no masks
-            if ((layerMaskAlpha == null) && (userMaskAlpha == null))
-                return;
-
-            // Apply one mask
-            else if ((layerMaskAlpha == null) || (userMaskAlpha == null))
+            if ((layerMaskAlpha.Length <= 1) && (userMaskAlpha.Length <= 1))
             {
-                var maskAlpha = layerMaskAlpha ?? userMaskAlpha;
+                return;
+            }
+            // Apply one mask
+            else if ((layerMaskAlpha.Length <= 1) || (userMaskAlpha.Length <= 1))
+            {
+                var maskAlpha = (layerMaskAlpha.Length <= 1) ? userMaskAlpha : layerMaskAlpha;
                 var maskStart = 0;
                 {
                     while (pDestStart < pDestEnd)
@@ -385,16 +554,17 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         private static void SetPDNRowRgb32(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, DecodeContext context)
         {
-            var pSrcRedChannel = context.Channels[0].ImageData;
-            var pSrcGreenChannel = context.Channels[1].ImageData;
-            var pSrcBlueChannel = context.Channels[2].ImageData;
+            NativeArray<float> redChannel = context.Channels[0].ImageData.Reinterpret<float>(1);
+            NativeArray<float> greenChannel = context.Channels[1].ImageData.Reinterpret<float>(1);
+            NativeArray<float> blueChannel = context.Channels[2].ImageData.Reinterpret<float>(1);
+            
             {
                 while (pDestStart < pDestEnd)
                 {
                     var c = color[pDestStart];
-                    c.r = RGBByteFromHDRFloat(BitConverter.ToSingle(pSrcRedChannel, idxSrc));
-                    c.g = RGBByteFromHDRFloat(BitConverter.ToSingle(pSrcGreenChannel, idxSrc));
-                    c.b = RGBByteFromHDRFloat(BitConverter.ToSingle(pSrcBlueChannel, idxSrc));
+                    c.r = RGBByteFromHDRFloat(redChannel[idxSrc / 4]);
+                    c.g = RGBByteFromHDRFloat(greenChannel[idxSrc / 4]);
+                    c.b = RGBByteFromHDRFloat(blueChannel[idxSrc / 4]);
                     color[pDestStart] = c;
                     pDestStart++;
                     idxSrc += 4;
@@ -404,11 +574,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         private static void SetPDNRowGrayscale32(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, DecodeContext context)
         {
-            var channelPtr = context.Channels[0].ImageData;
+            NativeArray<float> channel = context.Channels[0].ImageData.Reinterpret<float>(1);
             {
                 while (pDestStart < pDestEnd)
                 {
-                    byte rgbValue = RGBByteFromHDRFloat(BitConverter.ToSingle(channelPtr, idxSrc));
+                    byte rgbValue = RGBByteFromHDRFloat(channel[idxSrc / 4]);
                     var c = color[pDestStart];
                     c.r = rgbValue;
                     c.g = rgbValue;
@@ -524,9 +694,9 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 int index = (int)context.Channels[0].ImageData[idxSrc];
                 var c = color[pDestStart];
-                c.r = (byte)context.Layer.PsdFile.ColorModeData[index];
-                c.g = context.Layer.PsdFile.ColorModeData[index + 256];
-                c.b = context.Layer.PsdFile.ColorModeData[index + 2 * 256];
+                c.r = (byte)context.ColorModeData[index];
+                c.g = context.ColorModeData[index + 256];
+                c.b = context.ColorModeData[index + 2 * 256];
                 color[pDestStart] = c;
 
                 pDestStart++;
@@ -633,14 +803,5 @@ namespace PaintDotNet.Data.PhotoshopFileType
         }
 
         #endregion
-
-        ///////////////////////////////////////////////////////////////////////////////
-
-        private static double rgbExponent = 1 / 2.19921875;
-        private static byte RGBByteFromHDRFloat(float ptr)
-        {
-            var result = (byte)(255 * Math.Pow(ptr, rgbExponent));
-            return result;
-        }
     }
 }

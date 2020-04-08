@@ -57,31 +57,5 @@ namespace PhotoshopFile.Compression
         {
             return rleData;
         }
-
-        internal override void WriteInternal(byte[] array)
-        {
-            if (rleData != null)
-            {
-                throw new Exception(
-                    "Cannot write to RLE image in Decompress mode.");
-            }
-
-            using (var dataStream = new MemoryStream())
-            {
-                var rleWriter = new RleWriter(dataStream);
-                for (int row = 0; row < Size.Height; row++)
-                {
-                    int rowIndex = row * BytesPerRow;
-                    rleRowLengths[row] = rleWriter.Write(
-                            array, rowIndex, BytesPerRow);
-                }
-
-                // Save compressed data
-                dataStream.Flush();
-                rleData = dataStream.ToArray();
-                Debug.Assert(rleRowLengths.Total == rleData.Length,
-                    "RLE row lengths do not sum to the compressed data length.");
-            }
-        }
     }
 }

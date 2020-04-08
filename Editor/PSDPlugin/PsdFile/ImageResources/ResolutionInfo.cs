@@ -90,18 +90,5 @@ namespace PhotoshopFile
             this.VResDisplayUnit = (ResUnit)reader.ReadInt16();
             this.HeightDisplayUnit = (Unit)reader.ReadInt16();
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  writer.Write(HDpi.Integer);
-        //  writer.Write(HDpi.Fraction);
-        //  writer.Write((Int16)HResDisplayUnit);
-        //  writer.Write((Int16)WidthDisplayUnit);
-
-        //  writer.Write(VDpi.Integer);
-        //  writer.Write(VDpi.Fraction);
-        //  writer.Write((Int16)VResDisplayUnit);
-        //  writer.Write((Int16)HeightDisplayUnit);
-        //}
     }
 }

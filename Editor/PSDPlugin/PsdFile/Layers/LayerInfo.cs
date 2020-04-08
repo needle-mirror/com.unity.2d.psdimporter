@@ -164,37 +164,5 @@ namespace PhotoshopFile
         public abstract string Signature { get; }
 
         public abstract string Key { get; }
-
-        //protected abstract void WriteData(PsdBinaryWriter writer);
-
-        //public void Save(PsdBinaryWriter writer, bool globalLayerInfo,
-        //  bool isLargeDocument)
-        //{
-        //  Util.DebugMessage(writer.BaseStream, "Save, Begin, LayerInfo, {0}, {1}",
-        //    Signature, Key);
-
-        //  writer.WriteAsciiChars(Signature);
-        //  writer.WriteAsciiChars(Key);
-
-        //  var startPosition = writer.BaseStream.Position;
-        //  using (var lengthWriter = new PsdBlockLengthWriter(writer,
-        //    LayerInfoUtil.HasLongLength(Key, isLargeDocument)))
-        //  {
-        //    // Depending on the key, the length may be unpadded, 2-padded, or
-        //    // 4-padded.  Thus, it is up to each implementation of WriteData to
-        //    // pad the length correctly.
-        //    WriteData(writer);
-        //  }
-
-        //  // Data for global layer info is always padded to a multiple of 4,
-        //  // even if this causes the stated length to be incorrect.
-        //  if (globalLayerInfo)
-        //  {
-        //    writer.WritePadding(startPosition, 4);
-        //  }
-
-        //  Util.DebugMessage(writer.BaseStream, "Save, End, LayerInfo, {0}, {1}",
-        //    Signature, Key);
-        //}
     }
 }

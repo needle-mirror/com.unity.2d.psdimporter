@@ -49,14 +49,5 @@ namespace PhotoshopFile
             WriterName = reader.ReadUnicodeString();
             FileVersion = reader.ReadUInt32();
         }
-
-        //protected override void WriteData(PsdBinaryWriter writer)
-        //{
-        //  writer.Write(Version);
-        //  writer.Write(HasRealMergedData);
-        //  writer.WriteUnicodeString(ReaderName);
-        //  writer.WriteUnicodeString(WriterName);
-        //  writer.Write(FileVersion);
-        //}
     }
 }
