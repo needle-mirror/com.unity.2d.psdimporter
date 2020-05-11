@@ -590,16 +590,15 @@ namespace UnityEditor.U2D.PSD
 
         internal TextureImporterPlatformSettings GetPlatformTextureSettings(BuildTarget buildTarget)
         {
-            var buildTargetName = TexturePlatformSettingsModal.kValidBuildPlatform.FirstOrDefault(x => x.buildTarget.Contains(buildTarget));
-            var defaultTargetName = TexturePlatformSettingsModal.kValidBuildPlatform.FirstOrDefault(x => x.buildTarget.Contains(BuildTarget.NoTarget));
+            var buildTargetName = TexturePlatformSettingsHelper.GetBuildTargetName(buildTarget);
             TextureImporterPlatformSettings platformSettings = null;
-            platformSettings = m_PlatformSettings.SingleOrDefault(x => x.name == buildTargetName.buildTargetName);
-            platformSettings =  platformSettings ?? m_PlatformSettings.SingleOrDefault(x => x.name == defaultTargetName.buildTargetName);
+            platformSettings = m_PlatformSettings.SingleOrDefault(x => x.name == buildTargetName && x.overridden == true);
+            platformSettings = platformSettings ?? m_PlatformSettings.SingleOrDefault(x => x.name == TexturePlatformSettingsHelper.defaultPlatformName);
 
             if (platformSettings == null)
             {
                 platformSettings = new TextureImporterPlatformSettings();
-                platformSettings.name = name;
+                platformSettings.name = buildTargetName;
                 platformSettings.overridden = false;
             }
             return platformSettings;
@@ -889,6 +888,20 @@ namespace UnityEditor.U2D.PSD
                 }
             }
             return root;
+        }
+
+        internal void SetPlatformTextureSettings(TextureImporterPlatformSettings platformSettings)
+        {
+            var index = m_PlatformSettings.FindIndex(x => x.name == platformSettings.name);
+            if(index < 0)
+                m_PlatformSettings.Add(platformSettings);
+            else
+                m_PlatformSettings[index] = platformSettings;
+        }
+
+        internal TextureImporterPlatformSettings[] GetAllPlatformSettings()
+        {
+            return m_PlatformSettings.ToArray();
         }
 
         GameObject OnProducePrefab(string assetname, Sprite[] sprites, SpriteLibraryAsset spriteLib)
@@ -1274,6 +1287,16 @@ namespace UnityEditor.U2D.PSD
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).ToArray() : new[] { new SpriteMetaData(spriteImportData[0]) };
         }
 
+        internal SpriteRect GetSpriteDataFromAllMode(GUID guid)
+        {
+            var spriteMetaData = m_RigSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            if(spriteMetaData == null)
+                spriteMetaData = m_MosaicSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            if(spriteMetaData == null)
+                spriteMetaData = m_SpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            return spriteMetaData;
+        }
+        
         internal SpriteRect GetSpriteData(GUID guid)
         {
             var spriteImportData = GetSpriteImportData();
@@ -1375,6 +1398,11 @@ namespace UnityEditor.U2D.PSD
         {
             get { return m_SecondarySpriteTextures; }
             set { m_SecondarySpriteTextures = value; }
+        }
+
+        internal void ReadTextureSettings(TextureImporterSettings dest)
+        {
+            m_TextureImporterSettings.CopyTo(dest);
         }
     }
 }

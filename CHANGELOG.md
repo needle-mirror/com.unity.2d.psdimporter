@@ -1,4 +1,9 @@
 # Changelog
+
+## [4.0.0] - 2020-05-11
+### Changed
+- Version bump for Unity 2020.2
+
 ## [3.1.4] - 2020-04-09
 ### Fixed
 - Fix PSD import issues with PSD file without unique layer id
@@ -12,6 +17,10 @@
 ## [3.1.3] - 2020-03-20
 ### Changed
 - Update 2D Animation dependency
+
+## [4.0.0] - 2020-03-11
+### Changed
+- Version bump for Unity 2020.2
 
 ## [3.1.2] - 2020-02-27
 ### Fixed

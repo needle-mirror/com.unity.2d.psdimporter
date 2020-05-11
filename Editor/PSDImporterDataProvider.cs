@@ -26,7 +26,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetBones(GUID guid, List<SpriteBone> bones)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spriteBone = bones;
         }
@@ -96,7 +96,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spriteOutline = data.Select(x => new SpriteOutline() {outline = x}).ToList();
         }
@@ -108,7 +108,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -129,7 +129,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spritePhysicsOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
         }
@@ -141,7 +141,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -162,7 +162,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetVertices(GUID guid, Vertex2DMetaData[] vertices)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).vertices = vertices.ToList();
         }
@@ -180,7 +180,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetIndices(GUID guid, int[] indices)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).indices = indices;
         }
@@ -198,7 +198,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetEdges(GUID guid, Vector2Int[] edges)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).edges = edges;
         }

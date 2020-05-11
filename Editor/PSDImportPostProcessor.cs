@@ -8,6 +8,8 @@ namespace UnityEditor.U2D.PSD
 {
     internal class PSDImportPostProcessor : AssetPostprocessor
     {
+        private static string s_CurrentApplyAssetPath = null;
+        
         void OnPostprocessSprites(Texture2D texture, Sprite[] sprites)
         {
             var dataProviderFactories = new SpriteDataProviderFactories();
@@ -40,6 +42,28 @@ namespace UnityEditor.U2D.PSD
                             }
                         }
                         sprite.OverridePhysicsShape(convertedOutline);
+                    }
+                }
+            }
+        }
+        
+        public static string currentApplyAssetPath
+        {
+            set { s_CurrentApplyAssetPath = value; }
+        }
+        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
+        {
+            if (!string.IsNullOrEmpty(s_CurrentApplyAssetPath))
+            {
+                foreach (var asset in importedAssets)
+                {
+                    if (asset == s_CurrentApplyAssetPath)
+                    {
+                        var obj = AssetDatabase.LoadMainAssetAtPath(asset);
+                        Selection.activeObject = obj;
+                        Unsupported.SceneTrackerFlushDirty();
+                        s_CurrentApplyAssetPath = null;
+                        break;
                     }
                 }
             }

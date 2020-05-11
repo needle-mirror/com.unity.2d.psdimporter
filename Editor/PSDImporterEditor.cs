@@ -14,7 +14,7 @@ namespace UnityEditor.U2D.PSD
     /// Inspector for PSDImporter
     /// </summary>
     [CustomEditor(typeof(PSDImporter))]
-    public class PSDImporterEditor : ScriptedImporterEditor
+    public class PSDImporterEditor : ScriptedImporterEditor, ITexturePlatformSettingsDataProvider
     {
         SerializedProperty m_TextureType;
         SerializedProperty m_TextureShape;
@@ -62,6 +62,8 @@ namespace UnityEditor.U2D.PSD
         Dictionary<TextureImporterType, Action[]> m_AdvanceInspectorGUI = new Dictionary<TextureImporterType, Action[]>();
         int m_PlatformSettingsIndex;
         bool m_ShowPerAxisWrapModes = false;
+
+        TexturePlatformSettingsHelper m_TexturePlatformSettingsHelper;
 
         TexturePlatformSettingsView m_TexturePlatformSettingsView = new TexturePlatformSettingsView();
         TexturePlatformSettingsController m_TexturePlatformSettingsController = new TexturePlatformSettingsController();
@@ -133,8 +135,8 @@ namespace UnityEditor.U2D.PSD
                 MipMapGUI
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
-
             LoadPlatformSettings();
+            m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
         }
 
         /// <summary>
@@ -196,7 +198,11 @@ namespace UnityEditor.U2D.PSD
             };
             doc.Cleanup();
             AnalyticFactory.analytics.SendApplyEvent(evt);
+            m_TexturePlatformSettingsHelper.Apply();
             base.Apply();
+            Selection.activeObject = null;
+            Unsupported.SceneTrackerFlushDirty();
+            PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
         }
 
         static bool IsPSD(PsdFile doc)
@@ -238,22 +244,11 @@ namespace UnityEditor.U2D.PSD
         {
             foreach (var t in targets)
             {
-                var so = new SerializedObject(t);
-                var platformSettingsSP = so.FindProperty("m_PlatformSettings");
-                for (int i = 0; i < platformSettingsSP.arraySize; ++i)
+                var importer = ((PSDImporter)t);
+                var importerPlatformSettings = importer.GetAllPlatformSettings();
+                for (int i = 0; i < importerPlatformSettings.Length; ++i)
                 {
-                    var tip = new TextureImporterPlatformSettings();
-                    var sp = platformSettingsSP.GetArrayElementAtIndex(i);
-                    tip.name = sp.FindPropertyRelative("m_Name").stringValue;
-                    tip.overridden = sp.FindPropertyRelative("m_Overridden").intValue == 1;
-                    tip.maxTextureSize = sp.FindPropertyRelative("m_MaxTextureSize").intValue;
-                    tip.resizeAlgorithm = (TextureResizeAlgorithm)sp.FindPropertyRelative("m_ResizeAlgorithm").intValue;
-                    tip.format = (TextureImporterFormat)sp.FindPropertyRelative("m_TextureFormat").intValue;
-                    tip.textureCompression = (TextureImporterCompression)sp.FindPropertyRelative("m_TextureCompression").intValue;
-                    tip.compressionQuality = sp.FindPropertyRelative("m_CompressionQuality").intValue;
-                    tip.crunchedCompression = sp.FindPropertyRelative("m_CrunchedCompression").intValue == 1;
-                    tip.allowsAlphaSplitting = sp.FindPropertyRelative("m_AllowsAlphaSplitting").intValue == 1;
-
+                    var tip = importerPlatformSettings[i];
                     List<TextureImporterPlatformSettings> platformSettings = null;
                     m_PlatfromSettings.TryGetValue(tip.name, out platformSettings);
                     if (platformSettings == null)
@@ -303,32 +298,7 @@ namespace UnityEditor.U2D.PSD
 
         void DoPlatformSettings()
         {
-            m_PlatformSettingsIndex = EditorGUILayout.Popup(s_Styles.platformSettingsLabel, m_PlatformSettingsIndex, s_Styles.platformSettingsSelection);
-
-            List<TextureImporterPlatformSettings> settings = null;
-            m_PlatfromSettings.TryGetValue(TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].buildTargetName, out settings);
-            if (settings == null)
-            {
-                settings = new List<TextureImporterPlatformSettings>(targets.Length);
-                for (int i = 0; i < targets.Length; ++i)
-                {
-                    var tip = new TextureImporterPlatformSettings();
-                    tip.name = TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].buildTargetName;
-                    tip.format = TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].defaultTextureFormat;
-                    if (TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].buildTarget[0] == BuildTarget.NoTarget)
-                    {
-                        tip.overridden = true;
-                    }
-                    settings.Add(tip);
-                }
-                m_PlatfromSettings.Add(TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].buildTargetName, settings);
-            }
-
-
-            if (m_TexturePlatformSettingsController.HandlePlatformSettings(TexturePlatformSettingsModal.kValidBuildPlatform[m_PlatformSettingsIndex].buildTarget[0], settings, m_TexturePlatformSettingsView))
-            {
-                StorePlatformSettings();
-            }
+            m_TexturePlatformSettingsHelper.ShowPlatformSpecificSettings();
         }
 
         void DoAdvanceInspector()
@@ -795,12 +765,175 @@ namespace UnityEditor.U2D.PSD
             AssetDatabase.Refresh();
         }
 
+        protected override void ResetValues()
+        {
+            base.ResetValues();
+            LoadPlatformSettings();
+            m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
+        }
+
+        public int GetTargetCount()
+        {
+            return targets.Length;
+        }
+
+        public TextureImporterPlatformSettings GetPlatformTextureSettings(int i, string name)
+        {
+            if(m_PlatfromSettings.ContainsKey(name))
+                if(m_PlatfromSettings[name].Count > i)
+                    return m_PlatfromSettings[name][i];
+            return new TextureImporterPlatformSettings()
+            {
+                name = name,
+                overridden = false
+            };
+        }
+
+        public bool ShowPresetSettings()
+        {
+            return assetTarget == null;
+        }
+
+        public bool DoesSourceTextureHaveAlpha(int v)
+        {
+            return true;
+        }
+
+        public bool IsSourceTextureHDR(int v)
+        {
+            return false;
+        }
+
+        public void SetPlatformTextureSettings(int i, TextureImporterPlatformSettings platformSettings)
+        {
+            var psdImporter = ((PSDImporter)targets[i]);
+            psdImporter.SetPlatformTextureSettings(platformSettings);
+            psdImporter.Apply();
+        }
+
+        public void GetImporterSettings(int i, TextureImporterSettings settings)
+        {
+            ((PSDImporter)targets[i]).ReadTextureSettings(settings);
+            // Get settings that have been changed in the inspector
+            GetSerializedPropertySettings(settings);
+        }
+
+        internal TextureImporterSettings GetSerializedPropertySettings(TextureImporterSettings settings)
+        {
+            if (!m_AlphaSource.hasMultipleDifferentValues)
+                settings.alphaSource = (TextureImporterAlphaSource)m_AlphaSource.intValue;
+
+            if (!m_ConvertToNormalMap.hasMultipleDifferentValues)
+                settings.convertToNormalMap = m_ConvertToNormalMap.intValue > 0;
+
+            if (!m_BorderMipMap.hasMultipleDifferentValues)
+                settings.borderMipmap = m_BorderMipMap.intValue > 0;
+
+            if (!m_MipMapsPreserveCoverage.hasMultipleDifferentValues)
+                settings.mipMapsPreserveCoverage = m_MipMapsPreserveCoverage.intValue > 0;
+
+            if (!m_AlphaTestReferenceValue.hasMultipleDifferentValues)
+                settings.alphaTestReferenceValue = m_AlphaTestReferenceValue.floatValue;
+
+            if (!m_NPOTScale.hasMultipleDifferentValues)
+                settings.npotScale = (TextureImporterNPOTScale)m_NPOTScale.intValue;
+
+            if (!m_IsReadable.hasMultipleDifferentValues)
+                settings.readable = m_IsReadable.intValue > 0;
+
+            if (!m_sRGBTexture.hasMultipleDifferentValues)
+                settings.sRGBTexture = m_sRGBTexture.intValue > 0;
+
+            if (!m_EnableMipMap.hasMultipleDifferentValues)
+                settings.mipmapEnabled = m_EnableMipMap.intValue > 0;
+
+            if (!m_MipMapMode.hasMultipleDifferentValues)
+                settings.mipmapFilter = (TextureImporterMipFilter)m_MipMapMode.intValue;
+
+            if (!m_FadeOut.hasMultipleDifferentValues)
+                settings.fadeOut = m_FadeOut.intValue > 0;
+
+            if (!m_MipMapFadeDistanceStart.hasMultipleDifferentValues)
+                settings.mipmapFadeDistanceStart = m_MipMapFadeDistanceStart.intValue;
+
+            if (!m_MipMapFadeDistanceEnd.hasMultipleDifferentValues)
+                settings.mipmapFadeDistanceEnd = m_MipMapFadeDistanceEnd.intValue;
+
+            if (!m_SpriteMode.hasMultipleDifferentValues)
+                settings.spriteMode = m_SpriteMode.intValue;
+
+            if (!m_SpritePixelsToUnits.hasMultipleDifferentValues)
+                settings.spritePixelsPerUnit = m_SpritePixelsToUnits.floatValue;
+
+            if (!m_SpriteExtrude.hasMultipleDifferentValues)
+                settings.spriteExtrude = (uint)m_SpriteExtrude.intValue;
+
+            if (!m_SpriteMeshType.hasMultipleDifferentValues)
+                settings.spriteMeshType = (SpriteMeshType)m_SpriteMeshType.intValue;
+
+            if (!m_Alignment.hasMultipleDifferentValues)
+                settings.spriteAlignment = m_Alignment.intValue;
+
+            if (!m_SpritePivot.hasMultipleDifferentValues)
+                settings.spritePivot = m_SpritePivot.vector2Value;
+
+            if (!m_WrapU.hasMultipleDifferentValues)
+                settings.wrapModeU = (TextureWrapMode)m_WrapU.intValue;
+            if (!m_WrapV.hasMultipleDifferentValues)
+                settings.wrapModeU = (TextureWrapMode)m_WrapV.intValue;
+            if (!m_WrapW.hasMultipleDifferentValues)
+                settings.wrapModeU = (TextureWrapMode)m_WrapW.intValue;
+
+            if (!m_FilterMode.hasMultipleDifferentValues)
+                settings.filterMode = (FilterMode)m_FilterMode.intValue;
+
+            if (!m_Aniso.hasMultipleDifferentValues)
+                settings.aniso = m_Aniso.intValue;
+
+
+            if (!m_AlphaIsTransparency.hasMultipleDifferentValues)
+                settings.alphaIsTransparency = m_AlphaIsTransparency.intValue > 0;
+
+            if (!m_TextureType.hasMultipleDifferentValues)
+                settings.textureType = (TextureImporterType)m_TextureType.intValue;
+
+            if (!m_TextureShape.hasMultipleDifferentValues)
+                settings.textureShape = (TextureImporterShape)m_TextureShape.intValue;
+
+            return settings;
+        }
         /// <summary>
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
         /// <returns>false</returns>
-        public override bool showImportedObject { get => false; }
+        public override bool showImportedObject
+        {
+            get { return false; }
+        }
+        
+        public bool textureTypeHasMultipleDifferentValues
+        {
+           get { return m_TextureType.hasMultipleDifferentValues; }
+        }
+
+        public TextureImporterType textureType
+        {
+           get { return (TextureImporterType)m_TextureType.intValue; }
+        }
+
+        public SpriteImportMode spriteImportMode
+        {
+            get { return (SpriteImportMode)m_SpriteMode.intValue; }
+        }
+
+        public override bool HasModified()
+        {
+            if (base.HasModified())
+                return true;
+
+            return m_TexturePlatformSettingsHelper.HasModified();
+        }
 
         internal class Styles
         {
