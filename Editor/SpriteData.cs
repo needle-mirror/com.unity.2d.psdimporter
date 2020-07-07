@@ -68,9 +68,9 @@ namespace UnityEditor.U2D.PSD
             return Vector2.zero;
         }
 
-        public static implicit operator UnityEditor.Experimental.AssetImporters.SpriteImportData(SpriteMetaData value)
+        public static implicit operator UnityEditor.AssetImporters.SpriteImportData(SpriteMetaData value)
         {
-            var output = new UnityEditor.Experimental.AssetImporters.SpriteImportData();
+            var output = new UnityEditor.AssetImporters.SpriteImportData();
             output.name = value.name;
             output.alignment = value.alignment;
             output.rect = value.rect;

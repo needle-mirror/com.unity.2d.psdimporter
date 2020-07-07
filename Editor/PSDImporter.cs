@@ -5,7 +5,7 @@ using PDNWrapper;
 using UnityEngine;
 using Unity.Collections;
 using System.Linq;
-using UnityEditor.Experimental.AssetImporters;
+using UnityEditor.AssetImporters;
 using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
@@ -13,8 +13,7 @@ using UnityEngine.Assertions;
 using UnityEngine.Experimental.U2D.Animation;
 using UnityEngine.U2D;
 using UnityEngine.U2D.Animation;
-using UnityEditor.MemoryProfiler;
-using UnityEngine.Profiling.Memory.Experimental;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -22,7 +21,8 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     [ScriptedImporter(4, "psb")]
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@3.1/manual/index.html")]
+    [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
+    [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
         class UniqueNameGenerator
@@ -342,7 +342,7 @@ namespace UnityEditor.U2D.PSD
                     var textureSpriteSettings = m_TextureImporterSettings.ExtractTextureSpriteSettings();
                     textureSpriteSettings.packingTag = m_SpritePackingTag;
                     textureSpriteSettings.qualifyForPacking = !string.IsNullOrEmpty(m_SpritePackingTag);
-                    textureSpriteSettings.spriteSheetData = new UnityEditor.Experimental.AssetImporters.SpriteImportData[spriteCount];
+                    textureSpriteSettings.spriteSheetData = new UnityEditor.AssetImporters.SpriteImportData[spriteCount];
                     textureSettings.npotScale = TextureImporterNPOTScale.None;
                     textureSettings.secondaryTextures = secondaryTextures;
                     var spriteImportData = GetSpriteImportData();

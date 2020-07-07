@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.1] - 2020-07-07
+### Fixed
+- Fixed ArgumentException thrown when 2D Game Kit is imported for the first time (case 1244287)
+- Updated to use non-experimental AssetImporter  (case 1254380)
+
 ## [4.0.0] - 2020-05-11
 ### Changed
 - Version bump for Unity 2020.2
