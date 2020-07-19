@@ -1274,6 +1274,16 @@ namespace UnityEditor.U2D.PSD
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).ToArray() : new[] { new SpriteMetaData(spriteImportData[0]) };
         }
 
+        internal SpriteRect GetSpriteDataFromAllMode(GUID guid)
+        {
+            var spriteMetaData = m_RigSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            if(spriteMetaData == null)
+                spriteMetaData = m_MosaicSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            if(spriteMetaData == null)
+                spriteMetaData = m_SpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            return spriteMetaData;
+        }
+        
         internal SpriteRect GetSpriteData(GUID guid)
         {
             var spriteImportData = GetSpriteImportData();

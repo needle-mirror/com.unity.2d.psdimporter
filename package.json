@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "displayName": "2D PSD Importer",
@@ -12,19 +12,19 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.common": "3.0.0",
-    "com.unity.2d.animation": "4.2.2",
+    "com.unity.2d.common": "3.0.1",
+    "com.unity.2d.animation": "4.2.5",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "3.1.4"
+    "com.unity.2d.psdimporter.tests": "3.1.5"
   },
   "upmCi": {
-    "footprint": "0f31bea79298fdd3aa5228cc6f288ac7de11395a"
+    "footprint": "3dbe4feeab5b289ef36f5bf8e3a5865b386f1f3d"
   },
   "repository": {
-    "type": "git",
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
-    "revision": "43ebcd28b387c0a52efed484cb7d9242b9d7cf6f"
+    "type": "git",
+    "revision": "770e07a3b7a9107798c367cae274d1d3418c4ede"
   }
 }

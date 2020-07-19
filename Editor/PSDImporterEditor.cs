@@ -197,6 +197,9 @@ namespace UnityEditor.U2D.PSD
             doc.Cleanup();
             AnalyticFactory.analytics.SendApplyEvent(evt);
             base.Apply();
+            Selection.activeObject = null;
+            Unsupported.SceneTrackerFlushDirty();
+            PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
         }
 
         static bool IsPSD(PsdFile doc)

@@ -1,4 +1,10 @@
 # Changelog
+
+## [3.1.5] - 2020-07-19
+### Fixed
+- Fixed ArgumentException when applying Sprite Import settings with mosaic property unchecked (case 1253198)
+- Fixed ArgumentException errors are thrown when 2D Game Kit is imported for the first time (case 1259291)
+
 ## [3.1.4] - 2020-04-09
 ### Fixed
 - Fix PSD import issues with PSD file without unique layer id
