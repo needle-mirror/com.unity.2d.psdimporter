@@ -1,4 +1,8 @@
 # Changelog
+## [2.1.5] - 2020-07-23
+### Fixed
+- Fixed ArgumentException when 2D Game Kit is imported for the first time (case 1259290)
+
 ## [2.1.4] - 2020-04-09
 ### Fixed
 - Fix PSD import issues with PSD file without unique layer id

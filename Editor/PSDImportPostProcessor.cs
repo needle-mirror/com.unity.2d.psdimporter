@@ -12,7 +12,10 @@ namespace UnityEditor.U2D.PSD
         {
             var dataProviderFactories = new SpriteDataProviderFactories();
             dataProviderFactories.Init();
-            ISpriteEditorDataProvider importer = dataProviderFactories.GetSpriteEditorDataProviderFromObject(AssetImporter.GetAtPath(assetPath));
+            PSDImporter psd = AssetImporter.GetAtPath(assetPath) as PSDImporter;
+            if (psd == null)
+                return;
+            ISpriteEditorDataProvider importer = dataProviderFactories.GetSpriteEditorDataProviderFromObject(psd);
             if (importer != null)
             {
                 importer.InitSpriteEditorDataProvider();
@@ -30,13 +33,23 @@ namespace UnityEditor.U2D.PSD
                     var outlineOffset = sprite.rect.size / 2;
                     if (outline != null && outline.Count > 0)
                     {
-                        var convertedOutline = new Vector2[outline.Count][];
+                        // Ensure that outlines are all valid.
+                        int validOutlineCount = 0;
+                        for (int i = 0; i < outline.Count; ++i)
+                            validOutlineCount = validOutlineCount + ( (outline[i].Length > 2) ? 1 : 0 );
+
+                        int index = 0;
+                        var convertedOutline = new Vector2[validOutlineCount][];
                         for (int i = 0; i < outline.Count; ++i)
                         {
-                            convertedOutline[i] = new Vector2[outline[i].Length];
-                            for (int j = 0; j < outline[i].Length; ++j)
+                            if (outline[i].Length > 2)
                             {
-                                convertedOutline[i][j] = outline[i][j] * definitionScale + outlineOffset;
+                                convertedOutline[index] = new Vector2[outline[i].Length];
+                                for (int j = 0; j < outline[i].Length; ++j)
+                                {
+                                    convertedOutline[index][j] = outline[i][j] * definitionScale + outlineOffset;
+                                }
+                                index++;
                             }
                         }
                         sprite.OverridePhysicsShape(convertedOutline);
