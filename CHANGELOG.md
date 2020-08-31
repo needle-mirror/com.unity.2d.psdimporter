@@ -1,4 +1,8 @@
 # Changelog
+## [2.1.6] - 2020-08-31
+### Fixed
+- Fixed importing files with vector layers generates textures incorrectly (case 1271229)
+
 ## [2.1.5] - 2020-07-23
 ### Fixed
 - Fixed ArgumentException when 2D Game Kit is imported for the first time (case 1259290)
