@@ -513,11 +513,12 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 var maskAlpha = (0 == Data.HasLayerAlphaMask) ? Data.UserAlphaMask : Data.LayerAlphaMask;
                 var maskStart = 0;
                 {
-                    var c = Data.DecodedImage[dstStart];
                     while (dstStart < dstStops)
                     {
+                        var c = Data.DecodedImage[dstStart];
                         c.a = (byte)(Data.DecodedImage[dstStart].a * maskAlpha[maskStart] / 255);
                         Data.DecodedImage[dstStart] = c;
+                        
                         dstStart++;
                         maskStart++;
                     }
@@ -527,10 +528,10 @@ namespace PaintDotNet.Data.PhotoshopFileType
             else
             {
                 var maskStart = 0;
-                var c = Data.DecodedImage[dstStart];
                 {
                     while (dstStart < dstStops)
                     {
+                        var c = Data.DecodedImage[dstStart];
                         var alphaFactor = (Data.LayerAlphaMask[maskStart]) * (Data.UserAlphaMask[maskStart]);
                         c.a = (byte)(Data.DecodedImage[dstStart].a * alphaFactor / 65025);
                         Data.DecodedImage[dstStart] = c;

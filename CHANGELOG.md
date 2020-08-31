@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.1.6] - 2020-08-31
+### Fixed
+- Fixed importing files with vector layers generates textures incorrectly (case 1271228)
+
 ## [3.1.5] - 2020-07-19
 ### Fixed
 - Fixed ArgumentException when applying Sprite Import settings with mosaic property unchecked (case 1253198)
