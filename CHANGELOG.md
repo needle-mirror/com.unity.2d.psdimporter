@@ -1,4 +1,8 @@
 # Changelog
+## [4.0.2] - 2020-08-31
+### Fixed
+- Fixed importing files with vector layers generates textures incorrectly (case 1266986)
+- Fixed Sprite Editor Window doesn't show the Sprite when the Inspector is locked and the Sprite is not selected in the Project window
 
 ## [4.0.1] - 2020-07-07
 ### Fixed

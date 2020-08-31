@@ -633,7 +633,7 @@ namespace UnityEditor.U2D.PSD
                             dialogText, s_Styles.applyButtonLabel.text, s_Styles.revertButtonLabel.text))
                         {
                             ApplyAndImport();
-                            InternalEditorBridge.ShowSpriteEditorWindow();
+                            InternalEditorBridge.ShowSpriteEditorWindow(this.assetTarget);
 
                             // We reimported the asset which destroyed the editor, so we can't keep running the UI here.
                             GUIUtility.ExitGUI();
@@ -641,7 +641,7 @@ namespace UnityEditor.U2D.PSD
                     }
                     else
                     {
-                        InternalEditorBridge.ShowSpriteEditorWindow();
+                        InternalEditorBridge.ShowSpriteEditorWindow(this.assetTarget);
                     }
                 }
                 GUILayout.EndHorizontal();
