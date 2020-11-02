@@ -1,5 +1,7 @@
 # Summary
 
+**Note: Documentation for version 5.0.0 is currently being updated.**
+
 The PSD Importer is an Asset importer that is specialized for importing Adobe Photoshop .psb files into Unity and generating a Prefab made of Sprites based on the source file. The .psb file format is functionally identical to the more common Adobe .psd format and can support much larger images than the .psd format (up to 300,000 by 300,000 pixels in size).
 
 You can save or convert your Photoshop artwork files into the .psb format and import them into Unity with the PSD Importer. When you import .psb files with the PSD Importer, you can use features such as [Mosaic](#Mosaic) to automatically generate a Sprite sheet from the imported layers; or [Character Rig](#Rig) where Unity reassembles the Sprites of a character as they are arranged in their source files.

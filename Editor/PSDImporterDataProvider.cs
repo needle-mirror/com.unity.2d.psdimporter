@@ -234,7 +234,17 @@ namespace UnityEditor.U2D.PSD
                 }
             }
 
+            
             var cd = dataProvider.characterData;
+            cd.boneReadOnly = false;
+            var spriteBones = dataProvider.mainRigBones;
+            if (spriteBones != null)
+            {
+                cd.boneReadOnly = true;
+                cd.bones = spriteBones;
+            }
+
+
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
             var spriteRects = dataProvider.GetSpriteMetaData();
             parts.RemoveAll(x => Array.FindIndex(spriteRects, y => y.spriteID == new GUID(x.spriteId)) == -1);
@@ -263,8 +273,7 @@ namespace UnityEditor.U2D.PSD
                 else
                     parts[srIndex] = cp;
             }
-
-            var layers = dataProvider.GetPSDLayers();
+            
             parts.Sort((x, y) =>
             {
                 return x.order.CompareTo(y.order);
@@ -281,19 +290,6 @@ namespace UnityEditor.U2D.PSD
         {
             characterData.parts = characterData.parts.Reverse().ToArray();
             dataProvider.characterData = characterData;
-        }
-    }
-
-    internal class SpriteLibraryDataProvider : PSDDataProvider, ISpriteLibDataProvider
-    {
-        public SpriteCategoryList GetSpriteCategoryList()
-        {
-            return dataProvider.spriteCategoryList;
-        }
-
-        public void SetSpriteCategoryList(SpriteCategoryList spriteCategoryList)
-        {
-            dataProvider.spriteCategoryList = spriteCategoryList;
         }
     }
 }

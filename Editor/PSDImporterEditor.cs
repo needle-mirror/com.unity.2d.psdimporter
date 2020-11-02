@@ -8,6 +8,7 @@ using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
+using UnityEngine.U2D.Animation;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -55,12 +56,13 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_GenerateGOHierarchy;
         SerializedProperty m_PaperDollMode;
         SerializedProperty m_KeepDupilcateSpriteName;
+        SerializedProperty m_SkeletonAssetReferenceID;
 
+        private SkeletonAsset m_SkeletonAsset;
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
 
-        bool    m_IsPOT = false;
+        bool  m_IsPOT = false;
         bool m_ShowAdvanced = false;
-        bool m_ShowExperimental = false;
         Dictionary<TextureImporterType, Action[]> m_AdvanceInspectorGUI = new Dictionary<TextureImporterType, Action[]>();
         int m_PlatformSettingsIndex;
         bool m_ShowPerAxisWrapModes = false;
@@ -85,6 +87,7 @@ namespace UnityEditor.U2D.PSD
             m_GenerateGOHierarchy = serializedObject.FindProperty("m_GenerateGOHierarchy");
             m_PaperDollMode = serializedObject.FindProperty("m_PaperDollMode");
             m_KeepDupilcateSpriteName = serializedObject.FindProperty("m_KeepDupilcateSpriteName");
+            m_SkeletonAssetReferenceID = serializedObject.FindProperty("m_SkeletonAssetReferenceID");
 
             var textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
             m_TextureType = textureImporterSettingsSP.FindPropertyRelative("m_TextureType");
@@ -119,6 +122,8 @@ namespace UnityEditor.U2D.PSD
             var textureHeight = serializedObject.FindProperty("m_TextureActualHeight");
             m_IsPOT = Mathf.IsPowerOfTwo(textureWidth.intValue) && Mathf.IsPowerOfTwo(textureHeight.intValue);
 
+            var assetPath = AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID.stringValue);
+            m_SkeletonAsset = AssetDatabase.LoadAssetAtPath<SkeletonAsset>(assetPath);
 
             var advanceGUIAction = new Action[]
             {
@@ -174,6 +179,20 @@ namespace UnityEditor.U2D.PSD
             DoPlatformSettings();
             serializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
+        }
+        
+        void MainRigPropertyField()
+        {
+            EditorGUI.BeginChangeCheck();
+            m_SkeletonAsset = EditorGUILayout.ObjectField(s_Styles.mainSkeletonName, m_SkeletonAsset, typeof(SkeletonAsset), false) as SkeletonAsset;
+            if (EditorGUI.EndChangeCheck())
+            {
+                var referencePath = AssetDatabase.GetAssetPath(m_SkeletonAsset);
+                if (referencePath == ((AssetImporter) target).assetPath)
+                    m_SkeletonAssetReferenceID.stringValue = "";
+                else
+                    m_SkeletonAssetReferenceID.stringValue = AssetDatabase.GUIDFromAssetPath(referencePath).ToString();
+            }
         }
 
         /// <summary>
@@ -599,6 +618,7 @@ namespace UnityEditor.U2D.PSD
                             GUILayout.EndHorizontal();
                         }
                         //EditorGUILayout.PropertyField(m_PaperDollMode, s_Styles.paperDollMode);
+                        MainRigPropertyField();
                     }
 
 
@@ -608,13 +628,8 @@ namespace UnityEditor.U2D.PSD
                         EditorGUILayout.HelpBox(s_Styles.resliceFromLayerWarning.text, MessageType.Info, true);
                     }
                 }
-                m_ShowExperimental = EditorGUILayout.Foldout(m_ShowExperimental, s_Styles.experimental, true);
-                if (m_ShowExperimental)
-                {
-                    EditorGUI.indentLevel++;
-                    EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, s_Styles.keepDuplicateSpriteName);
-                    EditorGUI.indentLevel--;
-                }
+                
+                EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, s_Styles.keepDuplicateSpriteName);
             }
 
             using (new EditorGUI.DisabledScope(targets.Length != 1))
@@ -1092,8 +1107,8 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent generateGOHierarchy = new GUIContent(L10n.Tr("Use Layer Grouping"), L10n.Tr("GameObjects are grouped according to source file layer grouping"));
             public readonly GUIContent resliceFromLayer = new GUIContent(L10n.Tr("Reslice"), L10n.Tr("Recreate Sprite rects from file"));
             public readonly GUIContent paperDollMode = new GUIContent(L10n.Tr("Paper Doll Mode"), L10n.Tr("Special mode to generate a Prefab for Paper Doll use case"));
-            public readonly GUIContent experimental =  new GUIContent(L10n.Tr("Experimental"));
             public readonly GUIContent keepDuplicateSpriteName = new GUIContent(L10n.Tr("Keep Duplicate Name"), L10n.Tr("Keep Sprite name same as Layer Name even if there are duplicated Layer Name"));
+            public readonly GUIContent mainSkeletonName = new GUIContent(L10n.Tr("Main Skeleton"), L10n.Tr("Main Skeleton to use for Rigging"));
 
             public Styles()
             {

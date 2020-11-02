@@ -1,4 +1,8 @@
 # Changelog
+## [5.0.0-pre.1] - 2020-11-02
+### Added
+- Added bone sharing from other PSDImporter file
+
 ## [4.0.2] - 2020-08-31
 ### Fixed
 - Fixed importing files with vector layers generates textures incorrectly (case 1266986)

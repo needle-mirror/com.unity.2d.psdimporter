@@ -10,7 +10,6 @@ using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine.Assertions;
-using UnityEngine.Experimental.U2D.Animation;
 using UnityEngine.U2D;
 using UnityEngine.U2D.Animation;
 using UnityEngine.Scripting.APIUpdating;
@@ -20,7 +19,7 @@ namespace UnityEditor.U2D.PSD
     /// <summary>
     /// ScriptedImporter to import Photoshop files
     /// </summary>
-    [ScriptedImporter(4, "psb")]
+    [ScriptedImporter(5, "psb")]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -114,16 +113,30 @@ namespace UnityEditor.U2D.PSD
         };
         
         [SerializeField]
+        // SpriteData for both single and multiple mode
         List<SpriteMetaData> m_SpriteImportData = new List<SpriteMetaData>(); // we use index 0 for single sprite and the rest for multiple sprites
         [SerializeField]
+        // SpriteData for Mosaic mode
         List<SpriteMetaData> m_MosaicSpriteImportData = new List<SpriteMetaData>();
         [SerializeField]
+        // SpriteData for Rig mode
         List<SpriteMetaData> m_RigSpriteImportData = new List<SpriteMetaData>();
+        [SerializeField]
+        // CharacterData for Rig mode
+        CharacterData m_CharacterData = new CharacterData();
+        [SerializeField]
+        // SpriteData for shared rig mode
+        List<SpriteMetaData> m_SharedRigSpriteImportData = new List<SpriteMetaData>();
+        [SerializeField]
+        // CharacterData for shared rig mode
+        CharacterData m_SharedRigCharacterData = new CharacterData();
 
         [SerializeField]
         List<TextureImporterPlatformSettings> m_PlatformSettings = new List<TextureImporterPlatformSettings>();
         [SerializeField]
         bool m_MosaicLayers = true;
+        [SerializeField]
+        bool m_CharacterMode = true;
         [SerializeField]
         Vector2 m_DocumentPivot = Vector2.zero;
         [SerializeField]
@@ -141,7 +154,10 @@ namespace UnityEditor.U2D.PSD
         bool m_PaperDollMode = false;
 
         [SerializeField]
-        bool m_KeepDupilcateSpriteName = false;
+        bool m_KeepDupilcateSpriteName = true;
+        
+        [SerializeField] 
+        private string m_SkeletonAssetReferenceID = null;
 
         [SerializeField]
         SpriteCategoryList m_SpriteCategoryList = new SpriteCategoryList() {categories = new List<SpriteCategory>()};
@@ -170,16 +186,13 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         bool m_ResliceFromLayer = false;
-        [SerializeField]
-        bool m_CharacterMode = true;
 
         [SerializeField]
         List<PSDLayer> m_MosaicPSDLayers = new List<PSDLayer>();
         [SerializeField]
         List<PSDLayer> m_RigPSDLayers = new List<PSDLayer>();
-
         [SerializeField]
-        CharacterData m_CharacterData = new CharacterData();
+        List<PSDLayer> m_SharedRigPSDLayers = new List<PSDLayer>();
 
         [SerializeField]
         bool m_GenerateGOHierarchy = false;
@@ -192,6 +205,9 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         string m_SpriteLibAssetName = null;
+        
+        [SerializeField]
+        string m_SkeletonAssetName = null;
 
         [SerializeField]
         SecondarySpriteTexture[] m_SecondarySpriteTextures;
@@ -261,6 +277,15 @@ namespace UnityEditor.U2D.PSD
                 {
                     ImportFromLayers(ctx, doc);
                 }
+                
+                if (!string.IsNullOrEmpty(m_SkeletonAssetReferenceID))
+                {
+                    var primaryAssetPath = AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID);
+                    if(!string.IsNullOrEmpty(primaryAssetPath) && primaryAssetPath != assetPath)
+                    {
+                        ctx.DependsOnArtifact(primaryAssetPath);
+                    }
+                }
             }
             finally
             {
@@ -271,9 +296,6 @@ namespace UnityEditor.U2D.PSD
                 EditorUtility.SetDirty(this);
             }
 
-
-            // Debug Profiler.
-            // UnityEngine.Profiling.Memory.Experimental.MemoryProfiler.TakeSnapshot("snapshot.snap", MemorySnapshotFinish, CaptureFlags.ManagedObjects | CaptureFlags.NativeObjects | CaptureFlags.NativeAllocations | CaptureFlags.NativeStackTraces);
         }
 
         static void ValidatePSDLayerId(List<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
@@ -574,12 +596,6 @@ namespace UnityEditor.U2D.PSD
                 foreach (var l in oldPsdLayers)
                     l.Dispose();
             }
-            
-        }
-
-        void MemorySnapshotFinish(string path, bool done)
-        {
-
         }
 
         void EnsureSingleSpriteExist()
@@ -631,6 +647,8 @@ namespace UnityEditor.U2D.PSD
                 m_PrefabAssetName = GetUniqueName(string.Format("{0} Prefab", assetName), assetNameHash, true);
             if (string.IsNullOrEmpty(m_SpriteLibAssetName))
                 m_SpriteLibAssetName = GetUniqueName(string.Format("{0} Sprite Lib", assetName), assetNameHash, true);
+            if (string.IsNullOrEmpty(m_SkeletonAssetName))
+                m_SkeletonAssetName = GetUniqueName(string.Format("{0} Skeleton", assetName), assetNameHash, true);
 
             output.texture.name = assetName;
             ctx.AddObjectToAsset(m_TextureAssetName, output.texture, output.thumbNail);
@@ -665,6 +683,15 @@ namespace UnityEditor.U2D.PSD
                 {
                     slAsset.name = assetName;
                     ctx.AddObjectToAsset(m_SpriteLibAssetName, slAsset);
+                }
+
+                if (characterMode && skeletonAsset == null)
+                {
+                    var characterRig = ScriptableObject.CreateInstance<SkeletonAsset>();
+                    characterRig.name = assetName + " Skeleton";
+                    var bones = GetDataProvider<ICharacterDataProvider>().GetCharacterData().bones;
+                    characterRig.SetSpriteBones(bones);
+                    ctx.AddObjectToAsset(m_SkeletonAssetName, characterRig);
                 }
             }
             ctx.SetMainObject(mainAsset);
@@ -727,7 +754,7 @@ namespace UnityEditor.U2D.PSD
 
         bool characterMode
         {
-            get { return mosaicMode && m_CharacterMode == true; }
+            get { return mosaicMode && m_CharacterMode; }
         }
 
         float definitionScale
@@ -796,7 +823,7 @@ namespace UnityEditor.U2D.PSD
             {
                 go = go,
                 index = index
-            };
+            };            
         }
 
         BoneGO[] CreateBonesGO(Transform root)
@@ -848,12 +875,13 @@ namespace UnityEditor.U2D.PSD
                 var boneGOs = CreateBonesGO(root.transform);
                 if (spriteLib != null)
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
+                var currentCharacterData = characterData;
                 for (int i = 0; i < sprites.Length; ++i)
                 {
                     string categoryName;
                     if (SpriteIsMainFromSpriteLib(sprites[i].GetSpriteID().ToString(), out categoryName))
                     {
-                        var spriteBones = m_CharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == sprites[i].GetSpriteID()).bones;
+                        var spriteBones = currentCharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == sprites[i].GetSpriteID()).bones;
                         var rootBone = root;
                         if (spriteBones != null && spriteBones.Any())
                         {
@@ -910,6 +938,7 @@ namespace UnityEditor.U2D.PSD
             CharacterData? characterSkeleton = characterMode ? new CharacterData ? (GetDataProvider<ICharacterDataProvider>().GetCharacterData()) : null;
             if (sprites != null && sprites.Length > 0)
             {
+                var currentCharacterData = characterData;
                 var spriteImportData = GetSpriteImportData();
                 root = new GameObject();
                 root.name = assetname + "_GO";
@@ -946,7 +975,7 @@ namespace UnityEditor.U2D.PSD
                                 var spriteSkin = l.gameObject.AddComponent<SpriteSkin>();
                                 if (spriteRenderer.sprite != null && spriteRenderer.sprite.GetBindPoses().Length > 0)
                                 {
-                                    var spriteBones = m_CharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == spriteRenderer.sprite.GetSpriteID()).bones.Where(x => x >= 0 && x < boneGOs.Length).Select(x => boneGOs[x]);
+                                    var spriteBones = currentCharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == spriteRenderer.sprite.GetSpriteID()).bones.Where(x => x >= 0 && x < boneGOs.Length).Select(x => boneGOs[x]);
                                     if (spriteBones.Any())
                                     {
                                         spriteSkin.rootBone = spriteBones.OrderBy(x => x.index).First().go.transform;
@@ -1158,10 +1187,6 @@ namespace UnityEditor.U2D.PSD
             {
                 return characterMode ? new CharacterDataProvider { dataProvider = this } as T : null;
             }
-            if (typeof(T) == typeof(ISpriteLibDataProvider))
-            {
-                return new SpriteLibraryDataProvider() { dataProvider = this } as T;
-            }
             if (typeof(T) == typeof(ISecondaryTextureDataProvider))
             {
                 return new SecondaryTextureDataProvider() { dataProvider = this } as T;
@@ -1184,7 +1209,6 @@ namespace UnityEditor.U2D.PSD
                 type == typeof(ISpriteOutlineDataProvider) ||
                 type == typeof(ISpritePhysicsOutlineDataProvider) ||
                 type == typeof(ITextureDataProvider) ||
-                type == typeof(ISpriteLibDataProvider) ||
                 type == typeof(ISecondaryTextureDataProvider))
             {
                 return true;
@@ -1272,12 +1296,44 @@ namespace UnityEditor.U2D.PSD
 
         List<SpriteMetaData> GetSpriteImportData()
         {
-            return mosaicMode ? (characterMode ? m_RigSpriteImportData : m_MosaicSpriteImportData) : m_SpriteImportData;
+            if (mosaicMode)
+            {
+                if (characterMode)
+                {
+                    if (skeletonAsset != null)
+                    {
+                        return m_SharedRigSpriteImportData;
+                    }
+                    return m_RigSpriteImportData;
+                }
+                return m_MosaicSpriteImportData;
+            }
+            return m_SpriteImportData;
+        }
+
+        private SkeletonAsset skeletonAsset
+        {
+            get
+            {
+                return AssetDatabase.LoadAssetAtPath<SkeletonAsset>(
+                    AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID));
+            }
         }
 
         internal List<PSDLayer> GetPSDLayers()
         {
-            return mosaicMode ? (characterMode ? m_RigPSDLayers : m_MosaicPSDLayers) : null;
+            if (mosaicMode)
+            {
+                if (characterMode)
+                {
+                    if (skeletonAsset != null)
+                        return m_SharedRigPSDLayers;
+                    else
+                        return m_RigPSDLayers;
+                }
+                return m_MosaicPSDLayers;
+            }
+            return null;
         }
 
         internal SpriteMetaData[] GetSpriteMetaData()
@@ -1290,6 +1346,8 @@ namespace UnityEditor.U2D.PSD
         internal SpriteRect GetSpriteDataFromAllMode(GUID guid)
         {
             var spriteMetaData = m_RigSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+            if(spriteMetaData == null)
+                spriteMetaData = m_SharedRigSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
             if(spriteMetaData == null)
                 spriteMetaData = m_MosaicSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
             if(spriteMetaData == null)
@@ -1356,8 +1414,19 @@ namespace UnityEditor.U2D.PSD
 
         internal CharacterData characterData
         {
-            get { return m_CharacterData; }
-            set { m_CharacterData = value; }
+            get
+            {
+                if (skeletonAsset != null)
+                    return m_SharedRigCharacterData;
+                return m_CharacterData;
+            }
+            set
+            {
+                if (skeletonAsset != null)
+                    m_SharedRigCharacterData = value;
+                else
+                    m_CharacterData = value;
+            }
         }
 
         internal Vector2Int documentSize
@@ -1378,7 +1447,7 @@ namespace UnityEditor.U2D.PSD
                     categoryList = x.labels.Select(y =>
                     {
                         var sprite = sprites.FirstOrDefault(z => z.GetSpriteID().ToString() == y.spriteId);
-                        return new Categorylabel()
+                        return new SpriteCategoryEntry()
                         {
                             name = y.name,
                             sprite = sprite
@@ -1404,5 +1473,20 @@ namespace UnityEditor.U2D.PSD
         {
             m_TextureImporterSettings.CopyTo(dest);
         }
+        
+        internal SpriteBone[] mainRigBones
+        {
+            get
+            {
+                var rig = skeletonAsset;
+                if (rig != null)
+                {
+                    return rig.GetSpriteBones();
+                }
+
+                return null;
+            }
+        }
+
     }
 }
