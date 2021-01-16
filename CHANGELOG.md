@@ -1,4 +1,11 @@
 # Changelog
+## [5.0.0-pre.2] - 2021-01-16
+### Changed
+- Update license file
+
+### Fixed
+- Fixed case 1291323 where upgrading from PSDImporter v2 causes Sprite to be missing
+
 ## [5.0.0-pre.1] - 2020-11-02
 ### Added
 - Added bone sharing from other PSDImporter file

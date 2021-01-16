@@ -1,49 +1,38 @@
-# Summary
+# Overview
 
-**Note: Documentation for version 5.0.0 is currently being updated.**
+The PSD Importer is an [Asset importer](https://docs.unity3d.com/ScriptReference/AssetImporter.html) specifically for importing Adobe Photoshop .psb files into Unity, and generating a [Prefab](https://docs.unity3d.com/Manual/Prefabs.html) of Sprites based on the imported source file. The .psb file format is functionally identical to the more common Adobe .psd format, but is able to support much larger images than the .psd format (up to 300,000 by 300,000 pixels in size).
 
-The PSD Importer is an Asset importer that is specialized for importing Adobe Photoshop .psb files into Unity and generating a Prefab made of Sprites based on the source file. The .psb file format is functionally identical to the more common Adobe .psd format and can support much larger images than the .psd format (up to 300,000 by 300,000 pixels in size).
+You can save or convert your Photoshop artwork files into the .psb format and import them into Unity with the PSD Importer. When you import .psb files with the PSD Importer, you can use features such as [Mosaic](#mosaic) to automatically generate a Sprite sheet from the imported layers; or [Character Rig](#rig) where Unity reassembles the Sprites of a character as they are arranged in their source files.
 
-You can save or convert your Photoshop artwork files into the .psb format and import them into Unity with the PSD Importer. When you import .psb files with the PSD Importer, you can use features such as [Mosaic](#Mosaic) to automatically generate a Sprite sheet from the imported layers; or [Character Rig](#Rig) where Unity reassembles the Sprites of a character as they are arranged in their source files.
+The PSD Importer currently only supports two [Texture Modes](https://docs.unity3d.com/Manual/TextureTypes.html):[ Default](https://docs.unity3d.com/Manual/TextureTypes.html#Default) and[ Sprite](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). Other Texture Modes may be supported in the future.
 
-## Non-importable Photoshop effects
+**Note:** The **Sprite Library Asset** swapping has been removed from the 2D Animation package from version 6.0 onwards. However, the PSD Importer will continue to generate Sprite Library Assets if the data exists from the previous version.
 
-The PSD Importer only supports two [Texture Modes](https://docs.unity3d.com/Manual/TextureTypes.html): [Default](https://docs.unity3d.com/Manual/TextureTypes.html#Default) and [Sprite](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). Other Texture Modes might be supported in the future.
+## Supported and unsupported Photoshop effects
 
-The following Photoshop features are not supported by the PSD Importer and it ignores the following layer effects and features while it generates Sprites:   
+When importing a .psb file into Unity with the PSD Importer, the importer generates a prefab made of Sprites based on the image and layer data of the imported .psb file. However not all of Photoshop’s layer and visual effects or features are supported by the PSD Importer.The following Photoshop visual effects are ignored when the importer generates the Sprites and prefab: 
 
-* Channels 
+- Channels
+- Blend Modes
+- Layer Opacity
+- Effects
 
-* Blend Modes
+To add visual effects to the generated Sprites, you can add additional Textures to the Sprites with the[ Sprite Edito](https://docs.unity3d.com/Manual/SpriteEditor.html)r’s[ Secondary Textures](https://docs.unity3d.com/Manual/SpriteEditor-SecondaryTextures.html) module. Shaders can sample these Secondary Textures to apply additional effects to the Sprite, such as normal mapping. Refer to the on[ Sprite Editor: Secondary Textures](https://docs.unity3d.com/Manual/SpriteEditor-SecondaryTextures.html) documentation for more information.
 
-* Layer Opacity
+## PSD Importer Inspector properties
 
-* Effects
+After importing a .psb file into your Project, select the Asset file and set its Texture Type to [Sprite (2D and UI)](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). The following PSD Importer properties become available in the Inspector window.
 
-You can also add additional Textures to the Sprites with the [Sprite Edito](https://docs.unity3d.com/Manual/SpriteEditor.html)r’s [Secondary Textures](https://docs.unity3d.com/Manual/SpriteEditor-SecondaryTextures.html) module. Shaders can sample these Secondary Textures to apply additional effects to the Sprite, such as normal mapping. For more information, see documentation on [Sprite Editor: Secondary Textures](https://docs.unity3d.com/Manual/SpriteEditor-SecondaryTextures.html).
-
-## Inspector properties
-
-After importing a .psb file into your Project, select the Asset file to find the following properties in its Inspector window.
-
-### Texture Type - Default
-
-This is the default Texture Type that Unity uses when you import an image without a specific Texture Type selected. For more information, refer to the documentation on [Texture Types](https://docs.unity3d.com/Manual/TextureTypes.html).
-
-### Texture Type - Sprite (2D and UI)
-
-![](images/propertysettings.png) <br/> _Importer Inspector properties_
-
-Set the Texture Type to __Sprite (2D and UI)__ when you want to import a .psb file with character graphics on multiple layers. The following property settings are available:
+![](images/psd-importer-v5-properties.png) <br/>PSD Importer Inspector properties
 
 | Property                                                     | Function                                                     |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | __Texture Type__                                             | Select [Sprite (2D and UI)](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite) to import the Texture as a [Sprite](https://docs.unity3d.com/Manual/Sprites.html). This is required to begin using the imported images with the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/) package. |
 | __Sprite Mode__                                              | Use this property to specify how Unity extracts the Sprite graphic from the image. The default option is __Multiple__. |
-| &nbsp;&nbsp;&nbsp;&nbsp;Single                               | Choose this option if the imported image contains a single element. |
-| &nbsp;&nbsp;&nbsp;&nbsp;Multiple                             | This is the default option. Choose this option if the imported image contains multiple elements. Choose this option when importing artwork meant for animation with the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/) package. |
+| &nbsp;&nbsp;&nbsp;&nbsp;Single                               | Select this to have imported texture be treated as a single Sprite Asset without multiple parts or elements. This is ideal for characters that are a single layer in the source .psb file, which are not split into multiple layers. |
+| &nbsp;&nbsp;&nbsp;&nbsp;Multiple                             | This is the default option. Select this if the imported texture has multiple parts or elements, and is ideal for complex characters which have different parts which are split between multiple layers in the source .psb file as it prepares the characters for animation with the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest) package. |
 | __Pixels Per Unit__                                          | The number of pixels that equal to one Unity unit.           |
-| __Mesh Type__                                                | This defines the __Mesh__ type that Unity generates for the __Sprite__. This is set to __Tight__ by default. |
+| __Mesh Type__                                                | This defines the Mesh type that Unity generates for the Sprite. This is set to __Tight__ by default. |
 | &nbsp;&nbsp;&nbsp;&nbsp;[Full Rect](https://docs.unity3d.com/Documentation/ScriptReference/SpriteMeshType.FullRect.html) | Unity maps the Sprite onto a rectangular Mesh.               |
 | &nbsp;&nbsp;&nbsp;&nbsp;[Tight](https://docs.unity3d.com/Documentation/ScriptReference/SpriteMeshType.Tight.html) | Unity generates a Mesh based on the outline of the Sprite. If the Sprite is smaller than 32 x 32 pixels, Unity always maps it onto a __Full Rect__ quad Mesh, even if you select __Tight__. |
 | [__Extrude Edges__](https://docs.unity3d.com/Manual/Glossary.html#ExtrudeEdges) | Use the slider to determine how much to extend the Mesh from the edge of the Sprite. |
@@ -51,13 +40,11 @@ Set the Texture Type to __Sprite (2D and UI)__ when you want to import a .psb fi
 | __Mosaic__<a name="Mosaic"></a>                              | This setting is only available if you set the __Texture Type__ to __Multiple__. Enable this setting to make the PSD Importer generate Sprites from the imported layers and combine them into a single Texture in a Sprite sheet layout. |
 | [__Character Rig__](#Rig)                                    | Enable this property to make the importer generate a [Prefab](https://docs.unity3d.com/Manual/Prefabs.html) based on the imported source file. The PSD Importer generates Sprites from the imported layers of the source file, and the Sprites’ [hierarchy](https://docs.unity3d.com/Manual/Hierarchy.html) and positions are based on their [layer hierarchy](https://helpx.adobe.com/photoshop/using/layer-basics.html#layers_panel_overview) and their positions in the .psb file. |
 | __Use Layer Grouping__                                       | This setting is only available when you enable __Character Rig__. Enable this setting to make the importer generate a Prefab that follows the layer and grouping hierarchy of the imported .psb. file. |
-| __Pivot__                                                    | Choose the pivot point of the Sprite.                        |
+| __Pivot__                                                    | This is only available when **Character Rig** is enabled. Select the pivot point of the Sprite. |
 | &nbsp;&nbsp;&nbsp;&nbsp; Custom                              | Define the X and Y coordinates of a custom __Pivot__ location. |
-| [__Reslice__](#Reslice)                                      | Available only when you enable __Mosaic__. Enable this setting to regenerate the Sprite from the imported layers and clear any changes you have made to the Sprite and its metadata. |
-| __Experimental__                                             | The following feature is experimental and might be changed or removed in the future. It is only available for the following Editor and package versions:  <br />- __Unity 2019.2__: 2D PSD Importer version 1.2.0-preview.4 or newer.<br />- __Unity 2019.3__: 2D PSD Importer version 2.0.5 or newer. |
-| &nbsp;&nbsp;&nbsp;&nbsp; [Keep Duplicate Name](#Duplicate)    | Enable this setting to make the PSD Importer generate Sprites from the source files with the exact same name as their source layers, even when there are multiple layers with the same name. |
-
-
+| **Main Skeleton**                                            | This is only available when **Character Rig** is enabled. Assign the [Skeleton Asset]() that this character Prefab’s bone hierarchy will reference. <br />If no Skeleton Asset is assigned, the importer will automatically generate a Skeleton Asset as a sub-asset of this character. The Skeleton Asset contains the bone hierarchy of the Asset that was defined in the [Skinning Module]() (see [Skeleton Sharing]() for more information about using Skeleton Assets). |
+| [__Reslice__](#Reslice)                                      | This is available only when **Mosaic** is enabled. Enable this setting to regenerate the Sprite from the imported layers and clear any changes you have made to the Sprite and its metadata. |
+| [**Keep Duplicate Name**](#Duplicate)                        | Enable this setting to make the PSD Importer generate Sprites from the source files with the exact same name as their source layers, even when there are multiple layers with the same name. |
 
 ## Property details
 
@@ -81,19 +68,24 @@ Refer to the examples below of a character designed in Photoshop with its variou
 
 Enable this setting to discard all user modifications for the current set of SpriteRect data and regenerate all SpriteRects based on the current source file. Extra SpriteRect metadata (such as weights and bones data) persist if they remain valid with the regenerated SpriteRects.
 
+### Main Skeleton<a name="skeleton"></a>
+
+A Skeleton Asset (.skeleton) is an Asset that contains the bone hierarchy structure that allows for a rigged character to be animated with the 2D Animation package. The **Main Skeleton** property is only available when you import a .psb file with the **Character Rig** importer setting enabled. After importing the .psb file, assign a Skeleton Asset to the **Main Skeleton** property to have the generated prefab character be automatically rigged with the bone hierarchy structure contained in the Skeleton Asset.
+
+If no Skeleton Asset is assigned to the importer’s **Main Skeleton** property, then a Skeleton Asset is automatically generated as a sub-Asset of the imported source file and named ‘[Asset File Name] Skeleton’. You can share Skeleton Assets between different [imported](https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest/) .psb assets by assigning the same Skeleton to their **Main Skeleton** property in the PSD Importer properties.
+
+When you open and edit the character in 2D Animation package’s [Skinning Module](), the module will display the bone hierarchy provided by the assigned Skeleton Asset for rigging. 
+
 
 
 ## How the PSD Importer uses SpriteRect data
 
-The PSD Importer can store four separate sets of [SpriteRect](https://docs.unity3d.com/ScriptReference/Sprite-rect.html) data, with a set for each of the four combinations of importer property settings below:
-
-1. __Sprite Mode__ set to __Single__.
-
-2. __Sprite Mode__ set to __Multiple__.
-
-3. __Sprite Mode__ set to __Multiple,__ and __Mosaic__ enabled.
-
-4. __Sprite Mode__ set to __Multiple__, and both __Mosaic__ and __Character Rig__ enabled.
+1. The PSD Importer can store four separate sets of[ SpriteRect](https://docs.unity3d.com/ScriptReference/Sprite-rect.html) data, with a set for each of the four combinations of Importer property settings below:
+   1. **Sprite Mode** set to **Single**.
+   2. **Sprite Mode** set to **Multiple**.
+   3. **Sprite Mode** set to **Multiple,** and **Mosaic** enabled.
+   4. **Sprite Mode** set to **Multiple**, both **Mosaic** and **Character Rig** enabled and **Main** **Skeleton** property is not assigned.
+   5. **Sprite** **Mode** set to **Multiple**, both **Mosaic** and **Character** **Rig** is enabled and **Main** **Skeleton** property is assigned.
 
 Each set of data is persistent, and does not affect or overwrite the data of other sets. This means you can save different SpriteRect data for different importer settings for the same source file. The SpriteRect data persists even if you modify the dimensions and position of images in the source file, as long as the original [Layer ID](https://github.com/adobe-photoshop/generator-core/wiki/Understanding-Layer-IDs-and-Layer-Indices) of the source layers remain the same.
 
@@ -159,9 +151,9 @@ When a name collision occurs, one SpriteRect retains the original name while the
 
 3. Currently existing SpriteRects in the Project.
 
-## Experimental feature: Keep duplicate names <a name="Duplicate"></a>
+## Keep duplicate names <a name="Duplicate"></a>
 
-Unity’s default import behavior when there are duplicate names is to append "_[number]" to Sprites and SpriteRects it generates from source layers with identical names. Enable this experimental feature to instead have Unity give both Sprites/SpriteRects the exact same name as their source layer even if they have duplicate names.
+Unity’s default import behavior when there are duplicate names is to append "_[number]" to Sprites and SpriteRects it generates from source layers with identical names. Enable this feature to instead have Unity give both Sprites/SpriteRects the exact same name as their source layer even if they have duplicate names.
 
 
 ## PSD File Importer Override

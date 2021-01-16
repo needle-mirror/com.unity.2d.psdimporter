@@ -298,10 +298,38 @@ namespace UnityEditor.U2D.PSD
 
         }
 
-        static void ValidatePSDLayerId(List<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
+        static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, List<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
         {
+            // first check if all layers are unique. If not, we use back the previous layer id based on name match
+            HashSet<int> uniqueIdSet = new HashSet<int>();
+            bool useOldID = false;
+            foreach(var layer in layers)
+            {
+                if (uniqueIdSet.Contains(layer.LayerID))
+                {
+                    useOldID = true;
+                    break;   
+                }
+                uniqueIdSet.Add(layer.LayerID);
+            }
+            
             for (int i = 0; i < layers.Count; ++i)
             {
+                // fix case 1291323
+                if (useOldID)
+                {
+                    var oldLayers = oldPsdLayer.Where(x => x.name == layers[i].Name);
+                    // pick one that is not already on the list
+                    foreach (var ol in oldLayers)
+                    {
+                        if (!uniqueNameGenerator.ContainHash(ol.layerID))
+                        {
+                            layers[i].LayerID = ol.layerID;
+                            break;
+                        }
+                    }
+                }
+            
                 if (uniqueNameGenerator.ContainHash(layers[i].LayerID))
                 {
                     var importWarning = string.Format("Layer {0}: LayerId is not unique. Mapping will be done by Layer's name.", layers[i].Name);
@@ -315,7 +343,7 @@ namespace UnityEditor.U2D.PSD
                     uniqueNameGenerator.AddHash(layers[i].LayerID);
                 if (layers[i].ChildLayer != null)
                 {
-                    ValidatePSDLayerId(layers[i].ChildLayer, uniqueNameGenerator);
+                    ValidatePSDLayerId(oldPsdLayer, layers[i].ChildLayer, uniqueNameGenerator);
                 }
             }
         }
@@ -325,7 +353,7 @@ namespace UnityEditor.U2D.PSD
         {
             UniqueNameGenerator uniqueNameGenerator = new UniqueNameGenerator();
 
-            ValidatePSDLayerId(doc.Layers, uniqueNameGenerator);
+            ValidatePSDLayerId(GetPSDLayers(), doc.Layers, uniqueNameGenerator);
         }
         
         TextureGenerationOutput ImportTexture(AssetImportContext ctx, NativeArray<Color32> imageData, int textureWidth, int textureHeight, int spriteStart, int spriteCount)
