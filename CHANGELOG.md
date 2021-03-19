@@ -1,4 +1,17 @@
 # Changelog
+
+## [5.0.1] - 2021-03-19
+### Changed
+- Updated package dependencies
+
+## [5.0.0] - 2021-03-17
+### Changed
+- Update version for release
+
+## [5.0.0-pre.3] - 2021-03-15
+### Changed
+- Updated documentation
+
 ## [5.0.0-pre.2] - 2021-01-16
 ### Changed
 - Update license file

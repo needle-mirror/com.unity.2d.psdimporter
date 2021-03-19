@@ -1215,6 +1215,10 @@ namespace UnityEditor.U2D.PSD
             {
                 return characterMode ? new CharacterDataProvider { dataProvider = this } as T : null;
             }
+            if (typeof(T) == typeof(IMainSkeletonDataProvider))
+            {
+                return characterMode && skeletonAsset != null ? new MainSkeletonDataProvider() { dataProvider = this } as T : null;
+            }
             if (typeof(T) == typeof(ISecondaryTextureDataProvider))
             {
                 return new SecondaryTextureDataProvider() { dataProvider = this } as T;
@@ -1230,8 +1234,13 @@ namespace UnityEditor.U2D.PSD
 
         internal bool HasDataProvider(Type type)
         {
-            if (characterMode && type == typeof(ICharacterDataProvider))
-                return true;
+            if (characterMode)
+            {
+                if (type == typeof(ICharacterDataProvider))
+                    return true;
+                if (type == typeof(IMainSkeletonDataProvider) && skeletonAsset != null)
+                    return true;
+            }
             if (type == typeof(ISpriteBoneDataProvider) ||
                 type == typeof(ISpriteMeshDataProvider) ||
                 type == typeof(ISpriteOutlineDataProvider) ||
@@ -1339,14 +1348,8 @@ namespace UnityEditor.U2D.PSD
             return m_SpriteImportData;
         }
 
-        private SkeletonAsset skeletonAsset
-        {
-            get
-            {
-                return AssetDatabase.LoadAssetAtPath<SkeletonAsset>(
-                    AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID));
-            }
-        }
+        private SkeletonAsset skeletonAsset =>
+            AssetDatabase.LoadAssetAtPath<SkeletonAsset>(AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID));
 
         internal List<PSDLayer> GetPSDLayers()
         {
@@ -1502,19 +1505,13 @@ namespace UnityEditor.U2D.PSD
             m_TextureImporterSettings.CopyTo(dest);
         }
         
-        internal SpriteBone[] mainRigBones
+        internal SpriteBone[] mainSkeletonBones
         {
             get
             {
-                var rig = skeletonAsset;
-                if (rig != null)
-                {
-                    return rig.GetSpriteBones();
-                }
-
-                return null;
+                var skeleton = skeletonAsset;
+                return skeleton != null ? skeleton.GetSpriteBones() : null;
             }
         }
-
     }
 }

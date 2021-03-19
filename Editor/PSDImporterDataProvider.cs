@@ -234,16 +234,7 @@ namespace UnityEditor.U2D.PSD
                 }
             }
 
-            
             var cd = dataProvider.characterData;
-            cd.boneReadOnly = false;
-            var spriteBones = dataProvider.mainRigBones;
-            if (spriteBones != null)
-            {
-                cd.boneReadOnly = true;
-                cd.bones = spriteBones;
-            }
-
 
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
             var spriteRects = dataProvider.GetSpriteMetaData();
@@ -290,6 +281,14 @@ namespace UnityEditor.U2D.PSD
         {
             characterData.parts = characterData.parts.Reverse().ToArray();
             dataProvider.characterData = characterData;
+        }
+    }
+
+    internal class MainSkeletonDataProvider : PSDDataProvider, IMainSkeletonDataProvider
+    {
+        public MainSkeletonData GetMainSkeletonData()
+        {
+            return new MainSkeletonData { bones = dataProvider.mainSkeletonBones };
         }
     }
 }
