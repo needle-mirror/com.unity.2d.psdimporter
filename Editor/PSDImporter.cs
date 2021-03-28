@@ -5,6 +5,8 @@ using PDNWrapper;
 using UnityEngine;
 using Unity.Collections;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEditor.AssetImporters;
 using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
@@ -545,7 +547,7 @@ namespace UnityEditor.U2D.PSD
                     {
                         var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteData.spriteID);
                         if (psdLayer == null)
-                            spriteNameHash.Add(spriteData.name.GetHashCode());
+                            spriteNameHash.Add(GetStringHash(spriteData.name));
                     }
 
                     foreach (var spriteData in spriteImportData)
@@ -556,7 +558,7 @@ namespace UnityEditor.U2D.PSD
                         // If it is user created rect or the name has been changed before
                         // add it into the spriteNameHash and we don't copy it over from the layer
                         if (psdLayer == null || psdLayer.spriteName != spriteData.name)
-                            spriteNameHash.Add(spriteData.name.GetHashCode());
+                            spriteNameHash.Add(GetStringHash(spriteData.name));
 
                         // If the sprite name has not been changed, we ensure the new
                         // layer name is still unique and use it as the sprite name
@@ -1115,6 +1117,7 @@ namespace UnityEditor.U2D.PSD
 
         static string SanitizeName(string name)
         {
+            name = name.Replace('\0', ' ');
             string newName = null;
             // We can't create asset name with these name.
             if ((name.Length == 2 && name[0] == '.' && name[1] == '.')
@@ -1130,22 +1133,29 @@ namespace UnityEditor.U2D.PSD
             return name;
         }
 
+        static int GetStringHash(string str)
+        {
+            MD5 md5Hasher = MD5.Create();
+            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(str));
+            return BitConverter.ToInt32(hashed, 0);
+        }
+        
         static string GetUniqueName(string name, List<int> stringHash, bool logNewNameGenerated = false, UnityEngine.Object context = null)
         {
-            string uniqueName = string.Copy(SanitizeName(name));
+            var sanitizedName = string.Copy(SanitizeName(name));
+            string uniqueName = sanitizedName;
             int index = 1;
             while (true)
             {
-                int hash = uniqueName.GetHashCode();
-                var p = stringHash.Where(x => x == hash);
-                if (!p.Any())
+                var hash = GetStringHash(uniqueName);
+                if (!stringHash.Contains(hash))
                 {
                     stringHash.Add(hash);
-                    if (logNewNameGenerated && name != uniqueName)
+                    if (logNewNameGenerated && sanitizedName != uniqueName)
                         Debug.Log(string.Format("Asset name {0} is changed to {1} to ensure uniqueness", name, uniqueName), context);
                     return uniqueName;
                 }
-                uniqueName = string.Format("{0}_{1}", name, index);
+                uniqueName = string.Format("{0}_{1}", sanitizedName, index);
                 ++index;
             }
         }

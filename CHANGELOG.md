@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.0.3] - 2021-03-28
+### Fixed
+- Fixed package description
+- Fixed Unity hang when importing certain PSD files (case 1325770)
+
+
+## [5.0.2] - 2021-03-21
+### Changed
+- Updated package dependencies
+
+### Fixed
+- Fixed manual documentation
+
 ## [5.0.1] - 2021-03-19
 ### Changed
 - Updated package dependencies

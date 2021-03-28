@@ -16,8 +16,8 @@ When importing an Asset without anything set in the **Main Skeleton** property, 
 
 ![](images/primary-skeleton.png)
 
-To share the 'Primary Skeleton' with the 'Variant' actor, select 'Variant' and go to its PSD Importer settings. Assign 'Primary Skeleton' to the **Main Skeleton** property to have 'Variant' reference that .skeleton Asset as its own bone hierarchy.
+To share the 'Primary Skeleton' with 'Variant', select 'Variant' and go to its PSD Importer settings. Assign 'Primary Skeleton' to the **Main Skeleton** property to have 'Variant' reference that .skeleton Asset as its own bone hierarchy.
 
 ![](images/variant-skeleton.png)<br/>The [Bone tools](https://docs.unity3d.com/Packages/com.unity.2d.animation@6.0/manual/SkinEdToolsShortcuts.html#bone-tools) are greyed out and unavailable when opening 'Variant' in the Skinning Editor.
 
-When an actor references another actor's .skeleton Asset instead of its own, you cannot edit the bones of the .skeleton when you open the current actor in the Skinning Editor (the Bone tools will be grayed out and unavailable). To edit the bones, you will need to edit the original actor (which the .skeleton Asset belongs to) in the Skinning Editor. Any changes to the .skeleton Asset is reflected in the bone hierarchy of any actor which references it. In our example, changes made to 'Primary Skeleton' are reflected in the 'Variant' actor's bone hierarchy.
+When an actor references another actor's .skeleton Asset instead of its own, the [Bone Tools](https://docs.unity3d.com/Packages/com.unity.2d.animation@6.0/manual/SkinEdToolsShortcuts.html#bone-tools) in the Skinning Editor are disabled. To edit the bones, open the original actor (that the .skeleton Asset belongs to) in the Skinning Editor and edit the bones. Any changes to the original .skeleton Asset is reflected in any actor which references it. In this example, changes made to 'Primary Skeleton' are reflected in the 'Variant' actor's bone hierarchy .

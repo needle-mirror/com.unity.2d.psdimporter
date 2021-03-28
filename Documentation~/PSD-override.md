@@ -4,9 +4,6 @@ From Unity 2019.30f1 onwards, the PSD Importer can be customized to import files
 
 ## PSDImporterOverride.cs
 ```
-using System.IO;
-using UnityEditor.Experimental;
-using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
 namespace UnityEditor.U2D.PSD

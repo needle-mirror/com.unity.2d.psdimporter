@@ -5,7 +5,7 @@ Importing .psb files with the PSD Importer allows you to use features such as [M
 
 The PSD Importer currently only supports two [Texture Modes](https://docs.unity3d.com/Manual/TextureTypes.html):[ Default](https://docs.unity3d.com/Manual/TextureTypes.html#Default) and[ Sprite](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). Other Texture Modes may be supported in the future.
 
-**Note:** The **Sprite Library Asset** swapping feature has been removed from the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest) package from version 6.0 onwards. However, the PSD Importer will continue to generate Sprite Library Assets if relevant data from a previous version is present.
+**Note:** The **Sprite Library Asset** is no longer editable from the Skinning Editor of the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest) from version 6.0 onwards as the Category and Label options have been removed from the Sprite Visibility panel. However, the PSD Importer will continue to automatically generate Sprite Library Assets if relevant data from a previous version is present.
 
 ## Supported and unsupported Photoshop effects
 
