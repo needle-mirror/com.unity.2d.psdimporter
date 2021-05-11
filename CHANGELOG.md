@@ -1,4 +1,13 @@
 # Changelog
+
+## [2.1.8] - 2021-05-11
+### Changed
+- Update 2D Animation dependency
+
+## [2.1.7] - 2021-03-01
+### Changed
+- Update 2D Animation dependency
+
 ## [2.1.6] - 2020-08-31
 ### Fixed
 - Fixed importing files with vector layers generates textures incorrectly (case 1271229)
