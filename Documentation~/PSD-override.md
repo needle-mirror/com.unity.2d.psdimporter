@@ -1,9 +1,13 @@
 # PSD File Importer Override
 
-From Unity 2019.30f1 onwards, the PSD Importer can be customized to import files with the .psd extension. To do that you will need to have custom scripts that allows you to do that by calling the `AssetDatabaseExperimental.SetImporterOverride` method. The following are examples on how to use the API:
+From Unity 2019.30f1 onwards, you can customize the PSD Importer to import files with the .psd extension. To do that you need to create custom scripts that call the `AssetDatabaseExperimental.SetImporterOverride` method.
 
-## PSDImporterOverride.cs
+## Example SetImporterOverride scripts
+### PSDImporterOverride.cs
 ```
+using System.IO;
+using UnityEditor.Experimental;
+using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
@@ -40,7 +44,7 @@ namespace UnityEditor.U2D.PSD
 }
 ```
 
-## PSDImporterOverrideEditor.cs
+### PSDImporterOverrideEditor.cs
 ```
 namespace UnityEditor.U2D.PSD
 {

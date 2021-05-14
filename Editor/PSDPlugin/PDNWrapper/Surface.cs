@@ -15,7 +15,11 @@ namespace PDNWrapper
 
         public void Dispose()
         {
-            m_Color.Dispose();
+            if (m_Color.IsCreated)
+            {
+                m_Color.Dispose();
+                m_Color = default;
+            }
         }
 
         public NativeArray<Color32> color

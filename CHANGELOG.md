@@ -1,21 +1,21 @@
 # Changelog
 
-## [5.0.3] - 2021-03-28
-### Fixed
-- Fixed package description
-- Fixed Unity hang when importing certain PSD files (case 1325770)
-
-
-## [5.0.2] - 2021-03-21
+## [6.0.0-pre.2] - 2021-05-14
 ### Changed
-- Updated package dependencies
+- Update dependency version
+
+## [6.0.0-pre.1] - 2021-05-05
+### Changed
+- Version bump for Unity 2021.2
+
+### Added
+- Add ability to use Photoshop file's layer name to map to SpriteRect instead of using layer id
+- Provide auto custom Physics shape generation option
+- Add support to collapse layers in a Photoshop file's group
+- Improve PSDImporter Inspector
 
 ### Fixed
-- Fixed manual documentation
-
-## [5.0.1] - 2021-03-19
-### Changed
-- Updated package dependencies
+- Fixed Unity hang when importing certain PSD files (case 1312835)
 
 ## [5.0.0] - 2021-03-17
 ### Changed

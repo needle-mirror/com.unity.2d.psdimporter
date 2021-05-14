@@ -1,14 +1,15 @@
 {
     "name": "Unity.2D.Psdimporter.Editor",
+    "rootNamespace": "",
     "references": [
         "PsdPlugin",
         "Unity.InternalAPIEditorBridge.001",
         "Unity.2D.Common.Editor",
         "Unity.2D.Animation.Editor",
         "Unity.2D.Animation.Runtime",
-        "Unity.2D.Sprite.Editor"
+        "Unity.2D.Sprite.Editor",
+        "Unity.InternalAPIEngineBridge.001"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
@@ -18,5 +19,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }

@@ -21,11 +21,17 @@ namespace UnityEditor.U2D.PSD
         int m_LayerID;
         [SerializeField]
         Vector2Int m_MosaicPosition;
+        [SerializeField]
+        bool m_Flatten;
+        [SerializeField]
+        bool m_IsImported;
+        [SerializeField]
+        bool m_IsVisible;
 
         [NonSerialized]
         GameObject m_GameObject;
 
-        public PSDLayer(NativeArray<Color32> tex, int parent, bool group, string layerName, int width, int height, int id)
+        public PSDLayer(NativeArray<Color32> tex, int parent, bool group, string layerName, int width, int height, int id, bool hidden)
         {
             isGroup = group;
             parentIndex = parent;
@@ -34,8 +40,13 @@ namespace UnityEditor.U2D.PSD
             this.width = width;
             this.height = height;
             layerID = id;
+            m_Flatten = false;
+            m_IsImported = false;
+            m_IsVisible = hidden;
+            m_SpriteID = new GUID().ToString();
         }
 
+        public bool isVisible => m_IsVisible;
         public int layerID { get { return m_LayerID; } private set { m_LayerID = value; } }
 
         public string name { get { return m_Name; } private set { m_Name = value; } }
@@ -45,6 +56,18 @@ namespace UnityEditor.U2D.PSD
         public Vector2Int mosaicPosition { get { return m_MosaicPosition; } set { m_MosaicPosition = value; } }
         public GUID spriteID  { get { return new GUID(m_SpriteID); } set { m_SpriteID = value.ToString(); } }
         public GameObject gameObject { get { return m_GameObject; } set { m_GameObject = value; } }
+
+        public bool flatten
+        {
+            get => m_Flatten;
+            set => m_Flatten = value;
+        }
+
+        public bool isImported
+        {
+            get => m_IsImported;
+            set => m_IsImported = value;
+        }
 
         public NativeArray<Color32> texture { get; set; }
         public int width { get; private set; }

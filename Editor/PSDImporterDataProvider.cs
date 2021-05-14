@@ -211,19 +211,28 @@ namespace UnityEditor.U2D.PSD
         {
             int group = -1;
             for (int i = 0; i <= parentIndex; ++i)
-                if (psdLayers[i].isGroup)
+                if (GenerateNodeForGroup(i, psdLayers))
                     ++group;
 
             return group;
         }
 
+        bool GenerateNodeForGroup(int index, List<PSDLayer> psdLayers)
+        {
+            var layer = psdLayers[index];
+            var parentGroup = true;
+            if (layer.parentIndex >= 0)
+                parentGroup = GenerateNodeForGroup(layer.parentIndex, psdLayers);
+            return psdLayers[index].isGroup && !psdLayers[index].flatten && parentGroup;
+        }
+        
         public CharacterData GetCharacterData()
         {
             var psdLayers = dataProvider.GetPSDLayers();
             var groups = new List<CharacterGroup>();
             for (int i = 0; i < psdLayers.Count; ++i)
             {
-                if (psdLayers[i].isGroup)
+                if (GenerateNodeForGroup(i, psdLayers))
                 {
                     groups.Add(new CharacterGroup()
                     {
