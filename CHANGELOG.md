@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-pre.3] - 2021-05-17
+### Changed
+- Update dependency version
+
 ## [6.0.0-pre.2] - 2021-05-14
 ### Changed
 - Update dependency version

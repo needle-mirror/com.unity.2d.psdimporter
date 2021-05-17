@@ -469,7 +469,7 @@ namespace UnityEditor.U2D.PSD
                 spriteMeshDataController.spriteMeshData = smd;
                 spriteMeshDataController.OutlineFromAlpha(new OutlineGenerator(), GetDataProvider<ITextureDataProvider>(), 0.05f, 200);
                 spriteMeshDataController.Triangulate(new Triangulator());
-                spriteMeshDataController.Subdivide(new Triangulator(), 0.25f);
+                spriteMeshDataController.Subdivide(new Triangulator(), 0.25f, 0);
                 spriteMeshDataController.CalculateWeights(new BoundedBiharmonicWeightsGenerator(), null, 0.01f);
                 spriteMeshDataController.SortTrianglesByDepth();
 
