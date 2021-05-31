@@ -20,7 +20,8 @@ namespace UnityEditor.U2D.PSD
     /// <summary>
     /// ScriptedImporter to import Photoshop files
     /// </summary>
-    [ScriptedImporter(4, "psb")]
+    // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000
+    [ScriptedImporter(20300000, "psb", AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -711,7 +712,11 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 if (psdGroup[index].gameObject != null)
+                {
                     psdGroup[index].gameObject.transform.SetParent(root);
+                    psdGroup[index].gameObject.transform.SetSiblingIndex(root.childCount-1);
+                }
+                    
             }
         }
 
@@ -912,6 +917,7 @@ namespace UnityEditor.U2D.PSD
             {
                 var spriteImportData = GetSpriteImportData();
                 root = new GameObject();
+                root.transform.SetSiblingIndex(0);
                 root.name = assetname + "_GO";
                 if (spriteLib != null)
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;

@@ -170,9 +170,6 @@ The following is an example on how to use the API
 
 #### PSDImporterOverride.cs
 ```
-using System.IO;
-using UnityEditor.Experimental;
-using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
 namespace UnityEditor.U2D.PSD

@@ -1,4 +1,12 @@
 # Changelog
+
+## [4.1.0] - 2021-05-31
+### Fixed
+- Fixed PSDImporter reimports when switching platform (case 1330426)
+
+### Changed
+- Update minimum Unity release version
+
 ## [4.0.2] - 2020-08-31
 ### Fixed
 - Fixed importing files with vector layers generates textures incorrectly (case 1266986)
