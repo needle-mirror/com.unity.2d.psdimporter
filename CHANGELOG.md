@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.0.4] - 2021-06-08
+### Fixed
+- Fixed changing PSD Importer inspector fields causes UnityEditor.ObjectPreview errors. (Case 1335593)
+- Fixed PSDImporter always reimports .psb files when switching build platforms. (Case 1330376)
+- Fixed inconsistency while importing
+
 ## [5.0.3] - 2021-03-28
 ### Fixed
 - Fixed package description

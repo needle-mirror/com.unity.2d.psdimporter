@@ -21,7 +21,7 @@ namespace UnityEditor.U2D.PSD
     /// <summary>
     /// ScriptedImporter to import Photoshop files
     /// </summary>
-    [ScriptedImporter(5, "psb")]
+    [ScriptedImporter(5, "psb", AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -768,7 +768,11 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 if (psdGroup[index].gameObject != null)
+                {
                     psdGroup[index].gameObject.transform.SetParent(root);
+                    psdGroup[index].gameObject.transform.SetSiblingIndex(root.childCount-1);
+                }
+                    
             }
         }
 
@@ -971,6 +975,7 @@ namespace UnityEditor.U2D.PSD
                 var currentCharacterData = characterData;
                 var spriteImportData = GetSpriteImportData();
                 root = new GameObject();
+                root.transform.SetSiblingIndex(0);
                 root.name = assetname + "_GO";
                 if (spriteLib != null)
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
@@ -1479,9 +1484,7 @@ namespace UnityEditor.U2D.PSD
         {
             if (!characterMode || m_SpriteCategoryList.categories == null)
                 return null;
-            var sla = ScriptableObject.CreateInstance<SpriteLibraryAsset>();
-            sla.name = "Sprite Lib";
-            sla.categories = m_SpriteCategoryList.categories.Select(x =>
+            var categories = m_SpriteCategoryList.categories.Select(x =>
                 new SpriteLibCategory()
                 {
                     name = x.name,
@@ -1495,11 +1498,11 @@ namespace UnityEditor.U2D.PSD
                         };
                     }).ToList()
                 }).ToList();
-            sla.categories.RemoveAll(x => x.categoryList.Count == 0);
-            if (sla.categories.Count > 0)
+            categories.RemoveAll(x => x.categoryList.Count == 0);
+            if(categories.Count > 0)
             {
-                sla.UpdateHashes();
-                return sla;
+                // Always set version to 0 since we will never be updating this
+                return SpriteLibraryAsset.CreateAsset(categories, "Sprite Lib", 0);
             }
             return null;
         }

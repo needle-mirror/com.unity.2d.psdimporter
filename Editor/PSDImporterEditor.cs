@@ -221,8 +221,6 @@ namespace UnityEditor.U2D.PSD
             AnalyticFactory.analytics.SendApplyEvent(evt);
             m_TexturePlatformSettingsHelper.Apply();
             base.Apply();
-            Selection.activeObject = null;
-            Unsupported.SceneTrackerFlushDirty();
             PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
         }
 
