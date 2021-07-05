@@ -5,21 +5,38 @@ using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
+    internal interface IPSDLayerMappingStrategyComparable
+    {
+        int layerID
+        {
+            get;
+        }
+        
+        string name
+        {
+            get;
+        }
+
+        bool isGroup
+        {
+            get;
+        }
+    }
+    
     internal interface IPSDLayerMappingStrategy
     {
-        bool Compare(PSDLayer a, PSDLayer b);
-        bool Compare(PSDImporter.FlattenLayerData a, BitmapLayer b);
-        string LayersUnique(IEnumerable<PSDLayer> layers);
+        bool Compare(IPSDLayerMappingStrategyComparable a, IPSDLayerMappingStrategyComparable b);
+        bool Compare(IPSDLayerMappingStrategyComparable a, BitmapLayer b);
+        string LayersUnique(IEnumerable<IPSDLayerMappingStrategyComparable> layers);
     }
     
     internal abstract class LayerMappingStrategy<T> : IPSDLayerMappingStrategy
     {
         string m_DuplicatedStringError = L10n.Tr("The following layers have duplicated identifier.");
-        protected abstract T GetID(PSDLayer layer);
+        protected abstract T GetID(IPSDLayerMappingStrategyComparable layer);
         protected abstract T GetID(BitmapLayer layer);
-        protected abstract T GetID(PSDImporter.FlattenLayerData layer);
 
-        protected virtual bool IsGroup(PSDLayer layer)
+        protected virtual bool IsGroup(IPSDLayerMappingStrategyComparable layer)
         {
             return layer.isGroup;
         }
@@ -29,29 +46,24 @@ namespace UnityEditor.U2D.PSD
             return layer.IsGroup;
         }
         
-        protected virtual bool IsGroup(PSDImporter.FlattenLayerData layer)
-        {
-            return true;
-        }
-        
-        public bool Compare(PSDImporter.FlattenLayerData x, BitmapLayer y)
+        public bool Compare(IPSDLayerMappingStrategyComparable x, BitmapLayer y)
         {
             return Comparer<T>.Default.Compare(GetID(x), GetID(y)) == 0 && IsGroup(x) == IsGroup(y);
         }
         
-        public bool Compare(PSDLayer x, PSDLayer y)
+        public bool Compare(IPSDLayerMappingStrategyComparable x, IPSDLayerMappingStrategyComparable y)
         {
             return Comparer<T>.Default.Compare(GetID(x), GetID(y)) == 0 && IsGroup(x) == IsGroup(y);
         }
 
-        public string LayersUnique(IEnumerable<PSDLayer> layers)
+        public string LayersUnique(IEnumerable<IPSDLayerMappingStrategyComparable> layers)
         {
             var layerNameHash = new HashSet<T>();
             var layerGroupHash = new HashSet<T>();
             return LayersUnique(layers, layerNameHash, layerGroupHash);
         }
 
-        string LayersUnique(IEnumerable<PSDLayer> layers, HashSet<T> layerNameHash, HashSet<T> layerGroupHash)
+        string LayersUnique(IEnumerable<IPSDLayerMappingStrategyComparable> layers, HashSet<T> layerNameHash, HashSet<T> layerGroupHash)
         {
             List<string> duplicateLayerName = new List<string>();
             string duplicatedStringError = null;
@@ -76,7 +88,7 @@ namespace UnityEditor.U2D.PSD
     
     internal class LayerMappingUseLayerName : LayerMappingStrategy<string>
     {
-        protected override string GetID(PSDLayer x)
+        protected override string GetID(IPSDLayerMappingStrategyComparable x)
         {
             return x.name.ToLower();
         }
@@ -85,16 +97,11 @@ namespace UnityEditor.U2D.PSD
         {
             return x.Name.ToLower();
         }
-        
-        protected override string GetID(PSDImporter.FlattenLayerData x)
-        {
-            return x.name.ToLower();
-        }
     }
 
     internal class LayerMappingUseLayerNameCaseSensitive : LayerMappingStrategy<string>
     {
-        protected override string GetID(PSDLayer x)
+        protected override string GetID(IPSDLayerMappingStrategyComparable x)
         {
             return x.name;
         }
@@ -103,16 +110,11 @@ namespace UnityEditor.U2D.PSD
         {
             return x.Name;
         }
-        
-        protected override string GetID(PSDImporter.FlattenLayerData x)
-        {
-            return x.name;
-        }
     }
 
     internal class LayerMappingUserLayerID : LayerMappingStrategy<int>
     {
-        protected override int GetID(PSDLayer x)
+        protected override int GetID(IPSDLayerMappingStrategyComparable x)
         {
             return x.layerID;
         }
@@ -120,11 +122,6 @@ namespace UnityEditor.U2D.PSD
         protected override int GetID(BitmapLayer x)
         {
             return x.LayerID;
-        }
-        
-        protected override int GetID(PSDImporter.FlattenLayerData x)
-        {
-            return x.layerId;
         }
     }
 }

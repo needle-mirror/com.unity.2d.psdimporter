@@ -3,17 +3,12 @@ This package contains third-party software components governed by the license(s)
 
 Component Name: Photoshop PSD FileType Plugin for Paint.NET
 
-License Type: MIT, BSD
-
-/////////////////////////////////////////////////////////////////////////////////
-
-Photoshop PSD FileType Plugin for Paint.NET
-http://psdplugin.codeplex.com/
+License Type: MIT
 
 Copyright (c) 2006-2007 Frank Blumenberg
 Copyright (c) 2010-2016 Tao Yue
 
-MIT License: http://www.opensource.org/licenses/mit-license.php
+https://www.psdplugin.com/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
 of this software and associated documentation files (the "Software"), to deal
@@ -33,18 +28,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
 THE SOFTWARE.
 
-/////////////////////////////////////////////////////////////////////////////////
+--------
+Component Name: Yet Another PSD Parser
 
-Portions of the software have been adapted from Yet Another PSD Parser:
-  http://www.codeproject.com/KB/graphics/PSDParser.aspx
-
-These portions are provided under the BSD License:
-  http://www.opensource.org/licenses/BSD-3-Clause
-
-----
+License Type: BSD
 
 Copyright (c) 2006, Jonas Beckeman
-All rights reserved.
+
+http://www.codeproject.com/KB/graphics/PSDParser.aspx
+
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -68,5 +60,3 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-/////////////////////////////////////////////////////////////////////////////////

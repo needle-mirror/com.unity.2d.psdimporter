@@ -5,7 +5,7 @@ using UnityEngine;
 namespace UnityEditor.U2D.PSD
 {
     [Serializable]
-    class PSDLayer
+    class PSDLayer : IPSDLayerMappingStrategyComparable
     {
         [SerializeField]
         string m_Name;

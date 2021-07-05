@@ -67,7 +67,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public static unsafe void Execute(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, PSDImporter.FlattenLayerData[] previousFlattenLayer, IPSDLayerMappingStrategy mappingStrategy)
+        public static unsafe void Execute(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, FlattenLayerData[] previousFlattenLayer, IPSDLayerMappingStrategy mappingStrategy)
         {
             UnityEngine.Profiling.Profiler.BeginSample("ExtractLayer_PrepareJob");
             List<LayerExtractData> layerToExtract = new List<LayerExtractData>();
@@ -112,7 +112,7 @@ namespace UnityEditor.U2D.PSD
             handle.Complete();
         }
 
-        static (int width, int height) ExtractLayer(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, bool flatten, List<LayerExtractData> layerExtract, PSDImporter.FlattenLayerData[] previousFlatten, IPSDLayerMappingStrategy mappingStrategy, bool parentGroupVisible)
+        static (int width, int height) ExtractLayer(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, bool flatten, List<LayerExtractData> layerExtract, FlattenLayerData[] previousFlatten, IPSDLayerMappingStrategy mappingStrategy, bool parentGroupVisible)
         {
             // parent is the previous element in extracedLayer
             int parentGroupIndex = extractedLayer.Count - 1;
@@ -124,7 +124,7 @@ namespace UnityEditor.U2D.PSD
                 if (l.IsGroup)
                 {
                     var layer = new PSDLayer(l.Surface.color, parentGroupIndex, l.IsGroup, l.Name, 0, 0, l.LayerID, l.Visible);
-                    layer.flatten = previousFlatten.FirstOrDefault(x => mappingStrategy.Compare(x, l)) != null;
+                    layer.flatten = previousFlatten == null ? false : previousFlatten.FirstOrDefault(x => mappingStrategy.Compare(x, l)) != null;
                     layer.isImported = (importHiddenLayer || layerVisible) && !flatten && layer.flatten;
                     int startIndex = extractedLayer.Count;
                     extractedLayer.Add(layer);

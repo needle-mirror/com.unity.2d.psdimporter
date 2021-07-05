@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.0.0-pre.4] - 2021-07-05
+### Fixed
+- Fixed changing PSD Importer inspector fields causes UnityEditor.ObjectPreview errors (case 1333823)
+- Fixed 2D PSDImporter always imports .psb files when switching build platforms (case 1327701)
+- Fixed 2D PSDImporter doesn't apply settings from Sprite Editor Window when changes made in Inspector (case 1339799)
+
 ## [6.0.0-pre.3] - 2021-05-17
 ### Changed
 - Update dependency version
@@ -7,6 +13,7 @@
 ## [6.0.0-pre.2] - 2021-05-14
 ### Changed
 - Update dependency version
+
 
 ## [6.0.0-pre.1] - 2021-05-05
 ### Changed
