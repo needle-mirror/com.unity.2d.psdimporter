@@ -35,22 +35,16 @@ The following section is only available if the **Texture Type** is set to **Mult
 ![](images/psdimporter-properties-v6-21.2-layerimport.png)
 Property  |Function  
 --|--
-**Import Mode**  |  Use this property to specify how the layers from the source file are imported. This property is set to **Individual Sprites (Mosaic)** by default.
-&nbsp;&nbsp;[Individual Sprites (Mosaic)](#Mosaic)|Select this option to have the PSD Importer generate individual Sprites from  the individual layers of the source file, and combines them into a single Texture in a Sprite sheet layout.  
-&nbsp;&nbsp;[Merged](#merged)  | Select this to have the PSD Importer generate a Texture with all layers merged.
-**Layer Name**  |This setting is only available if you set the **Import Mode** to **Individual Sprites (Mosaic)**. Use this property to specify how the importer handles layer names when duplicated layer names are found. This property is set to **Keep Duplicate Names** by default.  
-&nbsp;&nbsp;[Keep Duplicate Names](#keep-duplicate-names) | Select this to have the PSD Importer generate Sprites from the source files with the exact same name as their source layers, even when there are multiple layers with the same name.
-&nbsp;&nbsp;Resolve Duplicate Names  | Select this to have the PSD Importer generate Sprites from the source files with the same name as their source layers. If there are multiple layers with the same name, the Sprite’s name will be prefixed with a number.
-**Layer**  |This setting is only available if you set the **Import Mode** to **Individual Sprites (Mosaic)**.<br/>Use this property to specify how the importer handles layer’s that are set to not visible in the source file. This property is set to **Visible Layers Only** by default.   |  
-&nbsp;&nbsp;Visible Layers Only  |Select this to only import the visible layers from the source file.  
-&nbsp;&nbsp;Include Hidden Layers  |Select this to include the hidden layers of the source file in the import. This produces the same import result as making all layers visible in the source file before you import it into Unity.  |
-**Layer Mapping ID**|  Select this option to use the internal ID provided by the .psb file to map between the .psb file’s layer and the generated Sprite.|
+**Include Hidden Layers** | Enable this property to include the hidden [layers](https://helpx.adobe.com/photoshop/using/layer-basics.html#layers_panel_overview) of the .psb file in the import. This produces the same import result as making all layers visible in the source file unhiding all layers in the source file before you importing it into Unity. Clear this option if you want to only import the visible layers in the .psb file. |
+[__Keep Duplicate Name__](#keep-duplicate-name) | Enable this setting to make the PSD Importer generate Sprites from the source files with the exact same name as their source layers, even when there are multiple layers with the same name. |
+__Use Layer Grouping__<a name="LayerGrouping"></a> | This setting is only available when you enable __Character Rig__. Enable this setting to make the importer generate a Prefab that follows the layer and grouping hierarchy of the imported .psb. file. |
+**Layer Mapping**|  Select this option to use the internal ID provided by the .psb file to map between the .psb file’s layer and the generated Sprite.|
 &nbsp;&nbsp;Use Layer ID   |Select this to only import the visible layers in the .psb file.   |
 &nbsp;&nbsp;Use Layer Name| Select this option to use the name of the layer in the .psb file to map between the .psb file’s layer and the generated Sprite. Note that for this option to work correctly, each layer's name needs to be unique. Duplicated names might cause layers to be mapped to the wrong Sprite.|
 &nbsp;&nbsp;Use Layer Name (Case Sensitive)   |  Select this option to use the name of the layer (with case sensitivity) in the .psb file to map between the .psb file’s layer and the generated Sprite. Note that for this option to work correctly, each layer's name needs to be unique. Duplicated names might cause layers to be mapped to the wrong Sprite. |
-[Layer Group](#layer-group)   |Use this property to specify how the importer handles the Layer group from the source file.<br/>This setting is only available when you enable **Use as Rig** and set the **Import Mode** to **Individual Sprites (Mosaic)**.   |
-&nbsp;&nbsp;Ignore Layer Groups   |Select this option to have the generated Prefab contain only Layers from the source file while ignoring Layer Groups.   |
-&nbsp;&nbsp;As Per Source File   |Select this option to make the importer generate a Prefab that follows the layer and grouping hierarchy of the imported .psb.   |
+**Import Mode**  |  Use this property to specify how the layers from the source file are imported. This property is set to **Individual Sprites (Mosaic)** by default.
+&nbsp;&nbsp;[Individual Sprites (Mosaic)](#Mosaic)|Select this option to have the PSD Importer generate individual Sprites from  the individual layers of the source file, and combines them into a single Texture in a Sprite sheet layout.  
+&nbsp;&nbsp;[Merged](#merged)  | Select this to have the PSD Importer generate a Texture with all layers merged.
 
 ####<a name="Mosaic">Individual Sprites (Mosaic)</a>
 Enable this to have the PSD Importer attempt to create a Texture with each layer from the source file laid out in a mosaic manner.

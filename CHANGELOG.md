@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.0.0] - 2021-08-10
+### Fixed
+- Fixed performance regression in PSDImporter Editor (case 1349408)
+- Updated manual on Importer override to use latest API.
+
+### Changed
+- Changed some of PSDImporter settings to use checkboxes instead of drop down
+
 ## [6.0.0-pre.4] - 2021-07-05
 ### Fixed
 - Fixed changing PSD Importer inspector fields causes UnityEditor.ObjectPreview errors (case 1333823)

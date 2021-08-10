@@ -8,9 +8,9 @@ using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.U2D.Animation;
-using UnityEngine.UIElements;
 using UnityEngine.U2D.Common;
 
 namespace UnityEditor.U2D.PSD
@@ -22,6 +22,11 @@ namespace UnityEditor.U2D.PSD
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporterEditor : ScriptedImporterEditor, ITexturePlatformSettingsDataProvider
     {
+        struct InspectorGUI
+        {
+            public Action callback;
+            public bool needsRepaint;
+        }
         SerializedProperty m_TextureType;
         SerializedProperty m_TextureShape;
         SerializedProperty m_SpriteMode;
@@ -78,7 +83,7 @@ namespace UnityEditor.U2D.PSD
         TexturePlatformSettingsController m_TexturePlatformSettingsController = new TexturePlatformSettingsController();
 
         PSDImporterEditorFoldOutState m_EditorFoldOutState = new PSDImporterEditorFoldOutState();
-        Action[] m_InspectorUI;
+        InspectorGUI[] m_InspectorUI;
         PSDImporterEditorLayerTreeView m_LayerTreeView;
         TreeViewState m_TreeViewState;
         PSDImporter m_CurrentTarget;
@@ -160,10 +165,18 @@ namespace UnityEditor.U2D.PSD
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
             
             m_ActiveEditorIndex = EditorPrefs.GetInt(this.GetType().Name + "ActiveEditorIndex", 0);
-            m_InspectorUI = new Action[]
+            m_InspectorUI = new []
             {
-                DoSettingsUI,
-                DoLayerManagementUI
+                new InspectorGUI()
+                {
+                    callback = DoSettingsUI,
+                    needsRepaint = false
+                },
+                new InspectorGUI()
+                {
+                    callback = DoLayerManagementUI,
+                    needsRepaint = true
+                }
             };
             m_TreeViewState = new TreeViewState();
             UpdateLayerTreeView();
@@ -177,12 +190,22 @@ namespace UnityEditor.U2D.PSD
                 m_LayerTreeView = new PSDImporterEditorLayerTreeView(assetTarget.name, m_TreeViewState, m_CurrentTarget.importData.psdLayerData, m_ImportHiddenLayers.boolValue, serializedObject.FindProperty("m_PSDLayerImportSetting"), m_CurrentTarget.GetLayerMappingStrategy());
             }
         }
-        
+
+        /// <summary>
+        /// Override from AssetImporterEditor.RequiresConstantRepaint
+        /// </summary>
+        /// <returns>Returns true when in Layer Management tab for UI feedback update, false otherwise.</returns>        
+        public override bool RequiresConstantRepaint()
+        {
+            return m_InspectorUI[m_ActiveEditorIndex].needsRepaint;
+        }
+
         /// <summary>
         /// Implementation of AssetImporterEditor.OnInspectorGUI
         /// </summary>
         public override void OnInspectorGUI()
         {
+            Profiler.BeginSample("PSDImporter.OnInspectorGUI");
             serializedObject.Update();
             if (s_Styles == null)
                 s_Styles = new Styles();
@@ -206,11 +229,11 @@ namespace UnityEditor.U2D.PSD
             GUILayout.Space(5);
 
             
-            m_InspectorUI[m_ActiveEditorIndex]();
+            m_InspectorUI[m_ActiveEditorIndex].callback();
             
             serializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
-            Repaint();
+            Profiler.EndSample();
         }
         
         void DoLayerManagementUI()
@@ -691,38 +714,29 @@ namespace UnityEditor.U2D.PSD
             {
                 using (new EditorGUI.DisabledScope(m_SpriteMode.intValue != (int)SpriteImportMode.Multiple || m_SpriteMode.hasMultipleDifferentValues))
                 {
-                    int boolToInt = !m_MosaicLayers.boolValue ? 1 : 0;
-                    EditorGUI.BeginChangeCheck();
-                    boolToInt = EditorGUILayout.IntPopup(s_Styles.mosaicLayers, boolToInt, s_Styles.importModeOptions, s_Styles.falseTrueOptionValue);
-                    if (EditorGUI.EndChangeCheck())
-                        m_MosaicLayers.boolValue = boolToInt != 1;
-
-                    using (new EditorGUI.DisabledScope(m_MosaicLayers.boolValue == false))
+                    EditorGUILayout.PropertyField(m_ImportHiddenLayers, s_Styles.importHiddenLayer);
+                
+                    using (new EditorGUI.DisabledScope(m_SpriteMode.intValue != (int)SpriteImportMode.Multiple || m_SpriteMode.hasMultipleDifferentValues))
                     {
-                        boolToInt = m_KeepDupilcateSpriteName.boolValue ? 1 : 0;
-                        EditorGUI.BeginChangeCheck();
-                        boolToInt = EditorGUILayout.IntPopup(s_Styles.keepDuplicateSpriteName, boolToInt, s_Styles.dupllicateNameOption, s_Styles.falseTrueOptionValue);
-                        if (EditorGUI.EndChangeCheck())
-                            m_KeepDupilcateSpriteName.boolValue = boolToInt == 1;
-                    
-                        boolToInt = m_ImportHiddenLayers.boolValue ? 1 : 0;
-                        EditorGUI.BeginChangeCheck();
-                        boolToInt = EditorGUILayout.IntPopup(s_Styles.importHiddenLayer, boolToInt, s_Styles.layerOptions, s_Styles.falseTrueOptionValue);
-                        if (EditorGUI.EndChangeCheck())
+                        using (new EditorGUI.DisabledScope(m_MosaicLayers.boolValue == false))
                         {
-                            m_ImportHiddenLayers.boolValue = boolToInt == 1;
-                            m_LayerTreeView.showHidden = m_ImportHiddenLayers.boolValue;
+                            EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, s_Styles.keepDuplicateSpriteName);
+
+                            using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue || !m_CharacterMode.boolValue))
+                            {
+                                EditorGUILayout.PropertyField(m_GenerateGOHierarchy, s_Styles.layerGroupLabel);
+                            }
+                        
+                            EditorGUILayout.IntPopup(m_LayerMappingOption, s_Styles.layerMappingOption, s_Styles.layerMappingOptionValues, s_Styles.layerMapping);
                         }
 
-                        EditorGUILayout.IntPopup(m_LayerMappingOption, s_Styles.layerMappingOption, s_Styles.layerMappingOptionValues, s_Styles.layerMapping);
-                    
-                        using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue || !m_CharacterMode.boolValue))
-                        {
-                            boolToInt = m_GenerateGOHierarchy.boolValue ? 1 : 0;
-                            boolToInt  = EditorGUILayout.IntPopup(s_Styles.layerGroupLabel, boolToInt, s_Styles.layerGroupOption, s_Styles.falseTrueOptionValue);
-                            m_GenerateGOHierarchy.boolValue = boolToInt == 1;
-                        }
+                        var boolToInt = !m_MosaicLayers.boolValue ? 1 : 0;
+                        EditorGUI.BeginChangeCheck();
+                        boolToInt = EditorGUILayout.IntPopup(s_Styles.mosaicLayers, boolToInt, s_Styles.importModeOptions, s_Styles.falseTrueOptionValue);
+                        if (EditorGUI.EndChangeCheck())
+                            m_MosaicLayers.boolValue = boolToInt != 1;
                     }
+                    GUILayout.Space(5);
                 }
                 GUILayout.Space(5);
             }
@@ -900,6 +914,9 @@ namespace UnityEditor.U2D.PSD
             AssetDatabase.Refresh();
         }
 
+        /// <summary>
+        /// Implementation of AssetImporterEditor.ResetValues.
+        /// </summary>
         protected override void ResetValues()
         {
             base.ResetValues();
@@ -907,11 +924,21 @@ namespace UnityEditor.U2D.PSD
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.GetTargetCount.
+        /// </summary>
+        /// <returns>Returns the number of selected targets.</returns>
         public int GetTargetCount()
         {
             return targets.Length;
         }
 
+        /// <summary>
+        /// ITexturePlatformSettingsDataProvider.GetPlatformTextureSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="name">Name of the platform.</param>
+        /// <returns>TextureImporterPlatformSettings for the given platform name and selected target index.</returns>
         public TextureImporterPlatformSettings GetPlatformTextureSettings(int i, string name)
         {
             if(m_PlatfromSettings.ContainsKey(name))
@@ -924,21 +951,40 @@ namespace UnityEditor.U2D.PSD
             };
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.ShowPresetSettings.
+        /// </summary>
+        /// <returns>True if valid asset is selected, false otherwiser.</returns>
         public bool ShowPresetSettings()
         {
             return assetTarget == null;
         }
 
-        public bool DoesSourceTextureHaveAlpha(int v)
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.DoesSourceTextureHaveAlpha.
+        /// </summary>
+        /// <param name="i">Index to selected target.</param>
+        /// <returns>Always returns true since importer deals with source file that has alpha.</returns>
+        public bool DoesSourceTextureHaveAlpha(int i)
         {
             return true;
         }
 
-        public bool IsSourceTextureHDR(int v)
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.IsSourceTextureHDR.
+        /// </summary>
+        /// <param name="i">Index to selected target.</param>
+        /// <returns>Always returns false since importer does not handle HDR textures.</returns>
+        public bool IsSourceTextureHDR(int i)
         {
             return false;
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.SetPlatformTextureSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="platformSettings">TextureImporterPlatformSettings to apply to target.</param>
         public void SetPlatformTextureSettings(int i, TextureImporterPlatformSettings platformSettings)
         {
             var psdImporter = ((PSDImporter)targets[i]);
@@ -946,6 +992,11 @@ namespace UnityEditor.U2D.PSD
             psdImporter.Apply();
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.GetImporterSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="settings">TextureImporterPlatformSettings reference for data retrieval.</param>
         public void GetImporterSettings(int i, TextureImporterSettings settings)
         {
             ((PSDImporter)targets[i]).ReadTextureSettings(settings);
@@ -1047,21 +1098,36 @@ namespace UnityEditor.U2D.PSD
             get { return false; }
         }
         
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.textureTypeHasMultipleDifferentValues.
+        /// </summary>
         public bool textureTypeHasMultipleDifferentValues
         {
            get { return m_TextureType.hasMultipleDifferentValues; }
         }
 
+
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.textureType.
+        /// </summary>
         public TextureImporterType textureType
         {
            get { return (TextureImporterType)m_TextureType.intValue; }
         }
 
+
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.spriteImportMode.
+        /// </summary>
         public SpriteImportMode spriteImportMode
         {
             get { return (SpriteImportMode)m_SpriteMode.intValue; }
         }
 
+        /// <summary>
+        /// Override of AssetImporterEditor.HasModified.
+        /// </summary>
+        /// <returns>Returns True if has modified data. False otherwise.</returns>
         public override bool HasModified()
         {
             if (base.HasModified())
@@ -1205,20 +1271,18 @@ namespace UnityEditor.U2D.PSD
             
             public readonly GUIContent layerMapping  = EditorGUIUtility.TrTextContent("Layer Mapping", "Options for indicating how layer to Sprite mapping.");
             public readonly GUIContent generatePhysicsShape = EditorGUIUtility.TrTextContent("Generate Physics Shape", "Generates a default physics shape from the outline of the Sprite/s when a physics shape has not been set in the Sprite Editor.");
-            public readonly GUIContent importHiddenLayer = EditorGUIUtility.TrTextContent("Layer Visibility", "Settings to determine when hidden layers should be imported.");
+            public readonly GUIContent importHiddenLayer = EditorGUIUtility.TrTextContent("Include Hidden Layers", "Settings to determine when hidden layers should be imported.");
             public readonly GUIContent mosaicLayers = EditorGUIUtility.TrTextContent("Import Mode", "Layers will be imported as individual Sprites.");
             public readonly GUIContent characterMode = EditorGUIUtility.TrTextContent("Use as Rig","Enable to support 2D Animation character rigging.");
-            public readonly GUIContent layerGroupLabel = EditorGUIUtility.TrTextContent("Layer Group", "GameObjects are grouped according to source file layer grouping.");
+            public readonly GUIContent layerGroupLabel = EditorGUIUtility.TrTextContent("Use Layer Group", "GameObjects are grouped according to source file layer grouping.");
             public readonly GUIContent resliceFromLayer = EditorGUIUtility.TrTextContent("Automatic Reslice", "Recreate Sprite rects from file.");
             public readonly GUIContent paperDollMode = EditorGUIUtility.TrTextContent("Paper Doll Mode", "Special mode to generate a Prefab for Paper Doll use case.");
-            public readonly GUIContent keepDuplicateSpriteName = EditorGUIUtility.TrTextContent("Layer Name", "Keep Sprite name same as Layer Name even if there are duplicated Layer Name.");
+            public readonly GUIContent keepDuplicateSpriteName = EditorGUIUtility.TrTextContent("Keep Duplicate Names", "Keep Sprite name same as Layer Name even if there are duplicated Layer Name.");
             public readonly GUIContent mainSkeletonName = EditorGUIUtility.TrTextContent("Main Skeleton", "Main Skeleton to use for Rigging.");
             public readonly GUIContent generalHeaderText = EditorGUIUtility.TrTextContent("General", "General settings.");
-            public readonly GUIContent spriteHeaderText = EditorGUIUtility.TrTextContent("Sprite","Sprite settings.");
             public readonly GUIContent layerImportHeaderText = EditorGUIUtility.TrTextContent("Layer Import","Layer Import settings.");
             public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture","Texture settings.");
-            public readonly GUIContent defaultHeaderText = EditorGUIUtility.TrTextContent("Default","Default Texture settings.");
 
 
             public readonly int[] falseTrueOptionValue =
@@ -1227,24 +1291,12 @@ namespace UnityEditor.U2D.PSD
                 1
             };
 
-            public readonly GUIContent[] layerOptions =
-            {
-                EditorGUIUtility.TrTextContent("Exclude Hidden Layers", "Import only layers that are visible."),
-                EditorGUIUtility.TrTextContent("Include Hidden Layers","Import all layers, including hidden layers.")
-            };
-            
             public readonly GUIContent[] importModeOptions=
             {
                 EditorGUIUtility.TrTextContent("Individual Sprites (Mosaic)","Import individual Photoshop layers as Sprites."),
                 new GUIContent("Merged","Merge Photoshop layers and import as single Sprite.")
             };
-            
-            public readonly GUIContent[] dupllicateNameOption=
-            {
-                EditorGUIUtility.TrTextContent("Resolve Duplicate Names","Ensure Sprite names are unique."),
-                EditorGUIUtility.TrTextContent("Keep Duplicate Names","Keep layer's name even if duplicate.")    
-            };
-            
+
             public readonly GUIContent[] layerMappingOption=
             {
                 EditorGUIUtility.TrTextContent("Use Layer ID","Use layer's ID to identify layer and Sprite mapping."),
@@ -1257,12 +1309,6 @@ namespace UnityEditor.U2D.PSD
                 (int)PSDImporter.ELayerMappingOption.UseLayerId,
                 (int)PSDImporter.ELayerMappingOption.UseLayerName,
                 (int)PSDImporter.ELayerMappingOption.UseLayerNameCaseSensitive
-            };
-            
-            public readonly GUIContent[] layerGroupOption=
-            {
-                EditorGUIUtility.TrTextContent("Ignore Layer Groups","Only layers will generate GameObjects."),
-                EditorGUIUtility.TrTextContent("User Layer Groups", "Group GameObjects according to source file's layer grouping")
             };
 
             public readonly GUIContent[] editorTabNames =
