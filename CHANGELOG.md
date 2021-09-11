@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.9] - 2021-09-11
+### Fixed
+- Fixed Unity hang when importing certain PSD files (case 1357563)
+
 ## [2.1.8] - 2021-05-11
 ### Changed
 - Update 2D Animation dependency
