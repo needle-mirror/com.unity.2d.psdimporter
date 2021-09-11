@@ -273,6 +273,10 @@ namespace PaintDotNet.Data.PhotoshopFileType
         /// </remarks>
         internal static void CheckSufficientMemory(PsdFile psdFile)
         {
+            /*
+            Remove memory check since we can't properly ensure there will
+            be enough memory to import
+            
             // Multichannel images have channels converted to layers
             var numLayers = (psdFile.ColorMode == PsdColorMode.Multichannel)
                 ? psdFile.BaseLayer.Channels.Count
@@ -296,6 +300,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 throw new OutOfMemoryException();
             }
+            */
         }
     }
 }

@@ -1176,6 +1176,11 @@ namespace UnityEditor.U2D.PSD
                 return this as T;
         }
 
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.GetDataProvider.
+        /// </summary>
+        /// <typeparam name="T">Data provider type to retrieve.</typeparam>
+        /// <returns></returns>
         T ISpriteEditorDataProvider.GetDataProvider<T>()
         {
             return GetDataProvider<T>();
@@ -1199,6 +1204,11 @@ namespace UnityEditor.U2D.PSD
                 return type.IsAssignableFrom(GetType());
         }
 
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.HasDataProvider.
+        /// </summary>
+        /// <param name="type">Data provider type to query.</param>
+        /// <returns>True if data provider is supported, false otherwise.</returns>
         bool ISpriteEditorDataProvider.HasDataProvider(Type type)
         {
             return HasDataProvider(type);
@@ -1253,12 +1263,21 @@ namespace UnityEditor.U2D.PSD
             EditorPrefs.SetBool("VerifySavingAssets", originalValue);
         }
 
+
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.Apply.
+        /// </summary>
         void ISpriteEditorDataProvider.Apply()
         {
             Apply();
         }
 
         internal void InitSpriteEditorDataProvider() {}
+
+
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.InitSpriteEditorDataProvider.
+        /// </summary>
         void ISpriteEditorDataProvider.InitSpriteEditorDataProvider()
         {
             InitSpriteEditorDataProvider();
@@ -1271,6 +1290,10 @@ namespace UnityEditor.U2D.PSD
             return spriteImportMode == SpriteImportMode.Multiple ? spriteImportData.Skip(skip).Select(x => new SpriteMetaData(x) as SpriteRect).ToArray() : new[] {new SpriteMetaData(spriteImportData[0]) };
         }
 
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.GetSpriteRects.
+        /// </summary>
+        /// <returns>An array of SpriteRect for the current import mode.</returns>
         SpriteRect[] ISpriteEditorDataProvider.GetSpriteRects()
         {
             return GetSpriteRects();
@@ -1350,6 +1373,10 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        /// <summary>
+        /// Implementation for ISpriteEditorDataProvider.SetSpriteRects.
+        /// </summary>
+        /// <param name="spriteRects">Set the SpriteRect data for the current import mode.</param>
         void ISpriteEditorDataProvider.SetSpriteRects(SpriteRect[] spriteRects)
         {
             SetSpriteRects(spriteRects);

@@ -767,6 +767,9 @@ namespace UnityEditor.U2D.PSD
             AssetDatabase.Refresh();
         }
 
+        /// <summary>
+        /// Implementation of AssetImporterEditor.ResetValues.
+        /// </summary>
         protected override void ResetValues()
         {
             base.ResetValues();
@@ -774,11 +777,21 @@ namespace UnityEditor.U2D.PSD
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.GetTargetCount.
+        /// </summary>
+        /// <returns>Returns the number of selected targets.</returns>
         public int GetTargetCount()
         {
             return targets.Length;
         }
 
+        /// <summary>
+        /// ITexturePlatformSettingsDataProvider.GetPlatformTextureSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="name">Name of the platform.</param>
+        /// <returns>TextureImporterPlatformSettings for the given platform name and selected target index.</returns>
         public TextureImporterPlatformSettings GetPlatformTextureSettings(int i, string name)
         {
             if(m_PlatfromSettings.ContainsKey(name))
@@ -791,21 +804,41 @@ namespace UnityEditor.U2D.PSD
             };
         }
 
+
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.ShowPresetSettings.
+        /// </summary>
+        /// <returns>True if valid asset is selected, false otherwiser.</returns>
         public bool ShowPresetSettings()
         {
             return assetTarget == null;
         }
 
-        public bool DoesSourceTextureHaveAlpha(int v)
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.DoesSourceTextureHaveAlpha.
+        /// </summary>
+        /// <param name="i">Index to selected target.</param>
+        /// <returns>Always returns true since importer deals with source file that has alpha.</returns>
+        public bool DoesSourceTextureHaveAlpha(int i)
         {
             return true;
         }
 
-        public bool IsSourceTextureHDR(int v)
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.IsSourceTextureHDR.
+        /// </summary>
+        /// <param name="i">Index to selected target.</param>
+        /// <returns>Always returns false since importer does not handle HDR textures.</returns>
+        public bool IsSourceTextureHDR(int i)
         {
             return false;
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.SetPlatformTextureSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="platformSettings">TextureImporterPlatformSettings to apply to target.</param>
         public void SetPlatformTextureSettings(int i, TextureImporterPlatformSettings platformSettings)
         {
             var psdImporter = ((PSDImporter)targets[i]);
@@ -813,6 +846,11 @@ namespace UnityEditor.U2D.PSD
             psdImporter.Apply();
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.GetImporterSettings.
+        /// </summary>
+        /// <param name="i">Selected target index.</param>
+        /// <param name="settings">TextureImporterPlatformSettings reference for data retrieval.</param>
         public void GetImporterSettings(int i, TextureImporterSettings settings)
         {
             ((PSDImporter)targets[i]).ReadTextureSettings(settings);
@@ -914,21 +952,34 @@ namespace UnityEditor.U2D.PSD
             get { return false; }
         }
         
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.textureTypeHasMultipleDifferentValues.
+        /// </summary>
         public bool textureTypeHasMultipleDifferentValues
         {
            get { return m_TextureType.hasMultipleDifferentValues; }
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.textureType.
+        /// </summary>
         public TextureImporterType textureType
         {
            get { return (TextureImporterType)m_TextureType.intValue; }
         }
 
+        /// <summary>
+        /// Implementation of ITexturePlatformSettingsDataProvider.spriteImportMode.
+        /// </summary>
         public SpriteImportMode spriteImportMode
         {
             get { return (SpriteImportMode)m_SpriteMode.intValue; }
         }
 
+        /// <summary>
+        /// Override of AssetImporterEditor.HasModified.
+        /// </summary>
+        /// <returns>Returns True if has modified data. False otherwise.</returns>
         public override bool HasModified()
         {
             if (base.HasModified())

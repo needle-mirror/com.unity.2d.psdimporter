@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.1.1] - 2021-09-11
+### Fixed
+- Updated manual on Importer override to use latest API.
+- Fixed Unity hang when importing certain PSD files (case 1357558)
+
 ## [4.1.0] - 2021-05-31
 ### Fixed
 - Fixed PSDImporter reimports when switching platform (case 1330426)

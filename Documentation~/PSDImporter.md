@@ -164,9 +164,9 @@ Unity’s default import behavior when there are duplicate names is to append "_
 
 ## PSD File Importer Override
 
-In Unity 2019.30f1, it is possible to use PSDImporter to import files with 'psd' extensions.
-To do that you will need to have custom scripts that allows you to do that by calling the `AssetDatabaseExperimental.SetImporterOverride` method.
-The following is an example on how to use the API
+
+It is possible to use PSDImporter to import files with 'psd' extensions. The following are the sample scripts that you can use.
+
 
 #### PSDImporterOverride.cs
 ```
@@ -174,34 +174,9 @@ using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
-    [ScriptedImporter(1, "psd", AutoSelect = false)]
+    [AssetImporters.ScriptedImporter(1, new string[0],new[] {"psd"} )]
     internal class PSDImporterOverride : PSDImporter
     {
-
-        [MenuItem("Assets/2D Importer", false, 30)]
-        [MenuItem("Assets/2D Importer/Change PSD File Importer", false, 30)]
-        static void ChangeImporter()
-        {
-            foreach (var obj in Selection.objects)
-            {
-                var path = AssetDatabase.GetAssetPath(obj);
-                var ext = System.IO.Path.GetExtension(path);
-                if (ext == ".psd")
-                {
-                    var importer = AssetImporter.GetAtPath(path);
-                    if (importer is PSDImporterOverride)
-                    {
-                        Debug.Log(string.Format("{0} is now imported with TextureImporter", path));
-                        AssetDatabaseExperimental.ClearImporterOverride(path);
-                    }
-                    else
-                    {
-                        Debug.Log(string.Format("{0} is now imported with PSDImporter", path));
-                        AssetDatabaseExperimental.SetImporterOverride<PSDImporterOverride>(path);
-                    }
-                }
-            }
-        }
     }
 }
 ```
@@ -217,3 +192,7 @@ namespace UnityEditor.U2D.PSD
 
 }
 ```
+
+After implementing the above scripts, you will be able to switch the importer from a dropdown list in the Inspector.
+![](images/PSDImporterOverride.png)
+
