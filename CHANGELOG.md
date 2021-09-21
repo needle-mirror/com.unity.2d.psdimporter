@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.0.1] - 2021-09-21
+### Fixed
+- Removed memory requirement check since we cannot properly determine if there will be enough memory to import the file (case 1357544)
+- Fixed artifacts on images when flatten.
+- Fixed exception "PsdInvalidException: Unrecognized layer section type" when importing certain files.
+
 ## [6.0.0] - 2021-08-10
 ### Fixed
 - Fixed performance regression in PSDImporter Editor (case 1349408)
