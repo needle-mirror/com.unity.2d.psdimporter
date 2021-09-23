@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.0.6] - 2021-09-23
+### Changed
+- Updated package dependencies
+
+## [5.0.5] - 2021-09-01
+### Fixed
+- Updated manual on Importer override to use latest API.
+- Removed memory requirement check since we cannot properly determine if there will be enough memory to import the file (case 1357545)
+
 ## [5.0.4] - 2021-06-08
 ### Fixed
 - Fixed changing PSD Importer inspector fields causes UnityEditor.ObjectPreview errors. (Case 1335593)
