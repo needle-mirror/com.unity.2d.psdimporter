@@ -111,11 +111,18 @@ namespace UnityEditor.U2D.PSD
                         {
                             int sourceIndex = sourceYIndex + j;
                             int destIndex = destYIndex + j;
-                            float alpha = buffer[sourceIndex].a / 255.0f;
-                            premerge[destIndex].r = (byte)(alpha * (float)(buffer[sourceIndex].r) + (float)((1.0f - alpha) * (float)premerge[destIndex].r));
-                            premerge[destIndex].g = (byte)(alpha * (float)(buffer[sourceIndex].g) + (float)((1.0f - alpha) * (float)premerge[destIndex].g));
-                            premerge[destIndex].b = (byte)(alpha * (float)(buffer[sourceIndex].b) + (float)((1.0f - alpha) * (float)premerge[destIndex].b));
-                            premerge[destIndex].a = (byte)(alpha * (float)(buffer[sourceIndex].a) + (float)((1.0f - alpha) * (float)premerge[destIndex].a));
+                            Color sourceColor = buffer[sourceIndex];
+                            Color destColor = premerge[destIndex];
+                            Color finalColor = new Color();
+
+                            var destAlpha = destColor.a * (1 - sourceColor.a);
+                            finalColor.a = sourceColor.a + destColor.a * (1 - sourceColor.a);
+                            var premultiplyAlpha = 1 / finalColor.a;
+                            finalColor.r = (sourceColor.r * sourceColor.a + destColor.r * destAlpha) * premultiplyAlpha;
+                            finalColor.g = (sourceColor.g * sourceColor.a + destColor.g * destAlpha) * premultiplyAlpha;
+                            finalColor.b = (sourceColor.b * sourceColor.a + destColor.b * destAlpha) * premultiplyAlpha;
+
+                            premerge[destIndex] = finalColor;
                         }
                     }
                 }

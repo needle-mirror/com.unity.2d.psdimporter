@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.1.2] - 2021-10-11
+### Fixed
+- Fixed artifacts on images when flatten.
+- Fixed exception "PsdInvalidException: Unrecognized layer section type" when importing certain files.
+
 ## [4.1.1] - 2021-09-11
 ### Fixed
 - Updated manual on Importer override to use latest API.
