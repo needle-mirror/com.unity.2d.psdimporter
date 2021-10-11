@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.10] - 2021-10-11
+### Fixed
+- Fixed artifacts on images when flatten.
+- Fixed exception "PsdInvalidException: Unrecognized layer section type" when importing certain files
+
 ## [2.1.9] - 2021-09-11
 ### Fixed
 - Fixed Unity hang when importing certain PSD files (case 1357563)
