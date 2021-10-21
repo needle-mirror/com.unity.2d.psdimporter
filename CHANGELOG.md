@@ -1,18 +1,20 @@
 # Changelog
 
-## [6.0.1] - 2021-09-21
+## [7.0.0-pre.3] - 2021-10-21
+### Changed
+- Update to latest com.unity.2d.animation package
+
+## [7.0.0-pre.2] - 2021-10-11
 ### Fixed
-- Removed memory requirement check since we cannot properly determine if there will be enough memory to import the file (case 1357544)
-- Fixed artifacts on images when flatten.
+- Fixed artifacts on images when flatten
 - Fixed exception "PsdInvalidException: Unrecognized layer section type" when importing certain files.
 
-## [6.0.0] - 2021-08-10
-### Fixed
-- Fixed performance regression in PSDImporter Editor (case 1349408)
-- Updated manual on Importer override to use latest API.
-
+## [7.0.0-pre.1] - 2021-08-06
 ### Changed
-- Changed some of PSDImporter settings to use checkboxes instead of drop down
+- Update Unity supported version to 2022.1
+
+### Fixed
+- Removed memory requirement check since we cannot properly determine if there will be enough memory to import the file (case 1338690)
 
 ## [6.0.0-pre.4] - 2021-07-05
 ### Fixed

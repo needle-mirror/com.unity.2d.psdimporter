@@ -32,7 +32,7 @@ Enable this setting to discard all user modifications for the current set of [Sp
 
 ###Layer Import
 The following section is only available if the **Texture Type** is set to **Multiple**.
-![](images/psdimporter-properties-v6-21.2-layerimport.png)
+![](images/psdimporter-properties-v7-22.1-layerimport.png)
 Property  |Function  
 --|--
 **Include Hidden Layers** | Enable this property to include the hidden [layers](https://helpx.adobe.com/photoshop/using/layer-basics.html#layers_panel_overview) of the .psb file in the import. This produces the same import result as making all layers visible in the source file unhiding all layers in the source file before you importing it into Unity. Clear this option if you want to only import the visible layers in the .psb file. |
@@ -45,6 +45,7 @@ __Use Layer Grouping__<a name="LayerGrouping"></a> | This setting is only availa
 **Import Mode**  |  Use this property to specify how the layers from the source file are imported. This property is set to **Individual Sprites (Mosaic)** by default.
 &nbsp;&nbsp;[Individual Sprites (Mosaic)](#Mosaic)|Select this option to have the PSD Importer generate individual Sprites from  the individual layers of the source file, and combines them into a single Texture in a Sprite sheet layout.  
 &nbsp;&nbsp;[Merged](#merged)  | Select this to have the PSD Importer generate a Texture with all layers merged.
+Mosaic Padding | Settings to control the padding space between each layer in the texture when **Import Mode** is set to ***Individual Sprites (Mosaic)***
 
 ####<a name="Mosaic">Individual Sprites (Mosaic)</a>
 Enable this to have the PSD Importer attempt to create a Texture with each layer from the source file laid out in a mosaic manner.
@@ -92,38 +93,40 @@ When you open and edit the character in 2D Animation package’s **Skinning Edit
 
 ## Layer Management Tab
 The **Layer Management Tab** allows you to customize how the Importer imports the layers from the Photoshop file.
-![](images/layer-management-tab-21.2.png)
+![](images/layer-management-tab-22.1.png)
 
-###Layer hierarchy tree
+### Layer hierarchy tree
 [Group layers](https://helpx.adobe.com/photoshop/using/selecting-grouping-linking-layers.html) in Photoshop are represented with a fold-out folder icon ![](images/group-layers-icon.png) in the hierarchy tree of the Layer Management tab, while regular Photoshop layers in Photoshop represented only by their names.
 
-###Collapsing Groups
+### Layer visibility
+Groups or layers that are hidden in the source file are indicated with different color text compared to visible groups or layers.
+![](images/layer-visibility-hidden-layer-22.1.png)
+
+### Layer Importing
+The checkbox on each Group/Layer indicates if the Group or Layer from the Photoshop file should be imported. The Group or Layer will be imported when the checkbox is selected.  
+
+Clear the **Include Hidden Layers** option in the **Layer Mangement Tab** or [Settings Tab](#settings-tab) will only import visible layers from the source file.
+
+If a hidden group or layer is mark for import in this state, a warning icon will appear.
+![](images/layer-visibility-hidden-warning-22.1.png)
+
+To import a hidden layer, select the **Include Hidden Layers** checkbox either in the **Settings Tab** or in the **Layer Management Tab**
+
+![](images/layer-visibility-hidden-no-warning-22.1.png)
+
+### Collapsing Groups
 The Photoshop layers in a Group can be collapsed into a single Sprite when imported. Hover the cursor over a Group Layer and the **Collapse** icon appears on its left.
-![](images/layer-tab-collapse-21.2.png)<br/>Collapse icon with arrow facing down.
+![](images/layer-tab-collapse-22.1.png)<br/>Collapse icon with arrow facing down.
 
 Click the icon to indicate that the layers in the selected Group should be imported as a single Sprite.
-![](images/layer-tab-collapse-dim-21.2.png)<br/>Layers in Collapsed groups are grayed out.
 
-###Uncollapsing Groups
+### Uncollapsing Groups
 Hovering over a Collapsed Group layer reveals the Uncollapse icon (the arrow faces upwards).
 
-![](images/layer-tab-uncollapse-21.2.png)<br/>Select the icon again to uncollapse the Group layer and to import all Layers in the Group as separate Sprites.
+![](images/layer-tab-uncollapse-22.1.png)<br/>Select the icon again to uncollapse the Group layer and to import all Layers in the Group as separate Sprites.
 
-####Sub-groups within Group layers
+#### Sub-groups within Group layers
 If a Group contains other Group layers and is collapsed, then the layers in the sub-groups will also be collapsed into a single Sprite.
-![](images/layer-tab-subgroup-collapse-21.2.png)<br/>Group 1 containing multiple sub-groups.
-![](images/layer-tab-subgroup-uncollapse-21.2.png)<br/>All layers in the sub-groups are grayed out when the parent Group 1 is set to Collapse.
 
-![](images/layer-tab-subgroup-child-collapse-21.2.png)
+![](images/layer-tab-subgroup-child-collapse-22.1.png)
 If a child Group is currently set to be collapsed, then the parent group will have separate icons indicating that are child Groups currently set to collapse.
-
-###Layer visibility
-Setting the **Layer** option in the [Settings Tab](#settings-tab) to **Visible Layers Only** causes only visible layers from the source file to be displayed in the **Layer Management Tab**.
-![](images/layer-visibility-21.2.png)
-![](images/layer-visibility-tree-21.2.png)
-
-Set the Layer option to **Include Hidden Layers** to also display any hidden layers from the source file in the **Layer Management Tab.**
-![](images/layer-visibility-hidden-21.2.png)
-
-The icon ![](images/hidden-icon-21.2.png)  appears besides layers that are hidden in the source file so that they can be easily identified in the **Layer Management Tab**.
-![](images/hidden-layers-21.2.png)

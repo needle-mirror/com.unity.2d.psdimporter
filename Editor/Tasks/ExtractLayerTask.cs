@@ -67,11 +67,11 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public static unsafe void Execute(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, FlattenLayerData[] previousFlattenLayer, IPSDLayerMappingStrategy mappingStrategy)
+        public static unsafe void Execute(List<PSDLayer> extractedLayer, PSDExtractLayerData[] layers, bool importHiddenLayer)
         {
             UnityEngine.Profiling.Profiler.BeginSample("ExtractLayer_PrepareJob");
             List<LayerExtractData> layerToExtract = new List<LayerExtractData>();
-            ExtractLayer(extractedLayer, layers, importHiddenLayer, false, layerToExtract, previousFlattenLayer, mappingStrategy, true);
+            ExtractLayer(extractedLayer, layers, importHiddenLayer, false, layerToExtract, true);
             if (layerToExtract.Count == 0)
             {
                 foreach (var l in extractedLayer)
@@ -112,7 +112,7 @@ namespace UnityEditor.U2D.PSD
             handle.Complete();
         }
 
-        static (int width, int height) ExtractLayer(List<PSDLayer> extractedLayer, List<BitmapLayer> layers, bool importHiddenLayer, bool flatten, List<LayerExtractData> layerExtract, FlattenLayerData[] previousFlatten, IPSDLayerMappingStrategy mappingStrategy, bool parentGroupVisible)
+        static (int width, int height) ExtractLayer(List<PSDLayer> extractedLayer, PSDExtractLayerData[] layers, bool importHiddenLayer, bool flatten, List<LayerExtractData> layerExtract, bool parentGroupVisible)
         {
             // parent is the previous element in extracedLayer
             int parentGroupIndex = extractedLayer.Count - 1;
@@ -120,15 +120,20 @@ namespace UnityEditor.U2D.PSD
             int width = 0, height = 0;
             foreach (var l in layers)
             {
-                bool layerVisible = l.Visible && parentGroupVisible;
-                if (l.IsGroup)
+                var bitmapLayer = l.bitmapLayer;
+                var importsetting = l.importSetting;
+                bool layerVisible = bitmapLayer.Visible && parentGroupVisible;
+                if (l.bitmapLayer.IsGroup)
                 {
-                    var layer = new PSDLayer(l.Surface.color, parentGroupIndex, l.IsGroup, l.Name, 0, 0, l.LayerID, l.Visible);
-                    layer.flatten = previousFlatten == null ? false : previousFlatten.FirstOrDefault(x => mappingStrategy.Compare(x, l)) != null;
-                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten && layer.flatten;
+                    var layer = new PSDLayer(bitmapLayer.Surface.color, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, 0, 0, bitmapLayer.LayerID, bitmapLayer.Visible)
+                    {
+                        spriteID = l.importSetting.spriteId
+                    };
+                    layer.flatten = l.importSetting.flatten;
+                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten && layer.flatten && importsetting.importLayer;
                     int startIndex = extractedLayer.Count;
                     extractedLayer.Add(layer);
-                    (width, height) = ExtractLayer(extractedLayer, l.ChildLayer, importHiddenLayer, flatten || layer.flatten, layerExtract, previousFlatten, mappingStrategy, layerVisible);
+                    (width, height) = ExtractLayer(extractedLayer, l.children, importHiddenLayer, flatten || layer.flatten, layerExtract, layerVisible);
                     int endIndex = extractedLayer.Count - 1;
                     // If this group is to be flatten and there are flatten layers
                     if (flatten == false && layer.flatten && startIndex  < endIndex)
@@ -144,9 +149,12 @@ namespace UnityEditor.U2D.PSD
                 }
                 else
                 {
-                    var surface = importHiddenLayer || l.Visible ? l.Surface.color : default; 
-                    var layer = new PSDLayer(surface, parentGroupIndex, l.IsGroup, l.Name, l.Surface.width, l.Surface.height, l.LayerID,l.Visible);
-                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten;
+                    var surface = (importHiddenLayer || bitmapLayer.Visible) && importsetting.importLayer ? bitmapLayer.Surface.color : default; 
+                    var layer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, bitmapLayer.Surface.width, bitmapLayer.Surface.height, bitmapLayer.LayerID,bitmapLayer.Visible)
+                    {
+                        spriteID = importsetting.spriteId
+                    };
+                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten && importsetting.importLayer;
                     extractedLayer.Add(layer);
                     if (layer.isImported)
                     {
@@ -154,13 +162,13 @@ namespace UnityEditor.U2D.PSD
                         {
                             start = extractedLayer.Count-1,
                             end = extractedLayer.Count-1,
-                            width = l.Surface.width,
-                            height = l.Surface.height,
+                            width = bitmapLayer.Surface.width,
+                            height = bitmapLayer.Surface.height,
                         });
                     }
 
-                    width = l.Surface.width;
-                    height = l.Surface.height;
+                    width = bitmapLayer.Surface.width;
+                    height = bitmapLayer.Surface.height;
                 }
                 if (maxWidth < width)
                     maxWidth = width;

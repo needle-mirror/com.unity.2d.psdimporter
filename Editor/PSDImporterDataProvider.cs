@@ -207,14 +207,25 @@ namespace UnityEditor.U2D.PSD
 
     internal class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
-        int ParentGroupInFlatten(int parentIndex, List<PSDLayer> psdLayers)
+        int ParentGroupInFlatten(Dictionary<int, int> groupDictIndex, List<CharacterGroup> groups, int parentIndex, List<PSDLayer> psdLayers)
         {
-            int group = -1;
-            for (int i = 0; i <= parentIndex; ++i)
-                if (GenerateNodeForGroup(i, psdLayers))
-                    ++group;
+            if (parentIndex < 0)
+                return -1;
+            
+            if (groupDictIndex.ContainsKey(parentIndex))
+                return groupDictIndex[parentIndex];
 
-            return group;
+            var groupParentIndex = ParentGroupInFlatten(groupDictIndex, groups, psdLayers[parentIndex].parentIndex, psdLayers);
+            var newGroup = new CharacterGroup()
+            {
+                name = psdLayers[parentIndex].name,
+                parentGroup = groupParentIndex,
+                order = parentIndex
+            };
+
+            groups.Add(newGroup);
+            groupDictIndex.Add(parentIndex, groups.Count - 1);
+            return groups.Count - 1;
         }
 
         bool GenerateNodeForGroup(int index, List<PSDLayer> psdLayers)
@@ -229,22 +240,11 @@ namespace UnityEditor.U2D.PSD
         public CharacterData GetCharacterData()
         {
             var psdLayers = dataProvider.GetPSDLayers();
+            var groupDictionaryIndex = new Dictionary<int, int>();
             var groups = new List<CharacterGroup>();
-            for (int i = 0; i < psdLayers.Count; ++i)
-            {
-                if (GenerateNodeForGroup(i, psdLayers))
-                {
-                    groups.Add(new CharacterGroup()
-                    {
-                        name = psdLayers[i].name,
-                        parentGroup = ParentGroupInFlatten(psdLayers[i].parentIndex, psdLayers),
-                        order = i
-                    });
-                }
-            }
-
+            
             var cd = dataProvider.characterData;
-
+            cd.pivot = dataProvider.GetDocumentPivot();
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
             var spriteRects = dataProvider.GetSpriteMetaData();
             parts.RemoveAll(x => Array.FindIndex(spriteRects, y => y.spriteID == new GUID(x.spriteId)) == -1);
@@ -264,7 +264,7 @@ namespace UnityEditor.U2D.PSD
                 var spritePSDLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteMetaData.spriteID);
                 if (spritePSDLayer != null)
                 {
-                    cp.parentGroup = ParentGroupInFlatten(spritePSDLayer.parentIndex, psdLayers);
+                    cp.parentGroup = ParentGroupInFlatten(groupDictionaryIndex, groups, spritePSDLayer.parentIndex, psdLayers);
                 }
 
 
@@ -290,6 +290,7 @@ namespace UnityEditor.U2D.PSD
         {
             characterData.parts = characterData.parts.Reverse().ToArray();
             dataProvider.characterData = characterData;
+            dataProvider.SetDocumentPivot(characterData.pivot);
         }
     }
 

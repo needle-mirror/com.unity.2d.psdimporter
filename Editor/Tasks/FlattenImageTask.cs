@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using PDNWrapper;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -10,11 +9,11 @@ namespace UnityEditor.U2D.PSD
 {
     static class FlattenImageTask
     {
-        static unsafe public void Execute(List<BitmapLayer> layer, bool importHiddenLayer, int width, int height, NativeArray<Color32> output)
+        static unsafe public void Execute(PSDExtractLayerData[] layer, bool importHiddenLayer, int width, int height, NativeArray<Color32> output)
         {
             UnityEngine.Profiling.Profiler.BeginSample("FlattenImage");
             List<IntPtr> buffers = new List<IntPtr>();
-            for (int i = layer.Count - 1; i >= 0; --i)
+            for (int i = layer.Length - 1; i >= 0; --i)
             {
                 GetBuffersToMergeFromLayer(layer[i], importHiddenLayer, buffers);
             }
@@ -64,19 +63,21 @@ namespace UnityEditor.U2D.PSD
             UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        static unsafe void GetBuffersToMergeFromLayer(BitmapLayer layer, bool importHiddenLayer, List<IntPtr> buffers)
+        static unsafe void GetBuffersToMergeFromLayer(PSDExtractLayerData layer, bool importHiddenLayer, List<IntPtr> buffers)
         {
-            if (!layer.Visible && importHiddenLayer == false)
+            var bitmapLayer = layer.bitmapLayer;
+            var importSetting = layer.importSetting;
+            if (!bitmapLayer.Visible && importHiddenLayer == false || importSetting.importLayer == false)
                 return;
-            if (layer.IsGroup)
+            if (bitmapLayer.IsGroup)
             {
-                for (int i = layer.ChildLayer.Count - 1; i >= 0; --i)
-                    GetBuffersToMergeFromLayer(layer.ChildLayer[i], importHiddenLayer, buffers);
+                for (int i = layer.children.Length - 1; i >= 0; --i)
+                    GetBuffersToMergeFromLayer(layer.children[i], importHiddenLayer, buffers);
             }
-            if (layer.Surface != null)
-                buffers.Add(new IntPtr(layer.Surface.color.GetUnsafeReadOnlyPtr()));
+            if (bitmapLayer.Surface != null)
+                buffers.Add(new IntPtr(bitmapLayer.Surface.color.GetUnsafeReadOnlyPtr()));
             else
-                Debug.LogWarning(string.Format("Layer {0} has no color buffer", layer.Name));
+                Debug.LogWarning(string.Format("Layer {0} has no color buffer", bitmapLayer.Name));
         }
 
         struct FlattenImageInternalJob : IJobParallelFor

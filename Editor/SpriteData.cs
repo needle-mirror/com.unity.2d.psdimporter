@@ -17,7 +17,6 @@ namespace UnityEditor.U2D.PSD
         public int[] indices;
         public Vector2Int[] edges;
         public float tessellationDetail;
-        public int parentGroupIndex = -1;
         public Vector2Int uvTransform = Vector2Int.zero;
 
         public SpriteMetaData() {}

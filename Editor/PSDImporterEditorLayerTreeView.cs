@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor.Experimental;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -16,6 +17,8 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_LayerIdProperty;
         SerializedProperty m_FlattenProperty;
         SerializedProperty m_IsGroup;
+        SerializedProperty m_ImportLayerProperty;
+        bool m_WasLayerImported;
 
         public string name
         {
@@ -57,6 +60,22 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        public bool wasLayerImported
+        {
+            get => m_WasLayerImported;
+            set => m_WasLayerImported = value;
+        }
+
+        public bool importLayer
+        {
+            get => m_ImportLayerProperty == null ? wasLayerImported : m_ImportLayerProperty.boolValue;
+            set
+            {
+                CheckAndAddElement();
+                m_ImportLayerProperty.boolValue = value;
+            }
+        }
+        
         void CheckAndAddElement()
         {
             if (m_Element == null)
@@ -69,6 +88,7 @@ namespace UnityEditor.U2D.PSD
                 name = m_Layer.name;
                 layerID = m_Layer.layerID;
                 isGroup = m_Layer.isGroup;
+                importLayer = wasLayerImported;
             }
         }
 
@@ -78,6 +98,7 @@ namespace UnityEditor.U2D.PSD
             m_LayerIdProperty = property.FindPropertyRelative("layerId");
             m_FlattenProperty = property.FindPropertyRelative("flatten");
             m_IsGroup = property.FindPropertyRelative("isGroup");
+            m_ImportLayerProperty = property.FindPropertyRelative("importLayer");
 
         }
 
@@ -93,90 +114,133 @@ namespace UnityEditor.U2D.PSD
             m_Layer = layer;
         }
     }
-    
+
     class PSDNode : TreeViewItem
     {
+        NodeStateChange m_ImportState = new NodeStateChange();
         PSDLayerData m_Layer;
         bool m_Disable = false;
+        public PSDLayerData layer => m_Layer;
+
         PSDLayerImportSettingSerializedPropertyWrapper m_Property;
+
         public bool disable
         {
             get => m_Disable;
             set => m_Disable = value;
         }
-        
+
         public PSDNode()
         {
             id = 1;
             displayName = "";
+            m_ImportState.state = true;
         }
-        
+
         public PSDNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper importSetting)
         {
             m_Layer = layer;
             displayName = layer.name;
             this.id = id;
             m_Property = importSetting;
+            m_ImportState.state = importLayer;
         }
 
-        public virtual void ChildGroupFlatten(bool flatten) { }
-        public virtual void FlattenStateChange() { }
-        public virtual void NotifyParentOnFlattenChange() { }
-        public PSDLayerData layer => m_Layer;
-        public bool flatten
+        public NodeStateChange importState => m_ImportState;
+        
+        public PSDLayerImportSettingSerializedPropertyWrapper property => m_Property;
+
+        public virtual bool importLayer
         {
-            get => m_Property.flatten;
-            set => m_Property.flatten = value;
+            get => property.importLayer;
+            set => property.importLayer = value;
         }
     }
 
+    class NodeStateChange
+    {
+        public int childNodeStateCount = 0;
+        public NodeStateChange parent;
+        public bool state;
+        
+        public void ChangeState(bool newState)
+        {
+            state = newState;
+            parent?.NotifyParentStateChange(newState);
+        }
+
+        void NotifyParentStateChange(bool newState)
+        {
+            childNodeStateCount +=  newState ? 1 : -1;
+            parent?.NotifyParentStateChange(newState);
+        }
+    }
+    
+    class PSDCollapsableNode :PSDNode
+    {
+        NodeStateChange m_CollapseStateChange = new NodeStateChange();
+
+        public virtual bool flatten
+        {
+            get => property.flatten;
+            set => property.flatten = value;
+        }
+
+        public PSDCollapsableNode()
+            : base()
+        {
+            m_CollapseStateChange.state = false;
+        }
+
+        public PSDCollapsableNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property)
+            : base(layer, id, property)
+        {
+            if(property != null)
+                m_CollapseStateChange.state = flatten;
+        }
+
+        public NodeStateChange collapseStateChange => m_CollapseStateChange;
+    }
+
+    class PSDFileNode : PSDCollapsableNode
+    {
+        SerializedProperty m_MosaicProperty;
+        SerializedProperty m_ImportFileNodeState;
+
+        public PSDFileNode(SerializedProperty mosaicProperty, SerializedProperty importNodeState)
+        {
+            m_MosaicProperty = mosaicProperty;
+            m_ImportFileNodeState = importNodeState;
+        }
+        public override bool flatten
+        {
+            get => !m_MosaicProperty.boolValue;
+            set
+            {
+                collapseStateChange.state = value;
+                m_MosaicProperty.boolValue = !value;   
+            }
+        }
+        
+        public override bool importLayer
+        {
+            get => m_ImportFileNodeState.boolValue;
+            set => m_ImportFileNodeState.boolValue = value;
+        }
+    }
+    
     class PSDLayerNode : PSDNode
     {
         public PSDLayerNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property):base(layer, id, property)
         { }
     }
 
-    class PSDLayerGroupNode : PSDNode
+    class PSDLayerGroupNode : PSDCollapsableNode
     {
-        int m_ChildFlattenCount;
         public PSDLayerGroupNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property)
             : base(layer, id, property)
         {
             this.icon = EditorGUIUtility.FindTexture(EditorResources.folderIconName);
-            m_ChildFlattenCount = 0;
-        }
-
-        public int childFlattenCount => m_ChildFlattenCount;
-
-        public override void NotifyParentOnFlattenChange()
-        {
-            var pp = parent as PSDNode;
-            if(pp != null)
-                pp.ChildGroupFlatten(flatten);
-        }
-        
-        public override void ChildGroupFlatten(bool flatten)
-        {
-            m_ChildFlattenCount += flatten ? 1 : -1;
-            var pp = parent as PSDNode;
-            if(pp != null)
-                pp.ChildGroupFlatten(flatten);
-        }
-
-        public override void FlattenStateChange()
-        {
-            if (children != null)
-            {
-                foreach (var child in children)
-                {
-                    var p = ((PSDNode)child);
-                    if (p != null)
-                    {
-                        //p.disable = flatten || this.disable;
-                        p.FlattenStateChange();   
-                    }
-                }   
-            }
         }
     }
 
@@ -188,6 +252,7 @@ namespace UnityEditor.U2D.PSD
         static public readonly string k_DarkIconResourcePath = "Icons/Dark";
         static public readonly string k_SelectedIconResourcePath = "Icons/Selected";
         public static readonly GUIContent layerHiddenToolTip = EditorGUIUtility.TrTextContent("", "The layer is hidden in the source file.");
+        public static readonly GUIContent hiddenLayerNotImportWarning = EditorGUIUtility.TrIconContent("console.warnicon", "Layer will not be imported because hidden layers are excluded from import.");
         public static readonly GUIContent[] mergedIcon =
         {
             new GUIContent(LoadIconResource("Layers Separated", k_LightIconResourcePath, k_DarkIconResourcePath), L10n.Tr("Layers Separated. Click to merge them.")),
@@ -244,35 +309,31 @@ namespace UnityEditor.U2D.PSD
     internal class PSDImporterEditorLayerTreeView : IMGUI.Controls.TreeView
     {
         PSDLayerData[] m_Layers;
-        bool m_ShowHidden;
-        bool m_HasChanged;
         string m_RootName;
         SerializedProperty m_PSDLayerImportSetting;
         IPSDLayerMappingStrategy m_MappingStrategy;
         int m_LastArraySize;
-        
-        public PSDImporterEditorLayerTreeView(string rootName, TreeViewState treeViewState, PSDLayerData[] layers, bool showHidden, SerializedProperty psdLayerImportSetting, IPSDLayerMappingStrategy mappingStrategy)
+        SerializedProperty m_MosaicProperty;
+        SerializedProperty m_FileNodeImportState;
+        SerializedProperty m_ImportHidden;
+        const int k_LeftMargin = 15;
+        public PSDImporterEditorLayerTreeView(string rootName, TreeViewState treeViewState, PSDLayerData[] layers, SerializedProperty psdLayerImportSetting, IPSDLayerMappingStrategy mappingStrategy, SerializedProperty mosaicProperty, SerializedProperty importHidden, SerializedProperty fileNodeImportState)
             : base(treeViewState)
         {
             m_Layers = layers;
             showAlternatingRowBackgrounds = true;
             showBorder = true;
-            m_ShowHidden = showHidden;
-            m_HasChanged = false;
-            baseIndent = 16;
+            baseIndent = 32 + k_LeftMargin;
             useScrollView = true;
             m_RootName = rootName;
             m_PSDLayerImportSetting = psdLayerImportSetting;
             m_MappingStrategy = mappingStrategy;
+            m_MosaicProperty = mosaicProperty;
+            m_ImportHidden = importHidden;
+            m_FileNodeImportState = fileNodeImportState;
             Reload();
         }
-
-        public bool showHidden
-        {
-            get => m_ShowHidden;
-            set => m_ShowHidden = value;
-        }
-
+        
         public override void OnGUI(Rect rect)
         {
             if(m_PSDLayerImportSetting.arraySize != m_LastArraySize)
@@ -286,8 +347,11 @@ namespace UnityEditor.U2D.PSD
             m_PSDLayerImportSetting.serializedObject.Update();
             m_LastArraySize = m_PSDLayerImportSetting.arraySize;
             var root = new TreeViewItem { id = -1, depth = -1, displayName = "Root" };
-            var fileRoot = new PSDNode(){id = -2};
-            fileRoot.displayName = m_RootName;
+            var fileRoot = new PSDFileNode(m_MosaicProperty, m_FileNodeImportState)
+            {
+                id = -2, displayName = m_RootName
+            };
+            
             //fileRoot.icon = EditorGUIUtility.IconContent("Texture Icon").image as Texture2D;
             root.AddChild(fileRoot);
             var spWrapper = new List<PSDLayerImportSettingSerializedPropertyWrapper>();
@@ -310,7 +374,10 @@ namespace UnityEditor.U2D.PSD
                     PSDLayerImportSettingSerializedPropertyWrapper importSetting = null;
                     if (importSettingIndex < 0)
                     {
-                        importSetting = new PSDLayerImportSettingSerializedPropertyWrapper(null, m_PSDLayerImportSetting, l);
+                        importSetting = new PSDLayerImportSettingSerializedPropertyWrapper(null, m_PSDLayerImportSetting, l)
+                        {
+                            wasLayerImported = l.isVisible || m_ImportHidden.boolValue
+                        };
                     }
                     else
                     {
@@ -337,18 +404,23 @@ namespace UnityEditor.U2D.PSD
                 }
                 foreach (var node in nodes)
                 {
-                    //if (showHidden || node.layer.isVisible)
+                    TreeViewItem rootNode = null;
+                    if (node.layer.parentIndex == -1)
                     {
-                        if (node.layer.parentIndex == -1)
-                        {
-                            fileRoot.AddChild(node);
-                        }
-                        else
-                        {
-                            nodes[node.layer.parentIndex].AddChild(node);
-                            if(node.flatten)
-                                nodes[node.layer.parentIndex].ChildGroupFlatten(node.flatten);
-                        }
+                        rootNode = fileRoot;
+                    }
+                    else
+                    {
+                        rootNode = nodes[node.layer.parentIndex];
+                    }
+                    rootNode.AddChild(node);
+                    if (node is PSDCollapsableNode)
+                    {
+                        var nodeCollapsable = (PSDCollapsableNode)node;
+                        var parentCollapsableNode = node.layer.parentIndex < 0 ? fileRoot : nodes[node.layer.parentIndex] as PSDCollapsableNode;
+                        nodeCollapsable.collapseStateChange.parent = parentCollapsableNode?.collapseStateChange;
+                        if(nodeCollapsable.flatten)
+                            parentCollapsableNode?.collapseStateChange.ChangeState(nodeCollapsable.flatten);
                     }
                 }    
             }
@@ -369,30 +441,72 @@ namespace UnityEditor.U2D.PSD
                 args.selected = args.focused = true;
                 Style.hoverLine.Draw(rowRect, false, false, a2, true);
             }
+            
+            rowRect.x += k_LeftMargin;
             using (new EditorGUI.DisabledScope(node.disable))
             {
                 if (node.disable)
                 {
                     var r = new Rect(rowRect.x + args.item.depth * this.depthIndentWidth + this.foldoutWidth + 32, rowRect.y, rowRect.width, rowRect.height);
-                    GUI.Label(r, Style.layerHiddenToolTip);   
+                    GUI.Label(r, Style.layerHiddenToolTip);
                 }
                 base.RowGUI(args);
             }
             
             args.focused = a1;
             args.selected = a2;
-            
-            // if (node.layer != null && !node.layer.isVisible)
-            // {
-            //     //GUI.Box(new Rect(rowRect.x, rowRect.y, Style.iconSize, Style.iconSize), Style.visibilityIcon, Style.flattenToggleStyle);
-            // }
-            
-            if (args.item is PSDLayerGroupNode)
+
+            if (node.disable && !m_ImportHidden.boolValue && node.importLayer)
             {
-                var group = (PSDLayerGroupNode)args.item;
-                Rect toggleRect = new Rect(rowRect.x + args.item.depth * this.depthIndentWidth, rowRect.y, Style.iconSize, Style.iconSize);
+                GUI.Box(new Rect(rowRect.x + Style.iconSize, rowRect.y, Style.iconSize, Style.iconSize), Style.hiddenLayerNotImportWarning, Style.flattenToggleStyle);
+            }
+            
+            var psdNode = args.item as PSDNode;
+            Rect toggleRect = new Rect(rowRect.x , rowRect.y, Style.iconSize, Style.iconSize);
+            
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.showMixedValue = psdNode.importState.childNodeStateCount > 0;
+            var importLayer = EditorGUI.Toggle(toggleRect, psdNode.importLayer);
+            EditorGUI.showMixedValue = false;
+            if (EditorGUI.EndChangeCheck())
+            {
+                SetChildrenNodeImport(psdNode, importLayer);
+                var parent = psdNode.parent as PSDCollapsableNode;
+                if (importLayer)
+                {
+                    while (parent != null)
+                    {
+                        parent.importLayer = true;
+                        parent = parent.parent as PSDCollapsableNode;
+                    }
+                }
+                else
+                {
+                    // if parent's children are all off, we turn off parent
+                    while (parent != null)
+                    {
+                        var import = false;
+                        foreach(var c in parent.children)
+                        {
+                            var n = (PSDNode)c;
+                            if (n.importLayer)
+                            {
+                                import = true;
+                                break;
+                            }
+                        }
+                        parent.importLayer = import;
+                        parent = parent.parent as PSDCollapsableNode;
+                    }
+                }
+            }
+
+            if (args.item is PSDCollapsableNode )
+            {
+                var group = (PSDCollapsableNode)args.item;
+                toggleRect = new Rect(rowRect.x + args.item.depth * this.depthIndentWidth + Style.iconSize, rowRect.y, Style.iconSize, Style.iconSize);
                 GUIContent[] icon = null;
-                if (group.childFlattenCount != 0)
+                if (group.collapseStateChange.childNodeStateCount != 0)
                     icon = Style.mergedMix;
                 if (hover)
                 {
@@ -410,22 +524,32 @@ namespace UnityEditor.U2D.PSD
                     var iconIndex = args.selected | hover ? 1 : 0;
                     EditorGUI.BeginChangeCheck();
                     var flatten = GUI.Toggle(toggleRect, group.flatten, icon[iconIndex], Style.flattenToggleStyle);
-                    if (EditorGUI.EndChangeCheck())
+                    var flattenNotSame = flatten != group.collapseStateChange.state;
+                    if (EditorGUI.EndChangeCheck() || flattenNotSame)
                     {
                         group.flatten = flatten;
-                        group.FlattenStateChange();
-                        group.NotifyParentOnFlattenChange();
-                        m_HasChanged = true;
+                        group.collapseStateChange.ChangeState(flatten);
                     }
+
+                    if (flattenNotSame)
+                        Repaint();
                 }
             }
         }
-        
-        public bool GetHasChangeAndClear()
+
+        void SetChildrenNodeImport(PSDNode node, bool value)
         {
-            var v = m_HasChanged;
-            m_HasChanged = false;
-            return v;
+            node.importLayer = value;
+            node.importState.childNodeStateCount = 0;
+            if (node.children != null)
+            {
+                foreach (var c in node.children)
+                {
+                    var p = (PSDNode)c;
+                    p.importLayer = value;
+                    SetChildrenNodeImport(p, value);
+                }    
+            }
         }
     }
 }

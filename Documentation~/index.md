@@ -9,7 +9,9 @@ The PSD Importer currently only supports two [Texture Modes](https://docs.unity3
 
 ## Supported and unsupported Photoshop effects
 
-When importing a .psb file into Unity with the PSD Importer, the importer generates a prefab of Sprites based on the image and layer data of the imported .psb file. However, the PSD Importer does not support all of Photoshop’s layer and visual effects or features. The PSD Importer ignores the following Photoshop layer properties and visual effects when it generates the Sprites and prefab:
+When importing a .psb file into Unity with the PSD Importer, the importer generates a prefab of Sprites based on the image and layer data of the imported .psb file. To ensure the importer imports the file correctly, ensure that the Photoshop file is saved with [Maximize Compatibility](https://helpx.adobe.com/au/photoshop/using/file-formats.html#maximize_compatibility_for_psd_and_psb_files) enabled. 
+
+The PSD Importer does not support all of Photoshop’s layer and visual effects or features. The PSD Importer ignores the following Photoshop layer properties and visual effects when it generates the Sprites and prefab:
 
 - Channels
 - Blend Modes

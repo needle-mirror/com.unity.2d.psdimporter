@@ -35,7 +35,8 @@ namespace PDNWrapper
             IsGroup = false;
         }
         public int LayerID { get; set; }
-
+        public bool Collapse { get; set; }
+        public bool ImportLayer { get; set; }
         public bool IsGroup {get; set; }
         public BitmapLayer ParentLayer {get; set; }
         public List<BitmapLayer> ChildLayer { get; set; }
