@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.1.3] - 2021-11-22
+### Fixed
+- Fixed per platform settings does not get applied in Windows platform. (Case 1379969)
+
+
 ## [4.1.2] - 2021-10-11
 ### Fixed
 - Fixed artifacts on images when flatten.
