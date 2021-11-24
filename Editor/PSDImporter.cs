@@ -20,7 +20,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000
-    [ScriptedImporter(22100000, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
+    [ScriptedImporter(22100001, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -99,6 +99,10 @@ namespace UnityEditor.U2D.PSD
             wrapModeU = TextureWrapMode.Repeat,
             wrapModeV = TextureWrapMode.Repeat,
             wrapModeW = TextureWrapMode.Repeat,
+            swizzleR = TextureImporterSwizzle.R,
+            swizzleG = TextureImporterSwizzle.G,
+            swizzleB = TextureImporterSwizzle.B,
+            swizzleA = TextureImporterSwizzle.A,
         };
         
         [SerializeField]
@@ -241,6 +245,14 @@ namespace UnityEditor.U2D.PSD
             }
             return ECustomSpriteMode.Multiple;
         }
+
+        public PSDImporter()
+        {
+            m_TextureImporterSettings.swizzleA = TextureImporterSwizzle.A;
+            m_TextureImporterSettings.swizzleR = TextureImporterSwizzle.R;
+            m_TextureImporterSettings.swizzleG = TextureImporterSwizzle.G;
+            m_TextureImporterSettings.swizzleB = TextureImporterSwizzle.B;
+        }
         
         /// <summary>
         /// Implementation of ScriptedImporter.OnImportAsset
@@ -251,6 +263,7 @@ namespace UnityEditor.U2D.PSD
         /// </param>
         public override void OnImportAsset(AssetImportContext ctx)
         {
+            
             FileStream fileStream = new FileStream(ctx.assetPath, FileMode.Open, FileAccess.Read);
             Document doc = null;
             if(m_ImportData == null)
@@ -760,7 +773,7 @@ namespace UnityEditor.U2D.PSD
 
         TextureImporterPlatformSettings GetPlatformTextureSettings(BuildTarget buildTarget)
         {
-            var buildTargetName = TexturePlatformSettingsHelper.GetBuildTargetName(buildTarget);
+            var buildTargetName = TexturePlatformSettingsHelper.GetBuildTargetGroupName(buildTarget);
             TextureImporterPlatformSettings platformSettings = null;
             platformSettings = m_PlatformSettings.SingleOrDefault(x => x.name == buildTargetName && x.overridden == true);
             platformSettings = platformSettings ?? m_PlatformSettings.SingleOrDefault(x => x.name == TexturePlatformSettingsHelper.defaultPlatformName);

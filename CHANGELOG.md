@@ -1,5 +1,14 @@
 # Changelog
 
+## [7.0.0-pre.4] - 2021-11-24
+### Fixed
+- Fixed per platform settings does not get applied in Windows platform. (Case 1376608)
+- Fixed unable to change mipmap settings in inspector. (Case 1379426)
+- Fixed PSDImporter to able to specify swizzle data.
+
+### Added
+- Added ability to change swizzle format in inspector.
+
 ## [7.0.0-pre.3] - 2021-10-21
 ### Changed
 - Update to latest com.unity.2d.animation package

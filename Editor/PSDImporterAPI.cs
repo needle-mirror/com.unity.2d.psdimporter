@@ -162,10 +162,7 @@ namespace UnityEditor.U2D.PSD
         /// <exception cref="ArgumentException">Exception when non valid values are set.</exception>
         public SpriteImportMode spriteImportMode
         {
-            get
-            {
-                return (SpriteImportMode)m_TextureImporterSettings.spriteMode;
-            }
+            get { return (SpriteImportMode)m_TextureImporterSettings.spriteMode; }
             set
             {
                 if (value == SpriteImportMode.Multiple || value == SpriteImportMode.Single)
@@ -185,10 +182,7 @@ namespace UnityEditor.U2D.PSD
         /// <exception cref="ArgumentException">Exception when non valid values are set.</exception>
         public TextureImporterType textureType
         {
-            get
-            {
-                return (TextureImporterType)m_TextureImporterSettings.textureType;
-            }
+            get { return (TextureImporterType)m_TextureImporterSettings.textureType; }
             set
             {
                 if (value == TextureImporterType.Sprite || value == TextureImporterType.Default)
@@ -331,8 +325,58 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
+
+        internal TextureImporterSwizzle swizzeR
+        {
+            get { return m_TextureImporterSettings.swizzleR; }
+            set
+            {
+                m_TextureImporterSettings.swizzleR = value;
+                SetDirty();
+            }
+        }
         
-        void SetDirty()
+        internal TextureImporterSwizzle swizzeG
+        {
+            get { return m_TextureImporterSettings.swizzleG; }
+            set
+            {
+                m_TextureImporterSettings.swizzleG = value;
+                SetDirty();
+            }
+        }
+        
+        internal TextureImporterSwizzle swizzeB
+        {
+            get { return m_TextureImporterSettings.swizzleB; }
+            set
+            {
+                m_TextureImporterSettings.swizzleB = value;
+                SetDirty();
+            }
+        }
+        
+        internal TextureImporterSwizzle swizzeA
+        {
+            get { return m_TextureImporterSettings.swizzleA; }
+            set
+            {
+                m_TextureImporterSettings.swizzleA = value;
+                SetDirty();
+            }
+        }
+
+        internal bool sRGBTexture
+        {
+            get { return m_TextureImporterSettings.sRGBTexture; }
+            set
+            {
+                m_TextureImporterSettings.sRGBTexture = value;
+                SetDirty();
+            }
+        }
+
+    void SetDirty()
         {
             EditorUtility.SetDirty(this);
         }

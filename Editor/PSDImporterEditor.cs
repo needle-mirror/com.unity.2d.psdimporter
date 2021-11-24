@@ -42,6 +42,7 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_IsReadable;
         SerializedProperty m_sRGBTexture;
         SerializedProperty m_AlphaSource;
+        SerializedProperty m_Swizzle;
         SerializedProperty m_MipMapMode;
         SerializedProperty m_EnableMipMap;
         SerializedProperty m_FadeOut;
@@ -75,7 +76,8 @@ namespace UnityEditor.U2D.PSD
 
         private SkeletonAsset m_SkeletonAsset;
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
-
+        static readonly int s_SwizzleFieldHash = "SwizzleField".GetHashCode();
+        
         bool m_IsPOT = false;
         Dictionary<TextureImporterType, Action[]> m_AdvanceInspectorGUI = new Dictionary<TextureImporterType, Action[]>();
         int m_PlatformSettingsIndex;
@@ -131,6 +133,7 @@ namespace UnityEditor.U2D.PSD
             m_AlphaSource = textureImporterSettingsSP.FindPropertyRelative("m_AlphaSource");
             m_MipMapMode = textureImporterSettingsSP.FindPropertyRelative("m_MipMapMode");
             m_EnableMipMap = textureImporterSettingsSP.FindPropertyRelative("m_EnableMipMap");
+            m_Swizzle  = textureImporterSettingsSP.FindPropertyRelative("m_Swizzle");
             m_FadeOut = textureImporterSettingsSP.FindPropertyRelative("m_FadeOut");
             m_BorderMipMap = textureImporterSettingsSP.FindPropertyRelative("m_BorderMipMap");
             m_MipMapsPreserveCoverage = textureImporterSettingsSP.FindPropertyRelative("m_MipMapsPreserveCoverage");
@@ -159,7 +162,8 @@ namespace UnityEditor.U2D.PSD
                 AlphaHandlingGUI,
                 POTScaleGUI,
                 ReadableGUI,
-                MipMapGUI
+                MipMapGUI,
+                SwizzleGUI
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Sprite, advanceGUIAction);
 
@@ -167,7 +171,8 @@ namespace UnityEditor.U2D.PSD
             {
                 POTScaleGUI,
                 ReadableGUI,
-                MipMapGUI
+                MipMapGUI,
+                SwizzleGUI
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
             LoadPlatformSettings();
@@ -911,7 +916,7 @@ namespace UnityEditor.U2D.PSD
             {
                 EditorGUI.indentLevel++;
                 ToggleFromInt(m_BorderMipMap, s_Styles.borderMipMaps);
-                EditorGUILayout.Popup(s_Styles.mipMapFilter, m_MipMapMode.intValue, s_Styles.mipMapFilterOptions);
+                m_MipMapMode.intValue = EditorGUILayout.Popup(s_Styles.mipMapFilter, m_MipMapMode.intValue, s_Styles.mipMapFilterOptions);
 
                 ToggleFromInt(m_MipMapsPreserveCoverage, s_Styles.mipMapsPreserveCoverage);
                 if (m_MipMapsPreserveCoverage.intValue != 0 && !m_MipMapsPreserveCoverage.hasMultipleDifferentValues)
@@ -978,6 +983,42 @@ namespace UnityEditor.U2D.PSD
             AssetDatabase.Refresh();
         }
 
+        static void SwizzleField(SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(EditorGUILayout.BeginHorizontal(), label, property);
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+            var rect = EditorGUILayout.GetControlRect(true, EditorGUI.GetPropertyHeight(SerializedPropertyType.Vector4, label), EditorStyles.numberField);
+            var id = GUIUtility.GetControlID(s_SwizzleFieldHash, FocusType.Keyboard, rect);
+            rect = EditorGUI.PrefixLabel(rect, id, label);
+            var value = property.uintValue;
+             float w = (rect.width - 3 * EditorGUIUtility.standardVerticalSpacing) / 4;
+             var subRect = new Rect(rect) {width = w};
+             var oldIndent = EditorGUI.indentLevel;
+             EditorGUI.indentLevel = 0;
+             for (int i = 0; i < 4; i++)
+             {
+                 int shift = 8 * i;
+                 uint swz = (value >> shift) & 0xFF;
+                 swz = (uint)EditorGUI.Popup(subRect, (int)swz, s_Styles.swizzleOptions);
+                 value &= ~(0xFFu << shift);
+                 value |= swz << shift;
+                 subRect.x += w + EditorGUIUtility.standardVerticalSpacing;
+             }
+             EditorGUI.indentLevel = oldIndent;
+
+             EditorGUI.showMixedValue = false;
+            if (EditorGUI.EndChangeCheck())
+                property.uintValue = value;
+            EditorGUILayout.EndHorizontal();
+            EditorGUI.EndProperty();
+        }
+
+        void SwizzleGUI()
+        {
+            SwizzleField(m_Swizzle, s_Styles.swizzle);
+        }
+        
         /// <summary>
         /// Implementation of AssetImporterEditor.ResetValues.
         /// </summary>
@@ -1068,6 +1109,14 @@ namespace UnityEditor.U2D.PSD
             GetSerializedPropertySettings(settings);
         }
 
+        static (TextureImporterSwizzle r, TextureImporterSwizzle g, TextureImporterSwizzle b, TextureImporterSwizzle a) ConvertSwizzleRaw(uint value)
+        {
+            return ((TextureImporterSwizzle)((int)value & (int)byte.MaxValue), 
+                (TextureImporterSwizzle) ((int)(value >> 8) & (int) byte.MaxValue),
+                (TextureImporterSwizzle) ((int)(value >> 16) & (int) byte.MaxValue),
+                (TextureImporterSwizzle) ((int)(value >> 24) & (int) byte.MaxValue));
+        }
+
         internal TextureImporterSettings GetSerializedPropertySettings(TextureImporterSettings settings)
         {
             if (!m_AlphaSource.hasMultipleDifferentValues)
@@ -1100,6 +1149,15 @@ namespace UnityEditor.U2D.PSD
             if (!m_MipMapMode.hasMultipleDifferentValues)
                 settings.mipmapFilter = (TextureImporterMipFilter)m_MipMapMode.intValue;
 
+            if (!m_Swizzle.hasMultipleDifferentValues)
+            {
+                var swizzleValue = ConvertSwizzleRaw(m_Swizzle.uintValue);
+                settings.swizzleR = swizzleValue.r;
+                settings.swizzleG = swizzleValue.g;
+                settings.swizzleB = swizzleValue.b;
+                settings.swizzleA = swizzleValue.a;
+            }
+            
             if (!m_FadeOut.hasMultipleDifferentValues)
                 settings.fadeOut = m_FadeOut.intValue > 0;
 
@@ -1435,6 +1493,10 @@ namespace UnityEditor.U2D.PSD
                 EditorGUIUtility.TrTextContent("Layer Management", "Layer merge settings.")
             };
         
+            public readonly GUIContent swizzle = EditorGUIUtility.TrTextContent("Swizzle",
+                "Reorder and invert texture color channels. For each of R,G,B,A channels pick where the channel data comes from.");
+            public readonly string[] swizzleOptions = new[] {"R","G","B","A", "1-R","1-G","1-B","1-A", "0","1" };
+            
             public Styles()
             {
                 // This is far from ideal, but it's better than having tons of logic in the GUI code itself.
