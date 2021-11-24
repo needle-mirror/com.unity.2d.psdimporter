@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.2] - 2021-11-24
+### Fixed
+- Fixed per platform settings does not get applied in Windows platform. (Case 1379970)
+
 ## [6.0.1] - 2021-09-21
 ### Fixed
 - Removed memory requirement check since we cannot properly determine if there will be enough memory to import the file (case 1357544)

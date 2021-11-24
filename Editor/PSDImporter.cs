@@ -20,7 +20,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000
-    [ScriptedImporter(21200000, "psb", AllowCaching = true)]
+    [ScriptedImporter(21200001, "psb", AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -679,7 +679,7 @@ namespace UnityEditor.U2D.PSD
 
         internal TextureImporterPlatformSettings GetPlatformTextureSettings(BuildTarget buildTarget)
         {
-            var buildTargetName = TexturePlatformSettingsHelper.GetBuildTargetName(buildTarget);
+            var buildTargetName = TexturePlatformSettingsHelper.GetBuildTargetGroupName(buildTarget);
             TextureImporterPlatformSettings platformSettings = null;
             platformSettings = m_PlatformSettings.SingleOrDefault(x => x.name == buildTargetName && x.overridden == true);
             platformSettings = platformSettings ?? m_PlatformSettings.SingleOrDefault(x => x.name == TexturePlatformSettingsHelper.defaultPlatformName);
