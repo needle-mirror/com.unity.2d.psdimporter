@@ -700,7 +700,7 @@ namespace UnityEditor.U2D.PSD
             {
                 EditorGUI.indentLevel++;
                 ToggleFromInt(m_BorderMipMap, s_Styles.borderMipMaps);
-                EditorGUILayout.Popup(s_Styles.mipMapFilter, m_MipMapMode.intValue, s_Styles.mipMapFilterOptions);
+                m_MipMapMode.intValue = EditorGUILayout.Popup(s_Styles.mipMapFilter, m_MipMapMode.intValue, s_Styles.mipMapFilterOptions);
 
                 ToggleFromInt(m_MipMapsPreserveCoverage, s_Styles.mipMapsPreserveCoverage);
                 if (m_MipMapsPreserveCoverage.intValue != 0 && !m_MipMapsPreserveCoverage.hasMultipleDifferentValues)

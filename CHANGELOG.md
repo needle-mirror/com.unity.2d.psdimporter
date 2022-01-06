@@ -1,9 +1,15 @@
 # Changelog
 
+## [4.2.0] - 2022-01-06
+### Fixed
+- Fixed unable to change mipmap settings in inspector. (Case 1381201)
+
+### Changed
+- Update minimum Unity release version.
+
 ## [4.1.3] - 2021-11-22
 ### Fixed
 - Fixed per platform settings does not get applied in Windows platform. (Case 1379969)
-
 
 ## [4.1.2] - 2021-10-11
 ### Fixed
