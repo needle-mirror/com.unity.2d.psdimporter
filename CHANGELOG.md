@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.0.0] - 2022-01-25
+### Changed
+- Package release version.
+
+### Fixed
+- Fixed null exception when importing files with masks. (Case 1388820)
+
 ## [7.0.0-pre.4] - 2021-11-24
 ### Fixed
 - Fixed per platform settings does not get applied in Windows platform. (Case 1376608)
