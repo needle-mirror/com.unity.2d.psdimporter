@@ -1,8 +1,14 @@
 # Changelog
 
+## [6.0.3] - 2022-02-07
+### Fixed
+- Fixed unable to change mipmap settings in inspector. (Case 1381198)
+- Fixed null exception when importing files with masks. (Case 1397354)
+
 ## [6.0.2] - 2021-11-24
 ### Fixed
 - Fixed per platform settings does not get applied in Windows platform. (Case 1379970)
+- Fixed unable to change mipmap settings in inspector. (Case 1381198)
 
 ## [6.0.1] - 2021-09-21
 ### Fixed
