@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.11] - 2022-02-22
+### Fixed
+- Fixed null exception when importing files with masks. (Case 1397356)
+
 ## [2.1.10] - 2021-10-11
 ### Fixed
 - Fixed artifacts on images when flatten.

@@ -86,6 +86,17 @@ namespace PhotoshopFile
             return val;
         }
 
+        public double ReadDouble()
+        {
+            var val = reader.ReadDouble();
+            byte[] b = BitConverter.GetBytes(val);
+            {
+                Util.SwapBytes(b, 0, 8);
+            }
+            val = BitConverter.ToDouble(b, 0);
+            return val;
+        }
+        
         public Int64 ReadInt64()
         {
             var val = reader.ReadInt64();
