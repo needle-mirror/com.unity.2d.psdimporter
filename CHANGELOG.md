@@ -1,11 +1,19 @@
 # Changelog
 
+## [4.3.0] - 2022-03-12
+### Changed
+- Updated minimum Unity release version required for the package to 2020.3.26f1.
+
+## [4.2.1] - 2022-02-21
+### Fixed
+- Fixed null exception when importing files with masks. (Case 1397355)
+
 ## [4.2.0] - 2022-01-06
 ### Fixed
 - Fixed unable to change mipmap settings in inspector. (Case 1381201)
 
 ### Changed
-- Update minimum Unity release version.
+- Updated minimum Unity release version required for the package to 2020.3.25f1.
 
 ## [4.1.3] - 2021-11-22
 ### Fixed

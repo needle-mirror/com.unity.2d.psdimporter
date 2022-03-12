@@ -103,6 +103,11 @@ namespace PhotoshopFile
     /// </summary>
     internal class MaskInfo
     {
+        private static int s_UserMaskDensityBit = BitVector32.CreateMask();
+        private static int s_UserMaskFeatherBit = BitVector32.CreateMask(s_UserMaskDensityBit);
+        private static int s_VectorMaskDensityBit = BitVector32.CreateMask(s_UserMaskFeatherBit);
+        private static int s_VectorMaskFeatherBit = BitVector32.CreateMask(s_VectorMaskDensityBit);
+
         public Mask LayerMask { get; set; }
 
         public Mask UserMask { get; set; }
@@ -113,7 +118,7 @@ namespace PhotoshopFile
         public MaskInfo()
         {
         }
-
+        
         public MaskInfo(PsdBinaryReader reader, Layer layer)
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, MaskInfo");
@@ -138,6 +143,35 @@ namespace PhotoshopFile
                 var userBackgroundColor = reader.ReadByte();
                 var userRectangle = reader.ReadRectangle();
                 UserMask = new Mask(layer, userRectangle, userBackgroundColor, new BitVector32(userFlagsByte));
+            }
+            else
+            {
+                // Only check if bit 4 is set. Testing shows there are discrepancy in file format documentation.
+                if (flagsByte == 16)
+                {
+                    // Not using them so just read and discard the values
+                    var maskParameters = new BitVector32(reader.ReadByte());
+                    if (maskParameters[s_UserMaskDensityBit])
+                        reader.ReadByte();
+
+                    if (maskParameters[s_UserMaskFeatherBit])
+                        reader.ReadDouble();
+
+                    if (maskParameters[s_VectorMaskDensityBit])
+                        reader.ReadByte();
+
+                    if (maskParameters[s_VectorMaskFeatherBit])
+                        reader.ReadDouble();
+                }
+
+                // The rest should be vector mask
+                if (reader.BaseStream.Position + 18 <= endPosition)
+                {
+                    var userFlagsByte = reader.ReadByte();
+                    var userBackgroundColor = reader.ReadByte();
+                    var userRectangle = reader.ReadRectangle();
+                    UserMask = new Mask(layer, userRectangle, userBackgroundColor, new BitVector32(userFlagsByte));
+                }
             }
 
             // 20-byte mask data will end with padding.
