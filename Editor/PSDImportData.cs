@@ -55,6 +55,7 @@ namespace UnityEditor.U2D.PSD
         public PSDLayerData[] psdLayerData
         {
             get => m_PsdLayerData;
+            set => m_PsdLayerData = value;
         }
 
         public void CreatePSDLayerData(List<BitmapLayer> bitmapLayer)
@@ -75,7 +76,8 @@ namespace UnityEditor.U2D.PSD
                 isVisible = layer.Visible,
                 layerID = layer.LayerID,
                 name = layer.Name,
-                parentIndex = parentIndex
+                parentIndex = parentIndex,
+                layerSizeOnFile = new Vector2Int(layer.rect.Width, layer.rect.Height)
             });
             parentIndex = layerData.Count - 1;
             foreach (var fileLayer in layer.ChildLayer)
@@ -92,6 +94,9 @@ namespace UnityEditor.U2D.PSD
         public int index;
     }
 
+    /// <summary>
+    /// Capture per layer import settings
+    /// </summary>
     [Serializable]
     class PSDLayerImportSetting: IPSDLayerMappingStrategyComparable
     {
@@ -130,6 +135,9 @@ namespace UnityEditor.U2D.PSD
         }
     }
     
+    /// <summary>
+    /// PSDLayer data for PSDImportData for last import state
+    /// </summary>
     [Serializable]
     class PSDLayerData : IPSDLayerMappingStrategyComparable
     {
@@ -180,6 +188,15 @@ namespace UnityEditor.U2D.PSD
             get => m_IsImported;
             set => m_IsImported = value;
         }
+
+        [SerializeField]
+        Vector2Int m_LayerSizeOnFile;
+        public Vector2Int layerSizeOnFile
+        {
+            get => m_LayerSizeOnFile;
+            set => m_LayerSizeOnFile = value;
+        }
+        
     }
 
     

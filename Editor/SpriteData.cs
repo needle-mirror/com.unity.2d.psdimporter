@@ -31,11 +31,6 @@ namespace UnityEditor.U2D.PSD
             spriteID = sr.spriteID;
         }
 
-        public static GUID GetGUIDFromSerializedProperty(SerializedProperty sp)
-        {
-            return new GUID(sp.FindPropertyRelative("m_SpriteID").stringValue);
-        }
-
         public static Vector2 GetPivotValue(SpriteAlignment alignment, Vector2 customOffset)
         {
             switch (alignment)

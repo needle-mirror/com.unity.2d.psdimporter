@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using PhotoshopFile;
 using UnityEditor.AssetImporters;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.U2D.Animation;
-using UnityEngine.U2D.Common;
+using UnityEngine.UIElements;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -20,12 +18,15 @@ namespace UnityEditor.U2D.PSD
     /// </summary>
     [CustomEditor(typeof(PSDImporter))]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
+    [CanEditMultipleObjects]
     public class PSDImporterEditor : ScriptedImporterEditor, ITexturePlatformSettingsDataProvider
     {
         struct InspectorGUI
         {
-            public Action callback;
+            public VisualElement container;
             public bool needsRepaint;
+            public Action onUpdate;
+            public Action onUIActivated;
         }
 
         const string kReferencePref = "PSDImporterPreviewShowReference";
@@ -72,8 +73,10 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_GeneratePhysicsShape;
         SerializedProperty m_LayerMappingOption;
         SerializedProperty m_Padding;
-        SerializedProperty m_ImportFileNodeState;
-
+        SerializedProperty m_SpriteSizeExpand;
+        SerializedProperty m_SpriteSizeExpandChanged;
+        uint m_SpriteSizePreviousSize;
+        
         private SkeletonAsset m_SkeletonAsset;
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
         static readonly int s_SwizzleFieldHash = "SwizzleField".GetHashCode();
@@ -88,14 +91,19 @@ namespace UnityEditor.U2D.PSD
         
         PSDImporterEditorFoldOutState m_EditorFoldOutState = new PSDImporterEditorFoldOutState();
         InspectorGUI[] m_InspectorUI;
-        PSDImporterEditorLayerTreeView m_LayerTreeView;
-        [SerializeField]
-        TreeViewState m_TreeViewState;
         PSDImporter m_CurrentTarget;
         bool m_ShowPivot;
         PSDGameObjectPreviewData m_PreviewRenderUtility;
-
-
+        PSDImporterLayerManagementMultiColumnTreeView m_LayerManagementTreeView;
+        IMGUIContainer m_LayerManagementSettingsContainer;
+        IMGUIContainer m_ApplyRevertGUIVisualElement;
+        VisualElement m_InspectorSettingsView;
+        VisualElement m_MultiSupportForLayerManagementNotSupported;
+        VisualElement m_RootVisualElement;
+        IMGUIContainer m_ToolbarContainer;
+        ScrollView m_InspectorScrollView;
+        int m_LayerTreeViewUpdateCount = 0;
+        
         /// <summary>
         /// Implementation of AssetImporterEditor.OnEnable
         /// </summary>
@@ -115,8 +123,10 @@ namespace UnityEditor.U2D.PSD
             m_GeneratePhysicsShape = serializedObject.FindProperty("m_GeneratePhysicsShape");
             m_LayerMappingOption = serializedObject.FindProperty("m_LayerMappingOption");
             m_Padding = serializedObject.FindProperty("m_Padding");
-            m_ImportFileNodeState = serializedObject.FindProperty("m_ImportFileNodeState");
-
+            m_SpriteSizeExpand = serializedObject.FindProperty("m_SpriteSizeExpand");
+            m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
+            m_SpriteSizeExpandChanged = serializedObject.FindProperty("m_SpriteSizeExpandChanged");
+            
             var textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
             m_TextureType = textureImporterSettingsSP.FindPropertyRelative("m_TextureType");
             m_TextureShape = textureImporterSettingsSP.FindPropertyRelative("m_TextureShape");
@@ -177,27 +187,122 @@ namespace UnityEditor.U2D.PSD
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
             LoadPlatformSettings();
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
-
-            m_ActiveEditorIndex = EditorPrefs.GetInt(this.GetType().Name + "ActiveEditorIndex", 0);
+            
             m_InspectorUI = new []
             {
                 new InspectorGUI()
                 {
-                    callback = DoSettingsUI,
-                    needsRepaint = false
+                    container = new IMGUIContainer(DoInspectorSettings)
+                    {
+                      name = "DoSettingsUI"  
+                    },
+                    needsRepaint = false,
                 },
                 new InspectorGUI()
                 {
-                    callback = DoLayerManagementUI,
-                    needsRepaint = true
+                    container = CreateLayerManagementUI(),
+                    needsRepaint = false,
+                    onUpdate = OnLayerManagementUIUpdate,
+                    onUIActivated = OnLayerManagementViewActivated
                 }
             };
-            m_TreeViewState = new TreeViewState();
+            m_ActiveEditorIndex = Mathf.Max(EditorPrefs.GetInt(this.GetType().Name + "ActiveEditorIndex", 0), 0);
+            m_ActiveEditorIndex %= m_InspectorUI.Length;
             UpdateLayerTreeView();
             m_ShowPivot = EditorPrefs.GetBool(kReferencePref, true);
             InitPreview();
         }
 
+        void OnLayerManagementUIUpdate()
+        {
+            if (m_LayerManagementTreeView != null)
+                m_LayerManagementTreeView.Update();
+        }
+        
+        void OnLayerManagementViewActivated()
+        {
+            if(serializedObject.isEditingMultipleObjects)
+            {
+                m_MultiSupportForLayerManagementNotSupported.SetHiddenFromLayout(false);
+                m_LayerManagementTreeView.SetHiddenFromLayout(true);
+                m_LayerManagementSettingsContainer.SetHiddenFromLayout(true);
+            }
+            else
+            {
+                m_MultiSupportForLayerManagementNotSupported.SetHiddenFromLayout(true);
+                m_LayerManagementTreeView.SetHiddenFromLayout(false);
+                m_LayerManagementSettingsContainer.SetHiddenFromLayout(false);
+            }
+        }
+        
+        VisualElement CreateLayerManagementUI()
+        {
+            var ve = new VisualElement();
+            m_MultiSupportForLayerManagementNotSupported = new Label()
+            {
+                name = "MultiSupportForLayerManagementNotSupported",
+                text = styles.multiEditLayerManagementNotSupported.text
+            };
+            m_LayerManagementSettingsContainer = new IMGUIContainer(DoLayerManagementUI)
+            {
+                name = "LayerManagementSettings",
+                style =
+                {
+                    flexGrow = 0,
+                    flexShrink = 0
+                }
+            };
+            
+            m_LayerManagementTreeView = new PSDImporterLayerManagementMultiColumnTreeView(serializedObject)
+            {
+                name = "LayerManagementTreeView"
+            };
+            m_LayerManagementTreeView.RegisterCallback<AttachToPanelEvent>(OnTreeViewAttachedToPanel);
+            
+            m_ApplyRevertGUIVisualElement = new IMGUIContainer(ApplyRevertGUIVisualElement)
+            {
+                name = "LayerManagementApplyRevertGUI",
+                style =
+                {
+                    flexGrow = 0,
+                    flexShrink = 0
+                }
+            };
+            m_ApplyRevertGUIVisualElement.RegisterCallback<GeometryChangedEvent>(OnUpdateLayerTreeViewHeight);
+            ve.Add(m_MultiSupportForLayerManagementNotSupported);
+            ve.Add(m_LayerManagementSettingsContainer);
+            ve.Add(m_LayerManagementTreeView);
+            ve.Add(m_ApplyRevertGUIVisualElement);
+            return ve;
+        }
+        
+        void OnTreeViewAttachedToPanel(AttachToPanelEvent evt)
+        {
+            m_InspectorScrollView = m_RootVisualElement.panel.visualTree.Q<ScrollView>();
+            m_InspectorScrollView.RegisterCallback<GeometryChangedEvent>(OnUpdateLayerTreeViewHeight);
+        }
+
+        void OnUpdateLayerTreeViewHeight(GeometryChangedEvent g)
+        {
+            ++m_LayerTreeViewUpdateCount;
+        }
+
+        void UpdateLayerTreeViewHeight()
+        {
+            // var h = m_InspectorScrollView.worldBound.height - (m_LayerManagementTreeView.worldBound.y - m_InspectorScrollView.worldBound.y) - m_ApplyRevertGUIVisualElement.worldBound.height;
+            // if (h != m_LayerManagementTreeView.style.height)
+            // {
+            //     m_LayerManagementTreeView.style.height = h;
+            //     m_LayerManagementTreeView.MarkDirtyRepaint();
+            // }
+        }
+        
+        void ApplyRevertGUIVisualElement()
+        {
+            serializedObject.ApplyModifiedProperties();
+            ApplyRevertGUI();
+        }
+        
         void InitPreview()
         {
             var t = (PSDImporter)target;
@@ -230,15 +335,23 @@ namespace UnityEditor.U2D.PSD
                 m_PreviewRenderUtility.Dispose();
                 m_PreviewRenderUtility = null;
             }
-
+            if(m_RootVisualElement != null)
+                m_RootVisualElement.Clear();
+            
+            if(m_LayerManagementTreeView != null)
+                m_LayerManagementTreeView.UnregisterCallback<AttachToPanelEvent>(OnTreeViewAttachedToPanel);
+            if(m_ApplyRevertGUIVisualElement != null)
+                m_ApplyRevertGUIVisualElement.UnregisterCallback<GeometryChangedEvent>(OnUpdateLayerTreeViewHeight);
+            if(m_InspectorScrollView != null)
+                m_InspectorScrollView.UnregisterCallback<GeometryChangedEvent>(OnUpdateLayerTreeViewHeight);
         }
 
         void UpdateLayerTreeView()
         {
-            if (!ReferenceEquals(m_CurrentTarget, target) || m_LayerTreeView == null)
+            if (!ReferenceEquals(m_CurrentTarget, target))
             {
                 m_CurrentTarget = (PSDImporter)target;
-                m_LayerTreeView = new PSDImporterEditorLayerTreeView(assetTarget?.name, m_TreeViewState, m_CurrentTarget?.importData?.psdLayerData, serializedObject?.FindProperty("m_PSDLayerImportSetting"), m_CurrentTarget?.GetLayerMappingStrategy(), m_MosaicLayers, m_ImportHiddenLayers, m_ImportFileNodeState);
+                m_LayerManagementTreeView.UpdateTreeView(serializedObject);
             }
         }
         
@@ -251,70 +364,112 @@ namespace UnityEditor.U2D.PSD
             return m_InspectorUI[m_ActiveEditorIndex].needsRepaint;
         }
 
-        /// <summary>
-        /// Implementation of AssetImporterEditor.OnInspectorGUI
-        /// </summary>
-        public override void OnInspectorGUI()
+        void DoInspectorSettings()
         {
-            Profiler.BeginSample("PSDImporter.OnInsectorGUI");
             serializedObject.Update();
-            if (s_Styles == null)
-                s_Styles = new Styles();
-
-            UpdateLayerTreeView();
-
-            if (assetTarget != null)
+            DoSettingsUI();
+            ApplyRevertGUIVisualElement();
+        }
+        
+        /// <summary>
+        /// Implementation of virtual method CreateInspectorGUI.
+        /// </summary>
+        /// <returns>VisualElement container for Inspector visual.</returns>
+        public override VisualElement CreateInspectorGUI()
+        {
+            var styleSheet = EditorGUIUtility.Load("packages/com.unity.2d.psdimporter/Editor/Assets/UI/PSDImporterStylesheet.uss") as StyleSheet;
+            m_RootVisualElement = new VisualElement()
             {
-                GUILayout.Space(5);
-                using (new GUILayout.HorizontalScope())
-                {
-                    GUILayout.FlexibleSpace();
-                    using (var check = new EditorGUI.ChangeCheckScope())
-                    {
-                        m_ActiveEditorIndex = GUILayout.Toolbar(m_ActiveEditorIndex, s_Styles.editorTabNames, "LargeButton", GUI.ToolbarButtonSize.FitToContents);
-                        if (check.changed)
-                        {
-                            EditorPrefs.SetInt(GetType().Name + "ActiveEditorIndex", m_ActiveEditorIndex);
-                        }
-                    }
+                name = "Root"
+            };
+            if(EditorGUIUtility.isProSkin)
+                m_RootVisualElement.AddToClassList("psdimporter-editor-dark");
+            else
+                m_RootVisualElement.AddToClassList("psdimporter-editor-light");
+            m_RootVisualElement.styleSheets.Add(styleSheet);
+            m_ToolbarContainer = new IMGUIContainer(DoToolBarIMGUI)
+            {
+                name = "Toolbar"
+            };
+            m_InspectorSettingsView = new VisualElement()
+            {
+                name = "InspectorSettings"
+            };
+            m_RootVisualElement.Add(m_ToolbarContainer);
+            m_RootVisualElement.Add(m_InspectorSettingsView);
+            m_RootVisualElement.schedule.Execute(VisualElementUpdate);
+            ShowInspectorTab(m_ActiveEditorIndex);
+            return m_RootVisualElement;
+        }
 
-                    GUILayout.FlexibleSpace();
+        void VisualElementUpdate()
+        {
+            if (m_LayerTreeViewUpdateCount > 1)
+                UpdateLayerTreeViewHeight();
+            m_LayerTreeViewUpdateCount = 0;
+            serializedObject.Update();
+            try
+            {
+                if(m_InspectorUI[m_ActiveEditorIndex].onUpdate != null)
+                    m_InspectorUI[m_ActiveEditorIndex].onUpdate.Invoke();
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Update:"+e);
+            }
+
+            serializedObject.ApplyModifiedProperties();
+            m_RootVisualElement.schedule.Execute(VisualElementUpdate);
+        }
+        
+        void ShowInspectorTab(int tab)
+        {
+            m_InspectorSettingsView.Clear();
+            m_InspectorSettingsView.Add(m_InspectorUI[tab].container);
+            m_InspectorUI[tab].onUIActivated?.Invoke();
+        }
+
+        void DoToolBarIMGUI()
+        {
+            GUILayout.Space(5);
+            using (new GUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    m_ActiveEditorIndex = GUILayout.Toolbar(m_ActiveEditorIndex, styles.editorTabNames, "LargeButton", GUI.ToolbarButtonSize.FitToContents);
+                    if (check.changed)
+                    {
+                        EditorPrefs.SetInt(GetType().Name + "ActiveEditorIndex", m_ActiveEditorIndex);
+                        ShowInspectorTab(m_ActiveEditorIndex);
+                    }
                 }
 
-                GUILayout.Space(5);
-
-
-                m_InspectorUI[m_ActiveEditorIndex].callback();
+                GUILayout.FlexibleSpace();
             }
-            else
-                DoSettingsUI();
-            
-            serializedObject.ApplyModifiedProperties();
-            ApplyRevertGUI();
-            Profiler.EndSample();
+
+            GUILayout.Space(5);
         }
         
         void DoLayerManagementUI()
         {
-            EditorGUILayout.PropertyField(m_ImportHiddenLayers, s_Styles.importHiddenLayer);
-            
-            EditorGUILayout.Space();
-            InspectorUtils.DrawSplitter();
-            InspectorUtils.DrawHeader("Layer Import Settings");
-            var rect = InternalEngineBridge.GetGUIClipVisibleRect();
-            //Magic number. 54 is for header. The rest no idea.
-            rect = GUILayoutUtility.GetRect(0,rect.height - (54 + 120 + EditorGUIUtility.singleLineHeight * 4), GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-            rect.x = 0;
-            rect.width = EditorGUIUtility.currentViewWidth;
-            m_LayerTreeView.OnGUI(rect);
+            EditorGUILayout.PropertyField(m_ImportHiddenLayers, styles.importHiddenLayer);
+            var headerRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            if (Event.current.type == EventType.Repaint)
+            {
+                GUIStyle header = "RL Header";
+                headerRect.height = EditorGUIUtility.singleLineHeight;
+                header.Draw(headerRect, false, false, false, false);
+                GUI.Label(headerRect, "Layer Import Settings");
+            }
         }
         
         void DoSettingsUI()
         {
-            if (m_EditorFoldOutState.DoGeneralUI(s_Styles.generalHeaderText))
+            if (m_EditorFoldOutState.DoGeneralUI(styles.generalHeaderText))
             {
                 EditorGUI.showMixedValue = m_TextureType.hasMultipleDifferentValues;
-                m_TextureType.intValue = EditorGUILayout.IntPopup(s_Styles.textureTypeTitle, m_TextureType.intValue, s_Styles.textureTypeOptions, s_Styles.textureTypeValues);
+                m_TextureType.intValue = EditorGUILayout.IntPopup(styles.textureTypeTitle, m_TextureType.intValue, styles.textureTypeOptions, styles.textureTypeValues);
                 EditorGUI.showMixedValue = false;
                 
                 switch ((TextureImporterType)m_TextureType.intValue)
@@ -339,11 +494,11 @@ namespace UnityEditor.U2D.PSD
             DoAdvanceInspector();
 
         }
-        
+
         void MainRigPropertyField()
         {
             EditorGUI.BeginChangeCheck();
-            m_SkeletonAsset = EditorGUILayout.ObjectField(s_Styles.mainSkeletonName, m_SkeletonAsset, typeof(SkeletonAsset), false) as SkeletonAsset;
+            m_SkeletonAsset = EditorGUILayout.ObjectField(styles.mainSkeletonName, m_SkeletonAsset, typeof(SkeletonAsset), false) as SkeletonAsset;
             if (EditorGUI.EndChangeCheck())
             {
                 var referencePath = AssetDatabase.GetAssetPath(m_SkeletonAsset);
@@ -359,7 +514,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         protected override void Apply()
         {
-            InternalEditorBridge.ApplySpriteEditorWindow();
+            // Send analytics first while the SerializedObject is still valid
             FileStream fileStream = new FileStream(((AssetImporter)target).assetPath, FileMode.Open, FileAccess.Read);
             var doc = PaintDotNet.Data.PhotoshopFileType.PsdLoad.Load(fileStream, ELoadFlag.Header | ELoadFlag.ColorMode);
 
@@ -379,7 +534,7 @@ namespace UnityEditor.U2D.PSD
             };
             doc.Cleanup();
             AnalyticFactory.analytics.SendApplyEvent(evt);
-            m_TexturePlatformSettingsHelper.Apply();
+            InternalEditorBridge.ApplySpriteEditorWindow();
             base.Apply();
             PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
             if (m_PreviewRenderUtility != null)
@@ -482,7 +637,7 @@ namespace UnityEditor.U2D.PSD
 
         void DoPlatformSettings()
         {
-            if (m_EditorFoldOutState.DoPlatformSettingsUI(s_Styles.platformSettingsHeaderText))
+            if (m_EditorFoldOutState.DoPlatformSettingsUI(styles.platformSettingsHeaderText))
             {
                 GUILayout.Space(5);
                 m_TexturePlatformSettingsHelper.ShowPlatformSpecificSettings();
@@ -496,7 +651,7 @@ namespace UnityEditor.U2D.PSD
             {
                 if (m_AdvanceInspectorGUI.ContainsKey((TextureImporterType)m_TextureType.intValue))
                 {
-                    if (m_EditorFoldOutState.DoAdvancedUI(s_Styles.advancedHeaderText))
+                    if (m_EditorFoldOutState.DoAdvancedUI(styles.advancedHeaderText))
                     {
                         foreach (var action in m_AdvanceInspectorGUI[(TextureImporterType)m_TextureType.intValue])
                         {
@@ -509,7 +664,7 @@ namespace UnityEditor.U2D.PSD
 
         void CommonTextureSettingsGUI()
         {
-            if (m_EditorFoldOutState.DoTextureUI(s_Styles.textureHeaderText))
+            if (m_EditorFoldOutState.DoTextureUI(styles.textureHeaderText))
             {
                 EditorGUI.BeginChangeCheck();
 
@@ -538,7 +693,7 @@ namespace UnityEditor.U2D.PSD
 
                     if (displayWarning)
                     {
-                        EditorGUILayout.HelpBox(s_Styles.warpNotSupportWarning.text, MessageType.Warning, true);
+                        EditorGUILayout.HelpBox(styles.warpNotSupportWarning.text, MessageType.Warning, true);
                     }
                 }
 
@@ -552,7 +707,7 @@ namespace UnityEditor.U2D.PSD
                     else
                         filter = FilterMode.Bilinear;
                 }
-                filter = (FilterMode)EditorGUILayout.IntPopup(s_Styles.filterMode, (int)filter, s_Styles.filterModeOptions, m_FilterModeOptions);
+                filter = (FilterMode)EditorGUILayout.IntPopup(styles.filterMode, (int)filter, styles.filterModeOptions, m_FilterModeOptions);
                 EditorGUI.showMixedValue = false;
                 if (EditorGUI.EndChangeCheck())
                     m_FilterMode.intValue = (int)filter;
@@ -568,7 +723,7 @@ namespace UnityEditor.U2D.PSD
                     int aniso = m_Aniso.intValue;
                     if (aniso == -1)
                         aniso = 1;
-                    aniso = EditorGUILayout.IntSlider(s_Styles.anisoLevelLabel, aniso, 0, 16);
+                    aniso = EditorGUILayout.IntSlider(styles.anisoLevelLabel, aniso, 0, 16);
                     EditorGUI.showMixedValue = false;
                     if (EditorGUI.EndChangeCheck())
                         m_Aniso.intValue = aniso;
@@ -576,9 +731,9 @@ namespace UnityEditor.U2D.PSD
                     if (aniso > 1)
                     {
                         if (QualitySettings.anisotropicFiltering == AnisotropicFiltering.Disable)
-                            EditorGUILayout.HelpBox(s_Styles.anisotropicDisableInfo.text, MessageType.Info);
+                            EditorGUILayout.HelpBox(styles.anisotropicDisableInfo.text, MessageType.Info);
                         else if (QualitySettings.anisotropicFiltering == AnisotropicFiltering.ForceEnable)
-                            EditorGUILayout.HelpBox(s_Styles.anisotropicForceEnableInfo.text, MessageType.Info);
+                            EditorGUILayout.HelpBox(styles.anisotropicForceEnableInfo.text, MessageType.Info);
                     }
                 }
                 GUILayout.Space(5);
@@ -637,9 +792,6 @@ namespace UnityEditor.U2D.PSD
         // Note: W wrapping mode is only shown when isVolumeTexture is true.
         static void WrapModePopup(SerializedProperty wrapU, SerializedProperty wrapV, SerializedProperty wrapW, bool isVolumeTexture, ref bool showPerAxisWrapModes)
         {
-            if (s_Styles == null)
-                s_Styles = new Styles();
-
             // In texture importer settings, serialized properties for things like wrap modes can contain -1;
             // that seems to indicate "use defaults, user has not changed them to anything" but not totally sure.
             // Show them as Repeat wrap modes in the popups.
@@ -677,7 +829,7 @@ namespace UnityEditor.U2D.PSD
             // main wrap mode popup
             EditorGUI.BeginChangeCheck();
             EditorGUI.showMixedValue = !showPerAxisWrapModes && (wrapU.hasMultipleDifferentValues || wrapV.hasMultipleDifferentValues || (isVolumeTexture && wrapW.hasMultipleDifferentValues));
-            value = EditorGUILayout.IntPopup(s_Styles.wrapModeLabel, value, s_Styles.wrapModeContents, s_Styles.wrapModeValues);
+            value = EditorGUILayout.IntPopup(styles.wrapModeLabel, value, styles.wrapModeContents, styles.wrapModeValues);
             if (EditorGUI.EndChangeCheck() && value != -1)
             {
                 // assign the same wrap mode to all axes, and hide per-axis popups
@@ -692,11 +844,11 @@ namespace UnityEditor.U2D.PSD
             {
                 showPerAxisWrapModes = true;
                 EditorGUI.indentLevel++;
-                WrapModeAxisPopup(s_Styles.wrapU, wrapU);
-                WrapModeAxisPopup(s_Styles.wrapV, wrapV);
+                WrapModeAxisPopup(styles.wrapU, wrapU);
+                WrapModeAxisPopup(styles.wrapV, wrapV);
                 if (isVolumeTexture)
                 {
-                    WrapModeAxisPopup(s_Styles.wrapW, wrapW);
+                    WrapModeAxisPopup(styles.wrapW, wrapW);
                 }
                 EditorGUI.indentLevel--;
             }
@@ -732,7 +884,7 @@ namespace UnityEditor.U2D.PSD
         void DoSpriteTextureTypeInspector()
         {
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.IntPopup(m_SpriteMode, s_Styles.spriteModeOptions, new[] { 1, 2, 3 }, s_Styles.spriteMode);
+            EditorGUILayout.IntPopup(m_SpriteMode, styles.spriteModeOptions, new[] { 1, 2, 3 }, styles.spriteMode);
 
             // Ensure that PropertyField focus will be cleared when we change spriteMode.
             if (EditorGUI.EndChangeCheck())
@@ -743,18 +895,18 @@ namespace UnityEditor.U2D.PSD
             // Show generic attributes
             using (new EditorGUI.DisabledScope(m_SpriteMode.intValue == 0))
             {
-                EditorGUILayout.PropertyField(m_SpritePixelsToUnits, s_Styles.spritePixelsPerUnit);
+                EditorGUILayout.PropertyField(m_SpritePixelsToUnits, styles.spritePixelsPerUnit);
 
                 if (m_SpriteMode.intValue != (int)SpriteImportMode.Polygon && !m_SpriteMode.hasMultipleDifferentValues)
                 {
-                    EditorGUILayout.IntPopup(m_SpriteMeshType, s_Styles.spriteMeshTypeOptions, new[] { 0, 1 }, s_Styles.spriteMeshType);
+                    EditorGUILayout.IntPopup(m_SpriteMeshType, styles.spriteMeshTypeOptions, new[] { 0, 1 }, styles.spriteMeshType);
                 }
 
-                EditorGUILayout.IntSlider(m_SpriteExtrude, 0, 32, s_Styles.spriteExtrude);
+                EditorGUILayout.IntSlider(m_SpriteExtrude, 0, 32, styles.spriteExtrude);
 
                 if (m_SpriteMode.intValue == 1)
                 {
-                    EditorGUILayout.IntPopup(m_Alignment, s_Styles.spriteAlignmentOptions, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s_Styles.spriteAlignment);
+                    EditorGUILayout.IntPopup(m_Alignment, styles.spriteAlignmentOptions, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, styles.spriteAlignment);
 
                     if (m_Alignment.intValue == (int)SpriteAlignment.Custom)
                     {
@@ -764,13 +916,13 @@ namespace UnityEditor.U2D.PSD
                     }   
                 }
             }
-            EditorGUILayout.PropertyField(m_GeneratePhysicsShape, s_Styles.generatePhysicsShape);
+            EditorGUILayout.PropertyField(m_GeneratePhysicsShape, styles.generatePhysicsShape);
             using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue))
             {
-                EditorGUILayout.PropertyField(m_ResliceFromLayer, s_Styles.resliceFromLayer);
+                EditorGUILayout.PropertyField(m_ResliceFromLayer, styles.resliceFromLayer);
                 if (m_ResliceFromLayer.boolValue)
                 {
-                    EditorGUILayout.HelpBox(s_Styles.resliceFromLayerWarning.text, MessageType.Info, true);
+                    EditorGUILayout.HelpBox(styles.resliceFromLayerWarning.text, MessageType.Info, true);
                 }
             }
             
@@ -779,46 +931,48 @@ namespace UnityEditor.U2D.PSD
         
         void DoSpriteInspector()
         {
-            if (m_EditorFoldOutState.DoLayerImportUI(s_Styles.layerImportHeaderText))
+            if (m_EditorFoldOutState.DoLayerImportUI(styles.layerImportHeaderText))
             {
-                EditorGUILayout.PropertyField(m_ImportHiddenLayers, s_Styles.importHiddenLayer);
+                EditorGUILayout.PropertyField(m_ImportHiddenLayers, styles.importHiddenLayer);
                 
                 using (new EditorGUI.DisabledScope(m_SpriteMode.intValue != (int)SpriteImportMode.Multiple || m_SpriteMode.hasMultipleDifferentValues))
                 {
                     using (new EditorGUI.DisabledScope(m_MosaicLayers.boolValue == false))
                     {
-                        EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, s_Styles.keepDuplicateSpriteName);
+                        EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, styles.keepDuplicateSpriteName);
 
                         using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue || !m_CharacterMode.boolValue))
                         {
-                            EditorGUILayout.PropertyField(m_GenerateGOHierarchy, s_Styles.layerGroupLabel);
+                            EditorGUILayout.PropertyField(m_GenerateGOHierarchy, styles.layerGroupLabel);
                         }
                         
-                        EditorGUILayout.IntPopup(m_LayerMappingOption, s_Styles.layerMappingOption, s_Styles.layerMappingOptionValues, s_Styles.layerMapping);
+                        EditorGUILayout.IntPopup(m_LayerMappingOption, styles.layerMappingOption, styles.layerMappingOptionValues, styles.layerMapping);
                     }
 
                     var boolToInt = !m_MosaicLayers.boolValue ? 1 : 0;
                     EditorGUI.BeginChangeCheck();
-                    boolToInt = EditorGUILayout.IntPopup(s_Styles.mosaicLayers, boolToInt, s_Styles.importModeOptions, s_Styles.falseTrueOptionValue);
+                    boolToInt = EditorGUILayout.IntPopup(styles.mosaicLayers, boolToInt, styles.importModeOptions, styles.falseTrueOptionValue);
                     if (EditorGUI.EndChangeCheck())
                         m_MosaicLayers.boolValue = boolToInt != 1;
                     using (new EditorGUI.DisabledScope(m_MosaicLayers.boolValue == false))
                     {
-                        EditorGUILayout.IntSlider(m_Padding, 0, 32, s_Styles.padding);   
+                        EditorGUILayout.IntSlider(m_Padding, 0, 32, styles.padding);
+                        
+                        EditorGUILayout.PropertyField(m_SpriteSizeExpand, styles.spriteSizeExpand);
                     }
                 }
                 GUILayout.Space(5);
             }
 
-            if (m_EditorFoldOutState.DoCharacterRigUI(s_Styles.characterRigHeaderText))
+            if (m_EditorFoldOutState.DoCharacterRigUI(styles.characterRigHeaderText))
             {
                 using (new EditorGUI.DisabledScope(m_SpriteMode.intValue != (int)SpriteImportMode.Multiple || m_SpriteMode.hasMultipleDifferentValues || m_MosaicLayers.boolValue == false))
                 {
-                    EditorGUILayout.PropertyField(m_CharacterMode, s_Styles.characterMode);
+                    EditorGUILayout.PropertyField(m_CharacterMode, styles.characterMode);
                     using (new EditorGUI.DisabledScope(!m_CharacterMode.boolValue))
                     {
                         MainRigPropertyField();
-                        EditorGUILayout.IntPopup(m_DocumentAlignment, s_Styles.spriteAlignmentOptions, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s_Styles.characterAlignment);
+                        EditorGUILayout.IntPopup(m_DocumentAlignment, styles.spriteAlignmentOptions, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, styles.characterAlignment);
                         if (m_DocumentAlignment.intValue == (int)SpriteAlignment.Custom)
                         {
                             GUILayout.BeginHorizontal();
@@ -839,17 +993,17 @@ namespace UnityEditor.U2D.PSD
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button(s_Styles.spriteEditorButtonLabel))
+                if (GUILayout.Button(styles.spriteEditorButtonLabel))
                 {
                     if (HasModified())
                     {
                         // To ensure Sprite Editor Window to have the latest texture import setting,
                         // We must applied those modified values first.
-                        string dialogText = string.Format(s_Styles.unappliedSettingsDialogContent.text, ((AssetImporter)target).assetPath);
-                        if (EditorUtility.DisplayDialog(s_Styles.unappliedSettingsDialogTitle.text,
-                            dialogText, s_Styles.applyButtonLabel.text, s_Styles.cancelButtonLabel.text))
+                        string dialogText = string.Format(styles.unappliedSettingsDialogContent.text, ((AssetImporter)target).assetPath);
+                        if (EditorUtility.DisplayDialog(styles.unappliedSettingsDialogTitle.text,
+                            dialogText, styles.applyButtonLabel.text, styles.cancelButtonLabel.text))
                         {
-                            ApplyAndImport();
+                            SaveChanges();
                             InternalEditorBridge.ShowSpriteEditorWindow(this.assetTarget);
 
                             // We reimported the asset which destroyed the editor, so we can't keep running the UI here.
@@ -864,7 +1018,22 @@ namespace UnityEditor.U2D.PSD
                 GUILayout.EndHorizontal();
             }    
         }
-        
+
+        /// <summary>
+        /// Implementation of AssetImporterEditor.SaveChanges.
+        /// </summary>
+        public override void SaveChanges()
+        {
+            if (m_SpriteSizePreviousSize != m_SpriteSizeExpand.uintValue)
+            {
+                m_SpriteSizeExpandChanged.boolValue = true;
+                serializedObject.ApplyModifiedProperties();
+                m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
+            }
+            m_TexturePlatformSettingsHelper.Apply();
+            base.SaveChanges();
+        }
+
         void DoTextureDefaultTextureTypeInspector()
         {
             ColorSpaceGUI();
@@ -873,27 +1042,27 @@ namespace UnityEditor.U2D.PSD
 
         void ColorSpaceGUI()
         {
-            ToggleFromInt(m_sRGBTexture, s_Styles.sRGBTexture);
+            ToggleFromInt(m_sRGBTexture, styles.sRGBTexture);
         }
 
         void POTScaleGUI()
         {
             using (new EditorGUI.DisabledScope(m_IsPOT || m_TextureType.intValue == (int)TextureImporterType.Sprite))
             {
-                EnumPopup(m_NPOTScale, typeof(TextureImporterNPOTScale), s_Styles.npot);
+                EnumPopup(m_NPOTScale, typeof(TextureImporterNPOTScale), styles.npot);
             }
         }
 
         void ReadableGUI()
         {
-            ToggleFromInt(m_IsReadable, s_Styles.readWrite);
+            ToggleFromInt(m_IsReadable, styles.readWrite);
         }
 
         void AlphaHandlingGUI()
         {
             EditorGUI.showMixedValue = m_AlphaSource.hasMultipleDifferentValues;
             EditorGUI.BeginChangeCheck();
-            int newAlphaUsage = EditorGUILayout.IntPopup(s_Styles.alphaSource, m_AlphaSource.intValue, s_Styles.alphaSourceOptions, s_Styles.alphaSourceValues);
+            int newAlphaUsage = EditorGUILayout.IntPopup(styles.alphaSource, m_AlphaSource.intValue, styles.alphaSourceOptions, styles.alphaSourceValues);
 
             EditorGUI.showMixedValue = false;
             if (EditorGUI.EndChangeCheck())
@@ -904,37 +1073,37 @@ namespace UnityEditor.U2D.PSD
             bool showAlphaIsTransparency = (TextureImporterAlphaSource)m_AlphaSource.intValue != TextureImporterAlphaSource.None;
             using (new EditorGUI.DisabledScope(!showAlphaIsTransparency))
             {
-                ToggleFromInt(m_AlphaIsTransparency, s_Styles.alphaIsTransparency);
+                ToggleFromInt(m_AlphaIsTransparency, styles.alphaIsTransparency);
             }
         }
 
         void MipMapGUI()
         {
-            ToggleFromInt(m_EnableMipMap, s_Styles.generateMipMaps);
+            ToggleFromInt(m_EnableMipMap, styles.generateMipMaps);
 
             if (m_EnableMipMap.boolValue && !m_EnableMipMap.hasMultipleDifferentValues)
             {
                 EditorGUI.indentLevel++;
-                ToggleFromInt(m_BorderMipMap, s_Styles.borderMipMaps);
-                m_MipMapMode.intValue = EditorGUILayout.Popup(s_Styles.mipMapFilter, m_MipMapMode.intValue, s_Styles.mipMapFilterOptions);
+                ToggleFromInt(m_BorderMipMap, styles.borderMipMaps);
+                m_MipMapMode.intValue = EditorGUILayout.Popup(styles.mipMapFilter, m_MipMapMode.intValue, styles.mipMapFilterOptions);
 
-                ToggleFromInt(m_MipMapsPreserveCoverage, s_Styles.mipMapsPreserveCoverage);
+                ToggleFromInt(m_MipMapsPreserveCoverage, styles.mipMapsPreserveCoverage);
                 if (m_MipMapsPreserveCoverage.intValue != 0 && !m_MipMapsPreserveCoverage.hasMultipleDifferentValues)
                 {
                     EditorGUI.indentLevel++;
-                    EditorGUILayout.PropertyField(m_AlphaTestReferenceValue, s_Styles.alphaTestReferenceValue);
+                    EditorGUILayout.PropertyField(m_AlphaTestReferenceValue, styles.alphaTestReferenceValue);
                     EditorGUI.indentLevel--;
                 }
 
                 // Mipmap fadeout
-                ToggleFromInt(m_FadeOut, s_Styles.mipmapFadeOutToggle);
+                ToggleFromInt(m_FadeOut, styles.mipmapFadeOutToggle);
                 if (m_FadeOut.intValue > 0)
                 {
                     EditorGUI.indentLevel++;
                     EditorGUI.BeginChangeCheck();
                     float min = m_MipMapFadeDistanceStart.intValue;
                     float max = m_MipMapFadeDistanceEnd.intValue;
-                    EditorGUILayout.MinMaxSlider(s_Styles.mipmapFadeOut, ref min, ref max, 0, 10);
+                    EditorGUILayout.MinMaxSlider(styles.mipmapFadeOut, ref min, ref max, 0, 10);
                     if (EditorGUI.EndChangeCheck())
                     {
                         m_MipMapFadeDistanceStart.intValue = Mathf.RoundToInt(min);
@@ -1000,7 +1169,7 @@ namespace UnityEditor.U2D.PSD
              {
                  int shift = 8 * i;
                  uint swz = (value >> shift) & 0xFF;
-                 swz = (uint)EditorGUI.Popup(subRect, (int)swz, s_Styles.swizzleOptions);
+                 swz = (uint)EditorGUI.Popup(subRect, (int)swz, styles.swizzleOptions);
                  value &= ~(0xFFu << shift);
                  value |= swz << shift;
                  subRect.x += w + EditorGUIUtility.standardVerticalSpacing;
@@ -1016,17 +1185,27 @@ namespace UnityEditor.U2D.PSD
 
         void SwizzleGUI()
         {
-            SwizzleField(m_Swizzle, s_Styles.swizzle);
+            SwizzleField(m_Swizzle, styles.swizzle);
         }
         
         /// <summary>
         /// Implementation of AssetImporterEditor.ResetValues.
         /// </summary>
+        [Obsolete("UnityUpgradeable () -> DiscardChanges")]
         protected override void ResetValues()
         {
-            base.ResetValues();
+            DiscardChanges();
+        }
+        
+        /// <summary>
+        /// Implementation of AssetImporterEditor.DiscardChanges.
+        /// </summary>
+        public override void DiscardChanges()
+        {
+            base.DiscardChanges();
             LoadPlatformSettings();
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
+            m_LayerManagementTreeView.UpdateTreeView(serializedObject);
         }
 
         /// <summary>
@@ -1095,6 +1274,9 @@ namespace UnityEditor.U2D.PSD
             var psdImporter = ((PSDImporter)targets[i]);
             psdImporter.SetPlatformTextureSettings(platformSettings);
             psdImporter.Apply();
+            var sp = new SerializedObject(psdImporter);
+            sp.FindProperty("m_PlatformSettingsDirtyTick").longValue = System.DateTime.Now.Ticks;
+            sp.ApplyModifiedProperties();
         }
 
         /// <summary>
@@ -1259,13 +1441,11 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public override void OnPreviewSettings()
         {
-            if (s_Styles == null)
-                s_Styles = new Styles();
             base.OnPreviewSettings();
             using(new EditorGUI.DisabledScope(!shouldProduceGameObject || m_PreviewRenderUtility == null))
             {
                 EditorGUI.BeginChangeCheck();
-                m_ShowPivot = GUILayout.Toggle(m_ShowPivot, s_Styles.previewPivotButtonContent, s_Styles.preButton);
+                m_ShowPivot = GUILayout.Toggle(m_ShowPivot, styles.previewPivotButtonContent, "toolbarbutton");
                 if (EditorGUI.EndChangeCheck())
                     EditorPrefs.SetBool(kReferencePref, m_ShowPivot);
             }
@@ -1289,11 +1469,10 @@ namespace UnityEditor.U2D.PSD
                     var t = (PSDImporter)target;
                     var prefabBounds = new Rect(0 , 0, t.importData.documentSize.x/ t.pixelsPerUnit, t.importData.documentSize.y/ t.pixelsPerUnit);
                     var documentPivot = PSDImporter.GetPivotPoint(prefabBounds, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
-                    m_PreviewRenderUtility.DrawPreview(r, Styles.preBackgroundSolid, documentPivot, m_ShowPivot);    
+                    m_PreviewRenderUtility.DrawPreview(r, "PreBackgroundSolid", documentPivot, m_ShowPivot);    
                 }
                 else
                     base.DrawPreview(r);
-                
             }
             else
             {
@@ -1303,9 +1482,8 @@ namespace UnityEditor.U2D.PSD
 
         internal class Styles
         {
-            public static readonly GUIStyle preBackgroundSolid = (GUIStyle) "PreBackgroundSolid";
             public readonly GUIContent padding = EditorGUIUtility.TrTextContent("Mosaic Padding", "Padding between each SpriteRect in pixel unit.");
-            public readonly GUIStyle preButton = "toolbarbutton";
+            public readonly GUIContent spriteSizeExpand = EditorGUIUtility.TrTextContent("Sprite Padding", "Internal padding within each SpriteRect generated from the Photoshop file.");
             public readonly GUIContent previewPivotButtonContent = EditorGUIUtility.TrIconContent("AvatarPivot", "Displays generated Prefab's pivot. The option will only be enabled if a Prefab is already generated and the import options will generate a Prefab.");
             public readonly GUIContent textureTypeTitle = new GUIContent("Texture Type", "What will this texture be used for?");
             public readonly GUIContent[] textureTypeOptions =
@@ -1452,7 +1630,7 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent layerImportHeaderText = EditorGUIUtility.TrTextContent("Layer Import","Layer Import settings.");
             public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture","Texture settings.");
-
+            public readonly GUIContent multiEditLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Multi editing in Layer Management is not supported.","");
 
             public readonly int[] falseTrueOptionValue =
             {
@@ -1523,7 +1701,17 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        internal static Styles s_Styles;
+        static Styles m_Styles;
+
+        internal static Styles styles
+        {
+            get
+            {
+                if(m_Styles == null)
+                    m_Styles = new Styles();
+                return m_Styles;
+            }
+        }
     }
 
     class PSDImporterEditorFoldOutState

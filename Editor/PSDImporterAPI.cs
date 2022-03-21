@@ -176,6 +176,19 @@ namespace UnityEditor.U2D.PSD
         }
 
         /// <summary>
+        /// Sets the type of mesh to ge generated for each Sprites.
+        /// </summary>
+        public SpriteMeshType spriteMeshType
+        {
+            get { return m_TextureImporterSettings.spriteMeshType; }
+            set
+            {
+                m_TextureImporterSettings.spriteMeshType = value;
+                SetDirty();
+            }
+        }
+        
+        /// <summary>
         /// Which type of texture are we dealing with here.
         /// </summary>
         /// <value>Valid values are TextureImporterType.Default or TextureImporterType.Sprite.</value>
@@ -326,6 +339,33 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        /// <summary>
+        /// Sets the padding between each Sprites in the mosaic texture.
+        /// </summary>
+        public uint mosiacPadding
+        {
+            get { return (uint)m_Padding; }
+            set
+            {
+                m_Padding = (int)value;
+                SetDirty();
+            }
+        }
+        
+        /// <summary>
+        /// Sets the value to increase the Sprite size by.
+        /// </summary>
+        public ushort spriteSizeExpand
+        {
+            get { return m_SpriteSizeExpand; }
+            set
+            {
+                m_SpriteSizeExpand = value;
+                m_SpriteSizeExpandChanged = true;
+                SetDirty();
+            }
+        }
+        
         internal TextureImporterSwizzle swizzeR
         {
             get { return m_TextureImporterSettings.swizzleR; }

@@ -9,7 +9,7 @@ namespace UnityEditor.U2D.PSD
 {
     class UniqueNameGenerator
     {
-        List<int> m_NameHash = new List<int>();
+        HashSet<int> m_NameHash = new HashSet<int>();
 
         public bool ContainHash(int i)
         {
@@ -31,7 +31,7 @@ namespace UnityEditor.U2D.PSD
             return GetUniqueName(name, m_NameHash);
         }
         
-        static string GetUniqueName(string name, List<int> stringHash, bool logNewNameGenerated = false, UnityEngine.Object context = null)
+        static string GetUniqueName(string name, HashSet<int> stringHash, bool logNewNameGenerated = false, UnityEngine.Object context = null)
         {
             var sanitizedName = string.Copy(SanitizeName(name));
             string uniqueName = sanitizedName;
@@ -79,7 +79,15 @@ namespace UnityEditor.U2D.PSD
         
     class GameObjectCreationFactory : UniqueNameGenerator
     {
-
+        public GameObjectCreationFactory(IList<string> names)
+        {
+            if (names != null)
+            {
+                foreach (var name in names)
+                    GetUniqueName(name);
+            }
+        }
+        
         public GameObject CreateGameObject(string name, params System.Type[] components)
         {
             var newName = GetUniqueName(name);
