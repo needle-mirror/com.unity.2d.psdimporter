@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.4] - 2022-05-20
+### Fixed
+- Fixed Sprite missing reference on certain source file created by third party tools. (Case DANB-52)
+
 ## [6.0.3] - 2022-02-07
 ### Fixed
 - Fixed unable to change mipmap settings in inspector. (Case 1381198)
