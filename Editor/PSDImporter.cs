@@ -372,6 +372,9 @@ namespace UnityEditor.U2D.PSD
                 if (useOldID)
                 {
                     var oldLayers = oldPsdLayer.Where(x => x.name == layers[i].Name);
+                    if (oldLayers.Count() == 0)
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == layers[i].Name.GetHashCode()); 
+
                     // pick one that is not already on the list
                     foreach (var ol in oldLayers)
                     {
