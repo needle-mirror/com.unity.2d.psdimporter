@@ -1,7 +1,15 @@
 # Changelog
 
+## [8.0.0-pre.3] - 2022-05-31
+### Changed
+- Update dependency package version.
+
+## [8.0.0-pre.2] - 2022-05-20
+### Fixed
+- Fixed Sprite missing reference on certain source file created by third party tools. (Case DANB-30)
+
 ## [8.0.0-pre.1] - 2022-03-21
-###Fixed
+### Fixed
 - Allow multi editing for PSDImporter Settings tab. (Case 1400534)
 - Fixed import not importing when Apply is clicked on Inspector.
 

@@ -394,6 +394,8 @@ namespace UnityEditor.U2D.PSD
                 if (useOldID)
                 {
                     var oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
+                    if (oldLayers.Count() == 0)
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == childBitmapLayer.Name.GetHashCode()); 
                     // pick one that is not already on the list
                     foreach (var ol in oldLayers)
                     {
@@ -507,38 +509,6 @@ namespace UnityEditor.U2D.PSD
             }
             
             return output;
-        }
-
-        void AutoGenerateSpriteSkinData(SpriteMetaData metaData)
-        {
-            //If bone data exist but skinning data doesn't exist, auto generate them
-            if (metaData.spriteBone != null && metaData.spriteBone.Count > 0 &&
-                (metaData.vertices == null || metaData.vertices.Count == 0))
-            {
-                var spriteMeshDataController = new SpriteMeshDataController();
-                var smd = new SpriteMeshData();
-                smd.spriteID = metaData.spriteID;
-                smd.frame = metaData.rect;
-                smd.pivot = metaData.pivot;
-                smd.bones = ModuleUtility.CreateSpriteBoneData(metaData.spriteBone.ToArray(), Matrix4x4.TRS(metaData.rect.position, Quaternion.identity, Vector3.one));
-                spriteMeshDataController.spriteMeshData = smd;
-                spriteMeshDataController.OutlineFromAlpha(new OutlineGenerator(), GetDataProvider<ITextureDataProvider>(), 0.05f, 200);
-                spriteMeshDataController.Triangulate(new Triangulator());
-                spriteMeshDataController.Subdivide(new Triangulator(), 0.25f, 0);
-                spriteMeshDataController.CalculateWeights(new BoundedBiharmonicWeightsGenerator(), null, 0.01f);
-                spriteMeshDataController.SortTrianglesByDepth();
-
-                List<Vertex2DMetaData> vmd = new List<Vertex2DMetaData>(smd.vertices.Count);
-                foreach (var v in smd.vertices)
-                    vmd.Add(new Vertex2DMetaData() { position = v.position - smd.frame.position, boneWeight = v.editableBoneWeight.ToBoneWeight(true) });
-                List<Vector2Int> emd = new List<Vector2Int>(smd.edges.Count);
-                foreach (var e in smd.edges)
-                    emd.Add(new Vector2Int(e.index1, e.index2));
-
-                metaData.vertices = vmd;
-                metaData.indices = smd.indices.ToArray();
-                metaData.edges = emd.ToArray();
-            }
         }
 
         string GetUniqueSpriteName(string name, UniqueNameGenerator generator)

@@ -1,7 +1,6 @@
-using System;
-using UnityEditor.U2D.Animation;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEditor.U2D.Common;
 
 namespace UnityEditor.U2D.PSD
 {
