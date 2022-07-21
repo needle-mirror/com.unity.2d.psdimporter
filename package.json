@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "6.0.4",
+  "version": "6.0.5",
   "unity": "2021.2",
   "unityRelease": "7f1",
   "displayName": "2D PSD Importer",
@@ -12,22 +12,22 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.animation": "7.0.6",
-    "com.unity.2d.common": "6.0.3",
+    "com.unity.2d.animation": "7.0.7",
+    "com.unity.2d.common": "6.0.4",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "6.0.4"
+    "com.unity.2d.psdimporter.tests": "6.0.5"
   },
   "_upm": {
-    "changelog": "### Fixed\n- Fixed Sprite missing reference on certain source file created by third party tools. (Case DANB-52)"
+    "changelog": "### Changed\n- Internal code clean up."
   },
   "upmCi": {
-    "footprint": "b1cabc81bffd062874fa603ab45175b41b259882"
+    "footprint": "6560d6e400c14267308f56f31fcda6aadab25f8c"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "787eee07cde83ceec97b5cee792e9e0a1566b141"
+    "revision": "21cf4d65740fb2e92caf175a7fcaea68198fa577"
   }
 }

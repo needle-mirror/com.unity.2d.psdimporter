@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.5] - 2022-07-21
+### Changed
+- Internal code clean up.
+
 ## [6.0.4] - 2022-05-20
 ### Fixed
 - Fixed Sprite missing reference on certain source file created by third party tools. (Case DANB-52)
