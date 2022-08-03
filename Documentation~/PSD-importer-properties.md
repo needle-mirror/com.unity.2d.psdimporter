@@ -171,11 +171,11 @@ This section is only available if the **Texture Type** is set to **Multiple** an
     </tr>
     <tr>
       <td rowspan="1"><strong><a href="#main-skeleton">Main Skeleton</a></strong></td>
-      <td colspan="2">This is only available when <b>Use as Rig</b> is enabled. Assign the <b>Skeleton Asset</b> that this character Prefab’s bone hierarchy will reference.<br/>If no Skeleton Asset is assigned, the importer will automatically generate a Skeleton Asset as a sub-Asset of this character. The Skeleton Asset contains the bone hierarchy of the Asset that was defined in the 2D Animation package's <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?=/manual/SkinningEditor.html">Skinning Editor</a> (refer to <a href="http://localhost:57059/com.unity.2d.psdimporter@latest?subfolder=/manual/skeleton-sharing.html">Skeleton Sharing</a> for more information).</td>
+      <td colspan="2">This is only available when <b>Use as Rig</b> is enabled. Assign the <b>Skeleton Asset</b> that this character Prefab’s bone hierarchy will reference.<br/>If no Skeleton Asset is assigned, the importer will automatically generate a Skeleton Asset as a sub-Asset of this character. The Skeleton Asset contains the bone hierarchy of the Asset that was defined in the 2D Animation package's <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinningEditor.html">Skinning Editor</a> (refer to <a href="http://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest?subfolder=/manual/skeleton-sharing.html">Skeleton Sharing</a> for more information).</td>
     </tr>
     <tr>
       <td rowspan="3"><strong>Pivot</strong></td>
-      <td colspan="2">This is only available when Use as Rig is enabled. Select the pivot point of the Sprite.</td>
+      <td colspan="2">This is only available when <b>Use as Rig</b> is enabled. Select the pivot point of the Sprite.</td>
     </tr>
     <tr>
       <td><strong>Custom</strong></td>
@@ -188,7 +188,7 @@ This section is only available if the **Texture Type** is set to **Multiple** an
 </table>
 
 ####Use as Rig
-Enable this property to have the PSD Importer generate a Prefab containing Sprites based on the layers of the imported source file. The PSD Importer also automatically gives the Sprites an [Order in Layer](https://docs.unity3d.com/Manual/2DSorting.html#sortlayer) value that sorts them according to their positions in the layer hierarchy in the source file. As a result, the generated Prefab recreates the arrangement and appearance of the assets in the original source file as closely as possible.
+Enable this property to have the PSD Importer generate a Prefab containing Sprites based on the layers of the imported source file. The PSD Importer also automatically gives the Sprites an [Order in Layer](https://docs.unity3d.com/Manual/2DSorting.html) value that sorts them according to their positions in the layer hierarchy in the source file. As a result, the generated Prefab recreates the arrangement and appearance of the assets in the original source file as closely as possible.
 
 The name of each Sprite in the Prefab is the same as the source layer it is based on, unless a **name collision error** occurs, which is usually due to duplicate names in the source layers.
 

@@ -103,6 +103,7 @@ namespace UnityEditor.U2D.PSD
         IMGUIContainer m_ToolbarContainer;
         ScrollView m_InspectorScrollView;
         int m_LayerTreeViewUpdateCount = 0;
+        SerializedProperty m_PlatformSettingsArrProp;
         
         /// <summary>
         /// Implementation of AssetImporterEditor.OnEnable
@@ -156,6 +157,7 @@ namespace UnityEditor.U2D.PSD
             m_WrapU = textureImporterSettingsSP.FindPropertyRelative("m_WrapU");
             m_WrapV = textureImporterSettingsSP.FindPropertyRelative("m_WrapV");
             m_WrapW = textureImporterSettingsSP.FindPropertyRelative("m_WrapW");
+            m_PlatformSettingsArrProp = extraDataSerializedObject.FindProperty("platformSettings");
 
             foreach (var t in targets)
             {
@@ -185,7 +187,7 @@ namespace UnityEditor.U2D.PSD
                 SwizzleGUI
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
-            LoadPlatformSettings();
+            
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
             
             m_InspectorUI = new []
@@ -213,6 +215,28 @@ namespace UnityEditor.U2D.PSD
             InitPreview();
         }
 
+        /// <summary>
+        /// Override for AssetImporter.extraDataType
+        /// </summary>
+        protected override Type extraDataType => typeof(PSDImporterEditorExternalData);
+        
+        /// <summary>
+        /// Override for AssetImporter.InitializeExtraDataInstance
+        /// </summary>
+        /// <param name="extraTarget">Target object</param>
+        /// <param name="targetIndex">Target index</param>
+        protected override void InitializeExtraDataInstance(UnityEngine.Object extraTarget, int targetIndex)
+        {
+            var importer = targets[targetIndex] as PSDImporter;
+            var extraData = extraTarget as PSDImporterEditorExternalData;
+            var platformSettingsNeeded = TexturePlatformSettingsHelper.PlatformSettingsNeeded(this);
+            if (importer != null)
+            {
+                extraData.Init(importer, platformSettingsNeeded);
+            }
+            
+        }
+        
         void OnLayerManagementUIUpdate()
         {
             if (m_LayerManagementTreeView != null)
@@ -300,6 +324,7 @@ namespace UnityEditor.U2D.PSD
         void ApplyRevertGUIVisualElement()
         {
             serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
         }
         
@@ -367,6 +392,7 @@ namespace UnityEditor.U2D.PSD
         void DoInspectorSettings()
         {
             serializedObject.Update();
+            extraDataSerializedObject.Update();
             DoSettingsUI();
             ApplyRevertGUIVisualElement();
         }
@@ -408,6 +434,7 @@ namespace UnityEditor.U2D.PSD
                 UpdateLayerTreeViewHeight();
             m_LayerTreeViewUpdateCount = 0;
             serializedObject.Update();
+            extraDataSerializedObject.Update();
             try
             {
                 if(m_InspectorUI[m_ActiveEditorIndex].onUpdate != null)
@@ -419,6 +446,7 @@ namespace UnityEditor.U2D.PSD
             }
 
             serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
             m_RootVisualElement.schedule.Execute(VisualElementUpdate);
         }
         
@@ -578,65 +606,10 @@ namespace UnityEditor.U2D.PSD
             return false;
         }
 
-        Dictionary<string, List<TextureImporterPlatformSettings>> m_PlatfromSettings = new Dictionary<string, List<TextureImporterPlatformSettings>>();
-        void LoadPlatformSettings()
-        {
-            foreach (var t in targets)
-            {
-                var importer = ((PSDImporter)t);
-                var importerPlatformSettings = importer.GetAllPlatformSettings();
-                for (int i = 0; i < importerPlatformSettings.Length; ++i)
-                {
-                    var tip = importerPlatformSettings[i];
-                    List<TextureImporterPlatformSettings> platformSettings = null;
-                    m_PlatfromSettings.TryGetValue(tip.name, out platformSettings);
-                    if (platformSettings == null)
-                    {
-                        platformSettings = new List<TextureImporterPlatformSettings>();
-                        m_PlatfromSettings.Add(tip.name, platformSettings);
-                    }
-                    platformSettings.Add(tip);
-                }
-            }
-        }
-
-        void StorePlatformSettings()
-        {
-            var platformSettingsSP = serializedObject.FindProperty("m_PlatformSettings");
-            platformSettingsSP.ClearArray();
-            foreach (var keyValue in m_PlatfromSettings)
-            {
-                if (!keyValue.Value[0].overridden)
-                    continue;
-
-                SerializedProperty platformSettingSP = null;
-                for (int i = 0; i < platformSettingsSP.arraySize; ++i)
-                {
-                    var sp = platformSettingsSP.GetArrayElementAtIndex(i);
-                    if (sp.FindPropertyRelative("m_Name").stringValue == keyValue.Key)
-                        platformSettingSP = sp;
-                }
-                if (platformSettingSP == null)
-                {
-                    platformSettingsSP.InsertArrayElementAtIndex(platformSettingsSP.arraySize);
-                    platformSettingSP = platformSettingsSP.GetArrayElementAtIndex(platformSettingsSP.arraySize - 1);
-                }
-
-                var tip = keyValue.Value[0];
-                platformSettingSP.FindPropertyRelative("m_Name").stringValue = tip.name;
-                platformSettingSP.FindPropertyRelative("m_Overridden").intValue = tip.overridden ? 1 : 0;
-                platformSettingSP.FindPropertyRelative("m_MaxTextureSize").intValue = tip.maxTextureSize;
-                platformSettingSP.FindPropertyRelative("m_ResizeAlgorithm").intValue = (int)tip.resizeAlgorithm;
-                platformSettingSP.FindPropertyRelative("m_TextureFormat").intValue = (int)tip.format;
-                platformSettingSP.FindPropertyRelative("m_TextureCompression").intValue = (int)tip.textureCompression;
-                platformSettingSP.FindPropertyRelative("m_CompressionQuality").intValue = tip.compressionQuality;
-                platformSettingSP.FindPropertyRelative("m_CrunchedCompression").intValue = tip.crunchedCompression ? 1 : 0;
-                platformSettingSP.FindPropertyRelative("m_AllowsAlphaSplitting").intValue = tip.allowsAlphaSplitting ? 1 : 0;
-            }
-        }
-
         void DoPlatformSettings()
         {
+            {
+            }
             if (m_EditorFoldOutState.DoPlatformSettingsUI(styles.platformSettingsHeaderText))
             {
                 GUILayout.Space(5);
@@ -1028,12 +1001,29 @@ namespace UnityEditor.U2D.PSD
             {
                 m_SpriteSizeExpandChanged.boolValue = true;
                 serializedObject.ApplyModifiedProperties();
+                extraDataSerializedObject.ApplyModifiedProperties();
                 m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
             }
-            m_TexturePlatformSettingsHelper.Apply();
+
+            ApplyTexturePlatformSettings();
+            
+            serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
             base.SaveChanges();
         }
 
+        void ApplyTexturePlatformSettings()
+        {
+            for(int i = 0; i< targets.Length && i < extraDataTargets.Length; ++i)
+            {
+                var psdImporter = (PSDImporter)targets[i];
+                var externalData = (PSDImporterEditorExternalData)extraDataTargets[i];
+                foreach (var ps in externalData.platformSettings)
+                {
+                    psdImporter.SetImporterPlatformSettings(ps);
+                }
+            }
+        }
         void DoTextureDefaultTextureTypeInspector()
         {
             ColorSpaceGUI();
@@ -1203,7 +1193,6 @@ namespace UnityEditor.U2D.PSD
         public override void DiscardChanges()
         {
             base.DiscardChanges();
-            LoadPlatformSettings();
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
             m_LayerManagementTreeView.UpdateTreeView(serializedObject);
         }
@@ -1225,9 +1214,15 @@ namespace UnityEditor.U2D.PSD
         /// <returns>TextureImporterPlatformSettings for the given platform name and selected target index.</returns>
         TextureImporterPlatformSettings ITexturePlatformSettingsDataProvider.GetPlatformTextureSettings(int i, string name)
         {
-            if(m_PlatfromSettings.ContainsKey(name))
-                if(m_PlatfromSettings[name].Count > i)
-                    return m_PlatfromSettings[name][i];
+            var externalData = extraDataSerializedObject.targetObjects[i] as PSDImporterEditorExternalData;
+            if (externalData != null)
+            {
+                foreach (var ps in externalData.platformSettings)
+                {
+                    if (ps.name == name)
+                        return ps;
+                }
+            }
             return new TextureImporterPlatformSettings()
             {
                 name = name,
@@ -1272,8 +1267,6 @@ namespace UnityEditor.U2D.PSD
         void ITexturePlatformSettingsDataProvider.SetPlatformTextureSettings(int i, TextureImporterPlatformSettings platformSettings)
         {
             var psdImporter = ((PSDImporter)targets[i]);
-            psdImporter.SetPlatformTextureSettings(platformSettings);
-            psdImporter.Apply();
             var sp = new SerializedObject(psdImporter);
             sp.FindProperty("m_PlatformSettingsDirtyTick").longValue = System.DateTime.Now.Ticks;
             sp.ApplyModifiedProperties();
@@ -1290,6 +1283,21 @@ namespace UnityEditor.U2D.PSD
             // Get settings that have been changed in the inspector
             GetSerializedPropertySettings(settings);
         }
+
+        /// <summary>
+        /// Get the name property of TextureImporterPlatformSettings from a SerializedProperty.
+        /// </summary>
+        /// <param name="sp">The SerializedProperty to retrive data.</param>
+        /// <returns>The name value in string.</returns>
+        public string GetBuildTargetName(SerializedProperty sp)
+        {
+            return sp.FindPropertyRelative("m_Name").stringValue;
+        }
+
+        /// <summary>
+        /// The SerializedProperty of an array of TextureImporterPlatformSettings. 
+        /// </summary>
+        public SerializedProperty platformSettingsArray => m_PlatformSettingsArrProp;
 
         static (TextureImporterSwizzle r, TextureImporterSwizzle g, TextureImporterSwizzle b, TextureImporterSwizzle a) ConvertSwizzleRaw(uint value)
         {

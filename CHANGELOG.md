@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.0.0] - 2022-08-03
+### Changed
+- Package release version.
+
+### Fixed
+- Fixed exception when showing PSDImporter inspector. (DANB-196)
+
 ## [8.0.0-pre.3] - 2022-05-31
 ### Changed
 - Update dependency package version.
