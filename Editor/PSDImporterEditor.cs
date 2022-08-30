@@ -55,6 +55,7 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_GenerateGOHierarchy;
         SerializedProperty m_PaperDollMode;
         SerializedProperty m_KeepDupilcateSpriteName;
+        SerializedProperty m_PlatformSettingsArrProp;
 
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
 
@@ -114,7 +115,8 @@ namespace UnityEditor.U2D.PSD
             m_WrapU = textureImporterSettingsSP.FindPropertyRelative("m_WrapU");
             m_WrapV = textureImporterSettingsSP.FindPropertyRelative("m_WrapV");
             m_WrapW = textureImporterSettingsSP.FindPropertyRelative("m_WrapW");
-
+            m_PlatformSettingsArrProp = extraDataSerializedObject.FindProperty("platformSettings");
+            
             var textureWidth = serializedObject.FindProperty("m_TextureActualWidth");
             var textureHeight = serializedObject.FindProperty("m_TextureActualHeight");
             m_IsPOT = Mathf.IsPowerOfTwo(textureWidth.intValue) && Mathf.IsPowerOfTwo(textureHeight.intValue);
@@ -137,16 +139,38 @@ namespace UnityEditor.U2D.PSD
                 MipMapGUI
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
-            LoadPlatformSettings();
+
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
         }
+        
+        /// <summary>
+        /// Override for AssetImporter.extraDataType
+        /// </summary>
+        protected override Type extraDataType => typeof(PSDImporterEditorExternalData);
 
+        /// <summary>
+        /// Override for AssetImporter.InitializeExtraDataInstance
+        /// </summary>
+        /// <param name="extraTarget">Target object</param>
+        /// <param name="targetIndex">Target index</param>
+        protected override void InitializeExtraDataInstance(UnityEngine.Object extraTarget, int targetIndex)
+        {
+            var importer = targets[targetIndex] as PSDImporter;
+            var extraData = extraTarget as PSDImporterEditorExternalData;
+            var platformSettingsNeeded = TexturePlatformSettingsHelper.PlatformSettingsNeeded(this);
+            if (importer != null)
+            {
+                extraData.Init(importer, platformSettingsNeeded);
+            }
+        }
+        
         /// <summary>
         /// Implementation of AssetImporterEditor.OnInspectorGUI
         /// </summary>
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+            extraDataSerializedObject.Update();
             if (s_Styles == null)
                 s_Styles = new Styles();
 
@@ -173,6 +197,7 @@ namespace UnityEditor.U2D.PSD
             GUILayout.Space(10);
             DoPlatformSettings();
             serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
         }
 
@@ -201,12 +226,24 @@ namespace UnityEditor.U2D.PSD
             doc.Cleanup();
             AnalyticFactory.analytics.SendApplyEvent(evt);
             m_TexturePlatformSettingsHelper.Apply();
+            ApplyTexturePlatformSettings();
             base.Apply();
-            Selection.activeObject = null;
-            Unsupported.SceneTrackerFlushDirty();
-            PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
         }
 
+        void ApplyTexturePlatformSettings()
+        {
+            for(int i = 0; i< targets.Length && i < extraDataTargets.Length; ++i)
+            {
+                var psdImporter = (PSDImporter)targets[i];
+                var externalData = (PSDImporterEditorExternalData)extraDataTargets[i];
+                foreach (var ps in externalData.platformSettings)
+                {
+                    psdImporter.SetPlatformTextureSettings(ps);
+                    psdImporter.Apply();
+                }
+            }
+        }
+        
         static bool IsPSD(PsdFile doc)
         {
             return !doc.IsLargeDocument;
@@ -239,63 +276,6 @@ namespace UnityEditor.U2D.PSD
                 }
             }
             return false;
-        }
-
-        Dictionary<string, List<TextureImporterPlatformSettings>> m_PlatfromSettings = new Dictionary<string, List<TextureImporterPlatformSettings>>();
-        void LoadPlatformSettings()
-        {
-            foreach (var t in targets)
-            {
-                var importer = ((PSDImporter)t);
-                var importerPlatformSettings = importer.GetAllPlatformSettings();
-                for (int i = 0; i < importerPlatformSettings.Length; ++i)
-                {
-                    var tip = importerPlatformSettings[i];
-                    List<TextureImporterPlatformSettings> platformSettings = null;
-                    m_PlatfromSettings.TryGetValue(tip.name, out platformSettings);
-                    if (platformSettings == null)
-                    {
-                        platformSettings = new List<TextureImporterPlatformSettings>();
-                        m_PlatfromSettings.Add(tip.name, platformSettings);
-                    }
-                    platformSettings.Add(tip);
-                }
-            }
-        }
-
-        void StorePlatformSettings()
-        {
-            var platformSettingsSP = serializedObject.FindProperty("m_PlatformSettings");
-            platformSettingsSP.ClearArray();
-            foreach (var keyValue in m_PlatfromSettings)
-            {
-                if (!keyValue.Value[0].overridden)
-                    continue;
-
-                SerializedProperty platformSettingSP = null;
-                for (int i = 0; i < platformSettingsSP.arraySize; ++i)
-                {
-                    var sp = platformSettingsSP.GetArrayElementAtIndex(i);
-                    if (sp.FindPropertyRelative("m_Name").stringValue == keyValue.Key)
-                        platformSettingSP = sp;
-                }
-                if (platformSettingSP == null)
-                {
-                    platformSettingsSP.InsertArrayElementAtIndex(platformSettingsSP.arraySize);
-                    platformSettingSP = platformSettingsSP.GetArrayElementAtIndex(platformSettingsSP.arraySize - 1);
-                }
-
-                var tip = keyValue.Value[0];
-                platformSettingSP.FindPropertyRelative("m_Name").stringValue = tip.name;
-                platformSettingSP.FindPropertyRelative("m_Overridden").intValue = tip.overridden ? 1 : 0;
-                platformSettingSP.FindPropertyRelative("m_MaxTextureSize").intValue = tip.maxTextureSize;
-                platformSettingSP.FindPropertyRelative("m_ResizeAlgorithm").intValue = (int)tip.resizeAlgorithm;
-                platformSettingSP.FindPropertyRelative("m_TextureFormat").intValue = (int)tip.format;
-                platformSettingSP.FindPropertyRelative("m_TextureCompression").intValue = (int)tip.textureCompression;
-                platformSettingSP.FindPropertyRelative("m_CompressionQuality").intValue = tip.compressionQuality;
-                platformSettingSP.FindPropertyRelative("m_CrunchedCompression").intValue = tip.crunchedCompression ? 1 : 0;
-                platformSettingSP.FindPropertyRelative("m_AllowsAlphaSplitting").intValue = tip.allowsAlphaSplitting ? 1 : 0;
-            }
         }
 
         void DoPlatformSettings()
@@ -773,7 +753,6 @@ namespace UnityEditor.U2D.PSD
         protected override void ResetValues()
         {
             base.ResetValues();
-            LoadPlatformSettings();
             m_TexturePlatformSettingsHelper = new TexturePlatformSettingsHelper(this);
         }
 
@@ -794,9 +773,19 @@ namespace UnityEditor.U2D.PSD
         /// <returns>TextureImporterPlatformSettings for the given platform name and selected target index.</returns>
         public TextureImporterPlatformSettings GetPlatformTextureSettings(int i, string name)
         {
-            if(m_PlatfromSettings.ContainsKey(name))
-                if(m_PlatfromSettings[name].Count > i)
-                    return m_PlatfromSettings[name][i];
+            var externalData = extraDataSerializedObject.targetObjects[i] as PSDImporterEditorExternalData;
+            if (externalData != null)
+            {
+                foreach (var ps in externalData.platformSettings)
+                {
+                    if (ps.name == name)
+                    {
+                        var copy = new TextureImporterPlatformSettings();
+                        ps.CopyTo(copy);
+                        return copy;
+                    }
+                }
+            }
             return new TextureImporterPlatformSettings()
             {
                 name = name,
@@ -804,6 +793,20 @@ namespace UnityEditor.U2D.PSD
             };
         }
 
+        /// <summary>
+        /// Retrieves the build target name property of a TextureImporterPlatformSettings
+        /// </summary>
+        /// <param name="sp">The SerializedProperty of a TextureImporterPlatformSettings</param>
+        /// <returns></returns>
+        string ITexturePlatformSettingsDataProvider.GetBuildTargetName(SerializedProperty sp)
+        {
+            return sp.FindPropertyRelative("m_Name").stringValue;
+        }
+        
+        /// <summary>
+        /// Returns SerializedProperty for TextureImporterPlatformSettings array.
+        /// </summary>
+        SerializedProperty ITexturePlatformSettingsDataProvider.platformSettingsArray => m_PlatformSettingsArrProp;
 
         /// <summary>
         /// Implementation of ITexturePlatformSettingsDataProvider.ShowPresetSettings.
@@ -841,9 +844,9 @@ namespace UnityEditor.U2D.PSD
         /// <param name="platformSettings">TextureImporterPlatformSettings to apply to target.</param>
         public void SetPlatformTextureSettings(int i, TextureImporterPlatformSettings platformSettings)
         {
-            var psdImporter = ((PSDImporter)targets[i]);
-            psdImporter.SetPlatformTextureSettings(platformSettings);
-            psdImporter.Apply();
+            // var psdImporter = ((PSDImporter)targets[i]);
+            // psdImporter.SetPlatformTextureSettings(platformSettings);
+            // psdImporter.Apply();
         }
 
         /// <summary>

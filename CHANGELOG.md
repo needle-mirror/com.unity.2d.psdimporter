@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.3.1] - 2022-08-30
+### Fixed
+- Fixed TexturePlatformSettings exception. (Case DANB-199)
+
 ## [4.3.0] - 2022-03-12
 ### Changed
 - Updated minimum Unity release version required for the package to 2020.3.26f1.
