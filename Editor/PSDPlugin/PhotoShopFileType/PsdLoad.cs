@@ -91,7 +91,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     jobHandle = l.DecodeToPdnLayer(jobHandle, out b);
                     b.ParentLayer = parent;
                     if (parent != null)
-                        parent.ChildLayer.Add(b);
+                        parent.AddChildLayer(b);
                     else
                         document.Layers.Add(b);
 
@@ -107,10 +107,9 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         internal static JobHandle DecodeToPdnLayer(this PhotoshopFile.Layer psdLayer, JobHandle inputDeps, out BitmapLayer pdnLayer)
         {
-            var psdFile = psdLayer.PsdFile;
             psdLayer.CreateMissingChannels();
-
-            pdnLayer = new BitmapLayer(psdFile.ColumnCount, psdFile.RowCount);
+            
+            pdnLayer = new BitmapLayer(psdLayer.Rect);
             pdnLayer.Name = psdLayer.Name;
             pdnLayer.Opacity = psdLayer.Opacity;
             pdnLayer.Visible = psdLayer.Visible;

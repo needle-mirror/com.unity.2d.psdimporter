@@ -18,6 +18,7 @@ namespace UnityEditor.U2D.PSD
         public Vector2Int[] edges;
         public float tessellationDetail;
         public Vector2Int uvTransform = Vector2Int.zero;
+        public Vector2 spritePosition;
 
         public SpriteMetaData() {}
 

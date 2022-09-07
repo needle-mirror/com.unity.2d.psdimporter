@@ -1,4 +1,10 @@
 # Changelog
+## [7.0.3] - 2022-09-07
+### Fixed
+- Improved import speed and memory allocation for psd/psb files by reducing the intermediate texture buffers. 
+- Fixed an editor freeze caused by over allocating intermediate texture buffers. (Case DANB-140)
+- Fixed an issue where some layers would become invisible when merging multiple layers together. (Case DANB-131)
+- Fixed exception when showing PSDImporter inspector. (DANB-197)
 
 ## [7.0.2] - 2022-07-21
 ### Changed

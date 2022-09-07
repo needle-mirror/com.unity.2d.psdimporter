@@ -20,7 +20,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000
-    [ScriptedImporter(22100001, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
+    [ScriptedImporter(22100002, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -263,12 +263,13 @@ namespace UnityEditor.U2D.PSD
         /// </param>
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            
-            FileStream fileStream = new FileStream(ctx.assetPath, FileMode.Open, FileAccess.Read);
+            var fileStream = new FileStream(ctx.assetPath, FileMode.Open, FileAccess.Read);
             Document doc = null;
+            
             if(m_ImportData == null)
                 m_ImportData = ScriptableObject.CreateInstance<PSDImportData>();
             m_ImportData.hideFlags = HideFlags.HideInHierarchy;
+            
             try
             {
                 UnityEngine.Profiling.Profiler.BeginSample("OnImportAsset");
@@ -276,22 +277,24 @@ namespace UnityEditor.U2D.PSD
                 UnityEngine.Profiling.Profiler.BeginSample("PsdLoad");
                 doc = PaintDotNet.Data.PhotoshopFileType.PsdLoad.Load(fileStream);
                 UnityEngine.Profiling.Profiler.EndSample();
+                
                 m_ImportData.CreatePSDLayerData(doc.Layers);
+                
                 ValidatePSDLayerId(doc);
                 SetDocumentImportData(doc);
 
                 importData.documentSize = new Vector2Int(doc.width, doc.height);
-                bool singleSpriteMode = m_TextureImporterSettings.textureType == TextureImporterType.Sprite && m_TextureImporterSettings.spriteMode != (int)SpriteImportMode.Multiple;
+                var singleSpriteMode = m_TextureImporterSettings.textureType == TextureImporterType.Sprite && m_TextureImporterSettings.spriteMode != (int)SpriteImportMode.Multiple;
                 EnsureSingleSpriteExist();
 
                 if (m_TextureImporterSettings.textureType != TextureImporterType.Sprite ||
                     m_MosaicLayers == false || singleSpriteMode)
                 {
-                    var image = new NativeArray<Color32>(doc.width * doc.height, Allocator.Persistent);
+                    var outputImageBuffer = new NativeArray<Color32>(doc.width * doc.height, Allocator.Persistent);
                     try
                     {
                         var spriteImportData = GetSpriteImportData();
-                        FlattenImageTask.Execute(m_ExtractData, m_ImportHiddenLayers, doc.width, doc.height, image);
+                        FlattenImageTask.Execute(m_ExtractData, ref outputImageBuffer, m_ImportHiddenLayers, documentSize);
                         
                         if (spriteImportData.Count <= 0 || spriteImportData[0] == null)
                         {
@@ -314,7 +317,7 @@ namespace UnityEditor.U2D.PSD
                                 spriteRects = spriteImportData.GetRange(1, spriteDataCount).ToArray();
                         }
                             
-                        var output = ImportTexture(ctx, image, doc.width, doc.height, spriteRects);
+                        var output = ImportTexture(ctx, outputImageBuffer, doc.width, doc.height, spriteRects);
                         importData.importedTextureWidth = output.texture.width;
                         importData.importedTextureHeight = output.texture.height;
                         //importData.importedSpriteRectData = spriteRects;
@@ -322,12 +325,12 @@ namespace UnityEditor.U2D.PSD
                     }
                     finally
                     {
-                        image.Dispose();
+                        outputImageBuffer.Dispose();
                     }
                 }
                 else
                 {
-                    ImportFromLayers(ctx, doc);
+                    ImportFromLayers(ctx);
                 }
                 
                 if (!string.IsNullOrEmpty(m_SkeletonAssetReferenceID))
@@ -351,7 +354,7 @@ namespace UnityEditor.U2D.PSD
 
         }
 
-        static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, List<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
+        static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, IEnumerable<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
         {
             // first check if all layers are unique. If not, we use back the previous layer id based on name match
             HashSet<int> uniqueIdSet = new HashSet<int>();
@@ -365,41 +368,41 @@ namespace UnityEditor.U2D.PSD
                 }
                 uniqueIdSet.Add(layer.LayerID);
             }
-            
-            for (int i = 0; i < layers.Count; ++i)
+
+            for (int i = 0; i < layers.Count(); ++i)
             {
+                var childBitmapLayer = layers.ElementAt(i);
                 // fix case 1291323
                 if (useOldID)
                 {
-                    var oldLayers = oldPsdLayer.Where(x => x.name == layers[i].Name);
+                    var oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
                     if (oldLayers.Count() == 0)
-                        oldLayers = oldPsdLayer.Where(x => x.layerID == layers[i].Name.GetHashCode()); 
-
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == childBitmapLayer.Name.GetHashCode()); 
                     // pick one that is not already on the list
                     foreach (var ol in oldLayers)
                     {
                         if (!uniqueNameGenerator.ContainHash(ol.layerID))
                         {
-                            layers[i].LayerID = ol.layerID;
+                            childBitmapLayer.LayerID = ol.layerID;
                             break;
                         }
                     }
                 }
             
-                if (uniqueNameGenerator.ContainHash(layers[i].LayerID))
+                if (uniqueNameGenerator.ContainHash(childBitmapLayer.LayerID))
                 {
-                    var importWarning = string.Format("Layer {0}: LayerId is not unique. Mapping will be done by Layer's name.", layers[i].Name);
-                    var layerName = uniqueNameGenerator.GetUniqueName(layers[i].Name);
-                    if (layerName != layers[i].Name)
+                    var importWarning = string.Format("Layer {0}: LayerId is not unique. Mapping will be done by Layer's name.", childBitmapLayer.Name);
+                    var layerName = uniqueNameGenerator.GetUniqueName(childBitmapLayer.Name);
+                    if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
-                    layers[i].LayerID = layerName.GetHashCode();
+                    childBitmapLayer.LayerID = layerName.GetHashCode();
                     Debug.LogWarning(importWarning);
                 }
                 else
-                    uniqueNameGenerator.AddHash(layers[i].LayerID);
-                if (layers[i].ChildLayer != null)
+                    uniqueNameGenerator.AddHash(childBitmapLayer.LayerID);
+                if (childBitmapLayer.ChildLayer != null)
                 {
-                    ValidatePSDLayerId(oldPsdLayer, layers[i].ChildLayer, uniqueNameGenerator);
+                    ValidatePSDLayerId(oldPsdLayer, childBitmapLayer.ChildLayer, uniqueNameGenerator);
                 }
             }
         }
@@ -487,11 +490,11 @@ namespace UnityEditor.U2D.PSD
             return generator.GetUniqueName(name);
         }
 
-        void SetDocumentImportData(List<BitmapLayer> layers, PSDExtractLayerData[] extractData, IPSDLayerMappingStrategy mappingStrategy, List<PSDLayer> psdLayers, PSDExtractLayerData parent = null)
+        void SetDocumentImportData(IEnumerable<BitmapLayer> layers, PSDExtractLayerData[] extractData, IPSDLayerMappingStrategy mappingStrategy, List<PSDLayer> psdLayers, PSDExtractLayerData parent = null)
         {
-            for (int i = 0; i < layers.Count; ++i)
+            for (int i = 0; i < layers.Count(); ++i)
             {
-                var layer = layers[i];
+                var layer = layers.ElementAt(i);
                 PSDLayerImportSetting importSetting = null;
                 if (m_PSDLayerImportSetting != null && m_PSDLayerImportSetting.Length > 0)
                 {
@@ -532,7 +535,7 @@ namespace UnityEditor.U2D.PSD
                 PSDExtractLayerData[] childrenextractData = null;
                 if (layer.ChildLayer != null)
                 {
-                    childrenextractData = new PSDExtractLayerData[layer.ChildLayer.Count];
+                    childrenextractData = new PSDExtractLayerData[layer.ChildLayer.Count()];
                     SetDocumentImportData(layer.ChildLayer, childrenextractData, mappingStrategy, psdLayers, extractData[i]);
                 }
 
@@ -548,20 +551,20 @@ namespace UnityEditor.U2D.PSD
             SetDocumentImportData(doc.Layers, m_ExtractData, mappingStrategy, oldPsdLayers);
         }
         
-        void ImportFromLayers(AssetImportContext ctx, Document doc)
+        void ImportFromLayers(AssetImportContext ctx)
         {
-            NativeArray<Color32> output = default(NativeArray<Color32>);
+            var output = default(NativeArray<Color32>);
 
-            List<int> layerIndex = new List<int>();
-            UniqueNameGenerator spriteNameHash = new UniqueNameGenerator();
+            var layerIndex = new List<int>();
+            var spriteNameHash = new UniqueNameGenerator();
             
             var oldPsdLayers = GetPSDLayers();
+            List<PSDLayer> psdLayers = null;
             try
             {
-                var psdLayers = new List<PSDLayer>();
-                var mappingStrategy = GetLayerMappingStrategy();
+                ExtractLayerTask.Execute(in m_ExtractData, out psdLayers, m_ImportHiddenLayers, documentSize);
                 
-                ExtractLayerTask.Execute(psdLayers, m_ExtractData, m_ImportHiddenLayers);
+                var mappingStrategy = GetLayerMappingStrategy();
                 var layerUnique = mappingStrategy.LayersUnique(psdLayers.ConvertAll(x => (IPSDLayerMappingStrategyComparable)x));
                 if (!string.IsNullOrEmpty(layerUnique))
                 {
@@ -589,28 +592,30 @@ namespace UnityEditor.U2D.PSD
                         hasNewLayer = true;
                 }
 
-                int expectedBufferLength = doc.width * doc.height;
                 var layerBuffers = new List<NativeArray<Color32>>();
-                for (int i = 0; i < psdLayers.Count; ++i)
+                var layerWidth = new List<int>();
+                var layerHeight = new List<int>();
+                for (var i = 0; i < psdLayers.Count; ++i)
                 {
                     var l = psdLayers[i];
+                    var expectedBufferLength = l.width * l.height;
                     if (l.texture.IsCreated && l.texture.Length == expectedBufferLength && l.isImported)
                     {
                         layerBuffers.Add(l.texture);
                         layerIndex.Add(i);
+                        layerWidth.Add(l.width);
+                        layerHeight.Add(l.height);
                     }
                 }
 
-                RectInt[] spritedata;
-                int width, height;
-                Vector2Int[] uvTransform;
-                ImagePacker.Pack(layerBuffers.ToArray(), doc.width, doc.height, m_Padding, out output, out width, out height, out spritedata, out uvTransform);
+                ImagePacker.Pack(layerBuffers.ToArray(), layerWidth.ToArray(), layerHeight.ToArray(), m_Padding, out output, out int width, out int height, out RectInt[] spriteData, out Vector2Int[] uvTransform);
+                
                 var spriteImportData = GetSpriteImportData();
                 if (spriteImportData.Count <= 0 || shouldResliceFromLayer || hasNewLayer)
                 {
                     var newSpriteMeta = new List<SpriteMetaData>();
 
-                    for (int i = 0; i < spritedata.Length && i < layerIndex.Count; ++i)
+                    for (int i = 0; i < spriteData.Length && i < layerIndex.Count; ++i)
                     {
                         var psdLayer = psdLayers[layerIndex[i]];
                         var spriteSheet = spriteImportData.FirstOrDefault(x => x.spriteID == psdLayer.spriteID);
@@ -620,26 +625,27 @@ namespace UnityEditor.U2D.PSD
                             spriteSheet.border = Vector4.zero;
                             spriteSheet.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
-                            spriteSheet.rect = new Rect(spritedata[i].x, spritedata[i].y, spritedata[i].width, spritedata[i].height);
+                            spriteSheet.rect = new Rect(spriteData[i].x, spriteData[i].y, spriteData[i].width, spriteData[i].height);
                             spriteSheet.spriteID = psdLayer.spriteID;
                         }
                         else
                         {
                             var r = spriteSheet.rect;
-                            r.position = r.position - psdLayer.mosaicPosition + spritedata[i].position;
+                            r.position = r.position - psdLayer.mosaicPosition + spriteData[i].position;
                             spriteSheet.rect = r;
                         }
                         
                         psdLayer.spriteName = GetUniqueSpriteName(psdLayer.name, spriteNameHash);
                         spriteSheet.name = psdLayer.spriteName;
+                        spriteSheet.spritePosition = psdLayer.layerPosition;
+                        
                         if(shouldResliceFromLayer)
-                            spriteSheet.rect = new Rect(spritedata[i].x, spritedata[i].y, spritedata[i].width, spritedata[i].height);
-                       
-                            
+                            spriteSheet.rect = new Rect(spriteData[i].x, spriteData[i].y, spriteData[i].width, spriteData[i].height);
+                        
                         spriteSheet.uvTransform = uvTransform[i];
 
                         psdLayer.spriteID = spriteSheet.spriteID;
-                        psdLayer.mosaicPosition = spritedata[i].position;
+                        psdLayer.mosaicPosition = spriteData[i].position;
                         newSpriteMeta.Add(spriteSheet);
                     }
                     spriteImportData.Clear();
@@ -650,29 +656,29 @@ namespace UnityEditor.U2D.PSD
                     spriteImportData.RemoveAll(x => removedLayersSprite.Contains(x.spriteID));
 
                     // First look for any user created SpriteRect and add those into the name hash
-                    foreach (var spriteData in spriteImportData)
+                    foreach (var importData in spriteImportData)
                     {
-                        var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteData.spriteID);
+                        var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == importData.spriteID);
                         if (psdLayer == null)
-                            spriteNameHash.AddHash(spriteData.name);
+                            spriteNameHash.AddHash(importData.name);
                     }
 
-                    foreach (var spriteData in spriteImportData)
+                    foreach (var importData in spriteImportData)
                     {
-                        var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteData.spriteID);
+                        var psdLayer = psdLayers.FirstOrDefault(x => x.spriteID == importData.spriteID);
                         if (psdLayer == null)
-                            spriteData.uvTransform = new Vector2Int((int)spriteData.rect.position.x, (int)spriteData.rect.position.y);
+                            importData.uvTransform = new Vector2Int((int)importData.rect.position.x, (int)importData.rect.position.y);
                         // If it is user created rect or the name has been changed before
                         // add it into the spriteNameHash and we don't copy it over from the layer
-                        if (psdLayer == null || psdLayer.spriteName != spriteData.name)
-                            spriteNameHash.AddHash(spriteData.name);
+                        if (psdLayer == null || psdLayer.spriteName != importData.name)
+                            spriteNameHash.AddHash(importData.name);
 
                         // If the sprite name has not been changed, we ensure the new
                         // layer name is still unique and use it as the sprite name
-                        if (psdLayer != null && psdLayer.spriteName == spriteData.name)
+                        if (psdLayer != null && psdLayer.spriteName == importData.name)
                         {
                             psdLayer.spriteName = GetUniqueSpriteName(psdLayer.name, spriteNameHash);
-                            spriteData.name = psdLayer.spriteName;
+                            importData.name = psdLayer.spriteName;
                         }
                     }
 
@@ -686,25 +692,28 @@ namespace UnityEditor.U2D.PSD
                         {
                             spriteSheet = new SpriteMetaData();
                             spriteImportData.Add(spriteSheet);
-                            spriteSheet.rect = new Rect(spritedata[k].x, spritedata[k].y, spritedata[k].width, spritedata[k].height);
+                            spriteSheet.rect = new Rect(spriteData[k].x, spriteData[k].y, spriteData[k].width, spriteData[k].height);
                             spriteSheet.border = Vector4.zero;
                             spriteSheet.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
                             spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
+                            spriteSheet.spritePosition = psdLayers[i].layerPosition;
                             psdLayers[i].spriteName = GetUniqueSpriteName(psdLayers[i].name, spriteNameHash);
                             spriteSheet.name = psdLayers[i].spriteName;
                         }
                         else if (spriteSheet != null)
                         {
                             var r = spriteSheet.rect;
-                            r.position = spriteSheet.rect.position - psdLayers[i].mosaicPosition + spritedata[k].position;
+                            r.position = spriteSheet.rect.position - psdLayers[i].mosaicPosition + spriteData[k].position;
+
                             spriteSheet.rect = r;
+                            spriteSheet.spritePosition = psdLayers[i].layerPosition;
                         }
 
                         if (spriteSheet != null)
                         {
                             spriteSheet.uvTransform = uvTransform[k];
                             psdLayers[i].spriteID = spriteSheet.spriteID;
-                            psdLayers[i].mosaicPosition = spritedata[k].position;
+                            psdLayers[i].mosaicPosition = spriteData[k].position;
                         }
                     }
                 }
@@ -1132,15 +1141,15 @@ namespace UnityEditor.U2D.PSD
                     root.AddComponent<SpriteLibrary>().spriteLibraryAsset = spriteLib;
 
                 var psdLayers = GetPSDLayers();
-                for (int i = 0; i < psdLayers.Count; ++i)
+                for (var i = 0; i < psdLayers.Count; ++i)
                 {
                     BuildGroupGameObject(psdLayers, i, root.transform);
                 }
                 var boneGOs = CreateBonesGO(root.transform);
-                for (int i = 0; i < psdLayers.Count; ++i)
+                for (var i = 0; i < psdLayers.Count; ++i)
                 {
                     var l = psdLayers[i];
-                    GUID layerSpriteID = l.spriteID;
+                    var layerSpriteID = l.spriteID;
                     var sprite = sprites.FirstOrDefault(x => x.GetSpriteID() == layerSpriteID);
                     var spriteMetaData = spriteImportData.FirstOrDefault(x => x.spriteID == layerSpriteID);
                     if (sprite != null && spriteMetaData != null && l.gameObject != null)
@@ -1148,10 +1157,17 @@ namespace UnityEditor.U2D.PSD
                         var spriteRenderer = l.gameObject.AddComponent<SpriteRenderer>();
                         spriteRenderer.sprite = sprite;
                         spriteRenderer.sortingOrder = psdLayers.Count - i;
-                        var uvTransform = spriteMetaData.uvTransform;
-                        var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x + (spriteMetaData.pivot.x * spriteMetaData.rect.width),
-                            spriteMetaData.rect.y - uvTransform.y + (spriteMetaData.pivot.y * spriteMetaData.rect.height)) * definitionScale / sprite.pixelsPerUnit;
-                        l.gameObject.transform.position = new Vector3(outlineOffset.x, outlineOffset.y, 0);
+                        
+                        var pivot = spriteMetaData.pivot;
+                        pivot.x *= spriteMetaData.rect.width;
+                        pivot.y *= spriteMetaData.rect.height;
+
+                        var spritePosition = spriteMetaData.spritePosition;
+                        spritePosition.x += pivot.x;
+                        spritePosition.y += pivot.y;
+                        spritePosition *= (definitionScale / sprite.pixelsPerUnit);
+                        
+                        l.gameObject.transform.position = new Vector3(spritePosition.x, spritePosition.y, 0f);
 
                         if (characterSkeleton != null)
                         {
@@ -1620,10 +1636,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        internal Vector2Int documentSize
-        {
-            get => importData.documentSize;
-        }
+        internal Vector2Int documentSize => importData.documentSize;
 
         SpriteLibraryAsset ProduceSpriteLibAsset(Sprite[] sprites)
         {

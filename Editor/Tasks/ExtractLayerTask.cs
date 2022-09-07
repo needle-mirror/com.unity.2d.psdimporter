@@ -1,181 +1,249 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PDNWrapper;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Burst;
 
 namespace UnityEditor.U2D.PSD
 {
-    class ExtractLayerTask
+    internal static class ExtractLayerTask
     {
-        struct LayerExtractData
+        struct LayerGroupData
         {
-            public int start;
-            public int end;
-            public int width;
-            public int height;
+            public int startIndex { get; set; }
+            public int endIndex { get; set; }
+            
+            /// <summary>
+            /// The layer's bounding box in document space.
+            /// </summary>
+            public int4 documentRect { get; set; }
+
+            public int width => documentRect.z;
+            public int height => documentRect.w;
         }
         
+        [BurstCompile]
         struct ConvertBufferJob : IJobParallelFor
         {
-            
-            [ReadOnly]
-            [DeallocateOnJobCompletion]
-            public NativeArray<IntPtr> original;
-            [ReadOnly]
-            [DeallocateOnJobCompletion]
-            public NativeArray<LayerExtractData> flattenIndex;
-            [ReadOnly]
-            [DeallocateOnJobCompletion]
-            public NativeArray<int> width;
-            [ReadOnly]
-            [DeallocateOnJobCompletion]
-            public NativeArray<int> height;
+            [ReadOnly, DeallocateOnJobCompletion] 
+            public NativeArray<int> inputTextureBufferSizes;
+            [ReadOnly, DeallocateOnJobCompletion]
+            public NativeArray<IntPtr> inputTextures;
+            [ReadOnly, DeallocateOnJobCompletion]
+            public NativeArray<int4> inputLayerRects;
+            [ReadOnly, DeallocateOnJobCompletion]
+            public NativeArray<LayerGroupData> layerGroupDataData;
 
+            [ReadOnly, DeallocateOnJobCompletion] 
+            public NativeArray<int2> outputTextureSizes;
             [DeallocateOnJobCompletion]
-            public NativeArray<IntPtr> output;
-            public unsafe void Execute(int index)
+            public NativeArray<IntPtr> outputTextures;
+            public unsafe void Execute(int index) 
             {
-                Color32* outputColor = (Color32*)output[index];
-                for (int i = flattenIndex[index].start; i <= flattenIndex[index].end; ++i)
+                var outputColor = (Color32*)outputTextures[index];
+                var groupStartIndex = layerGroupDataData[index].startIndex;
+                var groupEndIndex = layerGroupDataData[index].endIndex;
+                var groupRect = layerGroupDataData[index].documentRect;
+                
+                var outWidth = outputTextureSizes[index].x;
+                var outHeight = outputTextureSizes[index].y;
+
+                for (var i = groupEndIndex; i >= groupStartIndex; --i)
                 {
-                    if (original[i] == IntPtr.Zero)
+                    if (inputTextures[i] == IntPtr.Zero)
                         continue;
-                    Color32* originalColor = (Color32*)original[i];
-                    int bufferWidth = width[i];
-                    int bufferHeight = height[i];
-                    for (int h = 0; h < bufferHeight; ++h)
+
+                    var inputColor = (Color32*)inputTextures[i];
+                    var inWidth = inputLayerRects[i].z;
+                    var inHeight = inputLayerRects[i].w;
+                    
+                    var layerToGroupSpace = new int2(inputLayerRects[i].x - groupRect.x, inputLayerRects[i].y - groupRect.y);
+                    // Flip Y position
+                    layerToGroupSpace.y = outHeight - layerToGroupSpace.y - inHeight;
+
+                    for (var y = 0; y < inHeight; ++y)
                     {
-                        int originalYOffset = h * bufferWidth;
-                        int outputYOffset = (bufferHeight - h - 1) * bufferWidth;
-                        for (int w = 0; w < bufferWidth; ++w)
+                        var inY = y * inWidth;
+                        var outY = (outHeight - 1 - y - layerToGroupSpace.y) * outWidth;
+                        
+                        for (var x = 0; x < inWidth; ++x)
                         {
-                            var outColor = outputColor[w + outputYOffset];
-                            var inColor = originalColor[w + originalYOffset];
-                            float alpha = outColor.a / 255.0f;
-                            outColor.r = (byte)(alpha * (float)(outColor.r) + (float)((1.0f - alpha) * (float)inColor.r));
-                            outColor.g = (byte)(alpha * (float)(outColor.g) + (float)((1.0f - alpha) * (float)inColor.g));
-                            outColor.b = (byte)(alpha * (float)(outColor.b) + (float)((1.0f - alpha) * (float)inColor.b));
-                            outColor.a = (byte)(alpha * (float)(outColor.a) + (float)((1.0f - alpha) * (float)inColor.a));
-                            outputColor[w + outputYOffset] = outColor;
+                            var inX =  inY + x;
+                            var outX = outY + x + layerToGroupSpace.x;
+                            
+                            if (inX >= inputTextureBufferSizes[i])
+                                break;
+                            if (outX >= (outWidth * outHeight))
+                                break;
+
+                            Color inColor = inputColor[inX];
+                            Color prevOutColor = outputColor[outX];
+                            var outColor = new Color();
+                            
+                            var destAlpha = prevOutColor.a * (1 - inColor.a);
+                            outColor.a = inColor.a + prevOutColor.a * (1 - inColor.a);
+                            var premultiplyAlpha = 1 / outColor.a;
+                            outColor.r = (inColor.r * inColor.a + prevOutColor.r * destAlpha) * premultiplyAlpha;
+                            outColor.g = (inColor.g * inColor.a + prevOutColor.g * destAlpha) * premultiplyAlpha;
+                            outColor.b = (inColor.b * inColor.a + prevOutColor.b * destAlpha) * premultiplyAlpha;
+                            
+                            outputColor[outX] = outColor;                            
                         }
                     }
                 }
             }
         }
 
-        public static unsafe void Execute(List<PSDLayer> extractedLayer, PSDExtractLayerData[] layers, bool importHiddenLayer)
+        public static unsafe void Execute(in PSDExtractLayerData[] inputLayers, out List<PSDLayer> outputLayers, bool importHiddenLayer, Vector2Int documentSize)
         {
+            outputLayers = new List<PSDLayer>();
             UnityEngine.Profiling.Profiler.BeginSample("ExtractLayer_PrepareJob");
-            List<LayerExtractData> layerToExtract = new List<LayerExtractData>();
-            ExtractLayer(extractedLayer, layers, importHiddenLayer, false, layerToExtract, true);
-            if (layerToExtract.Count == 0)
+            
+            var layerGroupData = new List<LayerGroupData>();
+            ExtractLayer(in inputLayers, ref outputLayers, ref layerGroupData, importHiddenLayer, false, true, documentSize);
+            
+            if (layerGroupData.Count == 0)
             {
-                foreach (var l in extractedLayer)
-                    l.texture = default;
+                foreach (var layer in outputLayers)
+                    layer.texture = default;
                 return;
             }
-                
-            var job = new ConvertBufferJob();
-            job.original = new NativeArray<IntPtr>(extractedLayer.Count, Allocator.TempJob);
-            job.output = new NativeArray<IntPtr>(layerToExtract.Count, Allocator.TempJob);
-            job.width = new NativeArray<int>(extractedLayer.Count, Allocator.TempJob);
-            job.height = new NativeArray<int>(extractedLayer.Count, Allocator.TempJob);
             
-            for (int i = 0, extractLayerIndex = 0; i < extractedLayer.Count; ++i)
+            var job = new ConvertBufferJob();
+            job.inputTextureBufferSizes = new NativeArray<int>(outputLayers.Count, Allocator.TempJob);
+            job.inputTextures = new NativeArray<IntPtr>(outputLayers.Count, Allocator.TempJob);
+            job.inputLayerRects = new NativeArray<int4>(outputLayers.Count, Allocator.TempJob);
+            job.outputTextureSizes = new NativeArray<int2>(layerGroupData.Count, Allocator.TempJob);
+            job.outputTextures = new NativeArray<IntPtr>(layerGroupData.Count, Allocator.TempJob);
+            
+            for (int i = 0, outputLayerIndex = 0; i < outputLayers.Count; ++i)
             {
-                var el = extractedLayer[i];
-                job.original[i] = el.texture.IsCreated ? new IntPtr(el.texture.GetUnsafePtr()) : IntPtr.Zero;
-                if (extractLayerIndex < layerToExtract.Count && layerToExtract[extractLayerIndex].start == i)
+                var outputLayer = outputLayers[i];
+                
+                job.inputTextures[i] = outputLayer.texture.IsCreated ? new IntPtr(outputLayer.texture.GetUnsafePtr()) : IntPtr.Zero;
+
+                if (outputLayerIndex < layerGroupData.Count && layerGroupData[outputLayerIndex].startIndex == i)
                 {
-                    el.texture = new NativeArray<Color32>(layerToExtract[extractLayerIndex].width * layerToExtract[extractLayerIndex].height, Allocator.Persistent);
-                    job.output[extractLayerIndex] = el.texture.IsCreated ? new IntPtr(el.texture.GetUnsafePtr()) : IntPtr.Zero;
-                    ++extractLayerIndex;
+                    var inputLayer = layerGroupData[outputLayerIndex];
+                    
+                    outputLayer.texture = new NativeArray<Color32>(inputLayer.width * inputLayer.height, Allocator.Persistent);
+                    job.outputTextureSizes[outputLayerIndex] = new int2(inputLayer.width, inputLayer.height);
+                    job.outputTextures[outputLayerIndex] = outputLayer.texture.IsCreated ? new IntPtr(outputLayer.texture.GetUnsafePtr()) : IntPtr.Zero;
+                    job.inputTextureBufferSizes[i] = outputLayer.texture.IsCreated ? outputLayer.texture.Length : -1;
+                    ++outputLayerIndex;
                 }
                 else
                 {
-                    el.texture = default;
+                    job.inputTextureBufferSizes[i] = outputLayer.texture.IsCreated ? outputLayer.texture.Length : -1;
+                    outputLayer.texture = default;
                 }
                 
-                job.width[i] = el.width;
-                job.height[i] = el.height;
+                job.inputLayerRects[i] = new int4((int)outputLayer.layerPosition.x, (int)outputLayer.layerPosition.y, outputLayer.width, outputLayer.height);
             }
-            job.flattenIndex = new NativeArray<LayerExtractData>(layerToExtract.ToArray(), Allocator.TempJob);
+            job.layerGroupDataData = new NativeArray<LayerGroupData>(layerGroupData.ToArray(), Allocator.TempJob);
 
-            var jobsPerThread = layerToExtract.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
+            var jobsPerThread = layerGroupData.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
             jobsPerThread = Mathf.Max(jobsPerThread, 1);
-            var handle = job.Schedule(layerToExtract.Count, jobsPerThread);
+            var handle = job.Schedule(layerGroupData.Count, jobsPerThread);
             UnityEngine.Profiling.Profiler.EndSample();
             handle.Complete();
         }
 
-        static (int width, int height) ExtractLayer(List<PSDLayer> extractedLayer, PSDExtractLayerData[] layers, bool importHiddenLayer, bool flatten, List<LayerExtractData> layerExtract, bool parentGroupVisible)
+        static Rect ExtractLayer(in PSDExtractLayerData[] inputLayers, ref List<PSDLayer> outputLayers, ref List<LayerGroupData> layerGroupData, bool importHiddenLayer, bool flatten, bool parentGroupVisible, Vector2Int documentSize)
         {
-            // parent is the previous element in extracedLayer
-            int parentGroupIndex = extractedLayer.Count - 1;
-            int maxWidth = 0, maxHeight = 0;
-            int width = 0, height = 0;
-            foreach (var l in layers)
+            // parent is the previous element in extractedLayer
+            var parentGroupIndex = outputLayers.Count - 1;
+            var layerBoundingBox = default(Rect);
+
+            foreach (var inputLayer in inputLayers)
             {
-                var bitmapLayer = l.bitmapLayer;
-                var importsetting = l.importSetting;
-                bool layerVisible = bitmapLayer.Visible && parentGroupVisible;
-                if (l.bitmapLayer.IsGroup)
+                var bitmapLayer = inputLayer.bitmapLayer;
+                var importSettings = inputLayer.importSetting;
+                var layerVisible = bitmapLayer.Visible && parentGroupVisible;
+
+                var layerRect = new Rect(float.MaxValue, float.MaxValue, 0f, 0f);
+                if (inputLayer.bitmapLayer.IsGroup)
                 {
-                    var layer = new PSDLayer(bitmapLayer.Surface.color, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, 0, 0, bitmapLayer.LayerID, bitmapLayer.Visible)
+                    var outputLayer = new PSDLayer(bitmapLayer.Surface.color, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, 0, 0, bitmapLayer.LayerID, bitmapLayer.Visible)
                     {
-                        spriteID = l.importSetting.spriteId
+                        layerPosition = Vector2.zero,
+                        spriteID = inputLayer.importSetting.spriteId,
+                        flatten = inputLayer.importSetting.flatten
                     };
-                    layer.flatten = l.importSetting.flatten;
-                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten && layer.flatten && importsetting.importLayer;
-                    int startIndex = extractedLayer.Count;
-                    extractedLayer.Add(layer);
-                    (width, height) = ExtractLayer(extractedLayer, l.children, importHiddenLayer, flatten || layer.flatten, layerExtract, layerVisible);
-                    int endIndex = extractedLayer.Count - 1;
+                    outputLayer.isImported = (importHiddenLayer || layerVisible) && !flatten && outputLayer.flatten && importSettings.importLayer;
+                    
+                    var startIndex = outputLayers.Count;
+                    outputLayers.Add(outputLayer);
+                    layerRect = ExtractLayer(in inputLayer.children, ref outputLayers, ref layerGroupData, importHiddenLayer, flatten || outputLayer.flatten, layerVisible, documentSize);
+                    var endIndex = outputLayers.Count - 1;
+                    
                     // If this group is to be flatten and there are flatten layers
-                    if (flatten == false && layer.flatten && startIndex  < endIndex)
+                    if (flatten == false && outputLayer.flatten && startIndex  < endIndex)
                     {
-                        layerExtract.Add(new LayerExtractData()
+                        layerGroupData.Add(new LayerGroupData()
                         {
-                            start = startIndex,
-                            end = endIndex,
-                            width = width,
-                            height = height
-                        });   
+                            startIndex = startIndex,
+                            endIndex = endIndex,
+                            documentRect = new int4((int)layerRect.x, (int)layerRect.y, (int)layerRect.width, (int)layerRect.height)
+                        });
+
+                        outputLayer.texture = default;
+                        outputLayer.layerPosition = new Vector2(layerRect.x, layerRect.y);
+                        outputLayer.width = (int)layerRect.width;
+                        outputLayer.height = (int)layerRect.height;
                     }
                 }
                 else
                 {
-                    var surface = (importHiddenLayer || bitmapLayer.Visible) && importsetting.importLayer ? bitmapLayer.Surface.color : default; 
-                    var layer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, bitmapLayer.Surface.width, bitmapLayer.Surface.height, bitmapLayer.LayerID,bitmapLayer.Visible)
+                    var layerRectDocSpace = bitmapLayer.documentRect;
+                    // From Photoshop "space" into Unity "space"
+                    layerRectDocSpace.Y = (documentSize.y - layerRectDocSpace.Y) - layerRectDocSpace.Height;
+                    
+                    var surface = (importHiddenLayer || bitmapLayer.Visible) && importSettings.importLayer ? bitmapLayer.Surface.color : default;
+                    var outputLayer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, bitmapLayer.Surface.width, bitmapLayer.Surface.height, bitmapLayer.LayerID,bitmapLayer.Visible)
                     {
-                        spriteID = importsetting.spriteId
+                        spriteID = importSettings.spriteId,
+                        layerPosition = new Vector2(layerRectDocSpace.X, layerRectDocSpace.Y)
                     };
-                    layer.isImported = (importHiddenLayer || layerVisible) && !flatten && importsetting.importLayer;
-                    extractedLayer.Add(layer);
-                    if (layer.isImported)
+                    outputLayer.isImported = (importHiddenLayer || layerVisible) && !flatten && importSettings.importLayer;
+                    outputLayers.Add(outputLayer);
+                    if (outputLayer.isImported)
                     {
-                        layerExtract.Add(new LayerExtractData()
+                        layerGroupData.Add(new LayerGroupData()
                         {
-                            start = extractedLayer.Count-1,
-                            end = extractedLayer.Count-1,
-                            width = bitmapLayer.Surface.width,
-                            height = bitmapLayer.Surface.height,
+                            startIndex = outputLayers.Count - 1,
+                            endIndex = outputLayers.Count - 1,
+                            documentRect = new int4(layerRectDocSpace.X, layerRectDocSpace.Y, layerRectDocSpace.Width, layerRectDocSpace.Height)
                         });
                     }
 
-                    width = bitmapLayer.Surface.width;
-                    height = bitmapLayer.Surface.height;
+                    layerRect.x = layerRectDocSpace.X;
+                    layerRect.y = layerRectDocSpace.Y;
+                    layerRect.width = bitmapLayer.Surface.width;
+                    layerRect.height = bitmapLayer.Surface.height;
                 }
-                if (maxWidth < width)
-                    maxWidth = width;
-                if (maxHeight < height)
-                    maxHeight = height;
+
+                if (layerBoundingBox == default)
+                    layerBoundingBox = layerRect;
+                else
+                {
+                    if (layerBoundingBox.xMin > layerRect.xMin)
+                        layerBoundingBox.xMin = layerRect.xMin;
+                    if (layerBoundingBox.yMin > layerRect.yMin)
+                        layerBoundingBox.yMin = layerRect.yMin;
+                    if (layerBoundingBox.xMax < layerRect.xMax)
+                        layerBoundingBox.xMax = layerRect.xMax;
+                    if (layerBoundingBox.yMax < layerRect.yMax)
+                        layerBoundingBox.yMax = layerRect.yMax;
+                }
+
+                layerBoundingBox.width = Mathf.Min(layerBoundingBox.width, documentSize.x);
+                layerBoundingBox.height = Mathf.Min(layerBoundingBox.height, documentSize.y);
             }
-            return (maxWidth, maxHeight);
+            return layerBoundingBox;
         }
     }
 }

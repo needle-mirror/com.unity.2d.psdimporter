@@ -43,7 +43,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
     internal static class ImageDecoderPdn
     {
-        private static double rgbExponent = 1 / 2.19921875;
+        const double rgbExponent = 1 / 2.19921875;
 
         private class DecodeContext
         {
@@ -79,9 +79,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     NativeArray<byte>.Copy(layer.AlphaChannel.ImageData, AlphaChannel, layer.AlphaChannel.ImageData.Length);
                 ColorMode = layer.PsdFile.ColorMode;
                 ColorModeData = new NativeArray<byte>(layer.PsdFile.ColorModeData, Allocator.TempJob);
-
-                // Clip the layer to the specified bounds
-                Rectangle = Layer.Rect.IntersectWith(bounds);
+                Rectangle = bounds;
 
                 if (layer.Masks != null)
                 {
@@ -89,7 +87,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     UserMaskContext = GetMaskContext(layer.Masks.UserMask);
                 }
             }
-
+            
             internal void Cleanup()
             {
                 AlphaChannel.Dispose();
@@ -191,7 +189,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         public static JobHandle DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer, JobHandle inputDeps)
         {
             UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
-            var decodeContext = new DecodeContext(psdLayer, pdnLayer.Bounds);
+            var decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
             DecodeDelegate decoder = null;
             DecodeType decoderType = 0;
 
@@ -209,50 +207,45 @@ namespace PaintDotNet.Data.PhotoshopFileType
         /// Decode image from Photoshop's channel-separated formats to BGRA,
         /// using the specified decode delegate on each row.
         /// </summary>
-        private static JobHandle DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeType decoderType, JobHandle inputDeps)
+        static JobHandle DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeType decoderType, JobHandle inputDeps)
         {
-
-            var psdLayer = decodeContext.Layer;
             var surface = pdnLayer.Surface;
             var rect = decodeContext.Rectangle;
 
             // Convert rows from the Photoshop representation, writing the
             // resulting ARGB values to to the Paint.NET Surface.
 
-            int jobCount = Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
-            int execCount = (rect.Bottom - rect.Top);
-            int sliceCount = execCount / jobCount;
-            PDNDecoderJob decoderJob = new PDNDecoderJob();
+            var jobCount = Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
+            var execCount = (rect.Bottom - rect.Top);
+            var sliceCount = execCount / jobCount;
+            var decoderJob = new PDNDecoderJob();
 
-            decoderJob.Data.Rect = rect;
-            decoderJob.Data.LayerRect = psdLayer.Rect;
-            decoderJob.Data.ClippedRect = rect;
-            decoderJob.Data.SurfaceWidth = surface.width;
-            decoderJob.Data.SurfaceHeight = surface.height;
-            decoderJob.Data.SurfaceByteDepth = decodeContext.ByteDepth;
-            decoderJob.Data.DecoderType = decoderType;
+            decoderJob.data.Rect = rect;
+            decoderJob.data.SurfaceWidth = surface.width;
+            decoderJob.data.SurfaceByteDepth = decodeContext.ByteDepth;
+            decoderJob.data.DecoderType = decoderType;
 
-            decoderJob.Data.ColorChannel0 = decodeContext.Channels[0].ImageData;
-            decoderJob.Data.ColorChannel1 = decodeContext.Channels.Length > 1 ? decodeContext.Channels[1].ImageData : decodeContext.Channels[0].ImageData;
-            decoderJob.Data.ColorChannel2 = decodeContext.Channels.Length > 2 ? decodeContext.Channels[2].ImageData : decodeContext.Channels[0].ImageData;
-            decoderJob.Data.ColorChannel3 = decodeContext.Channels.Length > 3 ? decodeContext.Channels[3].ImageData : decodeContext.Channels[0].ImageData;
-            decoderJob.Data.ColorModeData = decodeContext.ColorModeData;
-            decoderJob.Data.DecodedImage  = surface.color;
+            decoderJob.data.ColorChannel0 = decodeContext.Channels[0].ImageData;
+            decoderJob.data.ColorChannel1 = decodeContext.Channels.Length > 1 ? decodeContext.Channels[1].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.data.ColorChannel2 = decodeContext.Channels.Length > 2 ? decodeContext.Channels[2].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.data.ColorChannel3 = decodeContext.Channels.Length > 3 ? decodeContext.Channels[3].ImageData : decodeContext.Channels[0].ImageData;
+            decoderJob.data.ColorModeData = decodeContext.ColorModeData;
+            decoderJob.data.DecodedImage  = surface.color;
 
             // Schedule the job, returns the JobHandle which can be waited upon later on
-            JobHandle jobHandle = decoderJob.Schedule(execCount, sliceCount, inputDeps);
+            var jobHandle = decoderJob.Schedule(execCount, sliceCount, inputDeps);
 
             // Mask and Alpha.
-            int userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
-            int layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            var userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            var layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
             var userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
             var layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
             var userAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
             var layerAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
 
-            PDNAlphaMaskJob alphaMaskJob = new PDNAlphaMaskJob();
+            var alphaMaskJob = new PDNAlphaMaskJob();
 
-            for (int y = rect.Top; y < rect.Bottom; ++y)
+            for (var y = rect.Top; y < rect.Bottom; ++y)
             {
                 if (decodeContext.UserMaskContext != null)
                     userAlphaMaskEmpty[y] = decodeContext.UserMaskContext.IsRowEmpty(y) ? (byte)1 : (byte)0;
@@ -260,37 +253,33 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     layerAlphaMaskEmpty[y] = decodeContext.LayerMaskContext.IsRowEmpty(y) ? (byte)1 : (byte)0;
             }
 
-            alphaMaskJob.Data.Rect = rect;
-            alphaMaskJob.Data.LayerRect = psdLayer.Rect;
-            alphaMaskJob.Data.ClippedRect = rect;
-            alphaMaskJob.Data.SurfaceWidth = surface.width;
-            alphaMaskJob.Data.SurfaceHeight = surface.height;
-            alphaMaskJob.Data.SurfaceByteDepth = decodeContext.ByteDepth;
-            alphaMaskJob.Data.HasAlphaChannel = decodeContext.HasAlphaChannel;
+            alphaMaskJob.data.Rect = rect;
+            alphaMaskJob.data.SurfaceWidth = surface.width;
+            alphaMaskJob.data.SurfaceByteDepth = decodeContext.ByteDepth;
+            alphaMaskJob.data.HasAlphaChannel = decodeContext.HasAlphaChannel;
 
-            alphaMaskJob.Data.HasUserAlphaMask = decodeContext.UserMaskContext != null ? 1 : 0;
-            alphaMaskJob.Data.UserMaskInvertOnBlend = decodeContext.UserMaskContext != null ? (decodeContext.UserMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
-            alphaMaskJob.Data.UserMaskRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.Rect : rect;
-            alphaMaskJob.Data.UserMaskContextRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Rectangle : rect;
-            alphaMaskJob.Data.HasLayerAlphaMask = decodeContext.LayerMaskContext != null ? 1 : 0;
-            alphaMaskJob.Data.LayerMaskInvertOnBlend = decodeContext.LayerMaskContext != null ? (decodeContext.LayerMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
-            alphaMaskJob.Data.LayerMaskRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.Rect : rect;
-            alphaMaskJob.Data.LayerMaskContextRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Rectangle : rect;
+            alphaMaskJob.data.HasUserAlphaMask = decodeContext.UserMaskContext != null ? 1 : 0;
+            alphaMaskJob.data.UserMaskInvertOnBlend = decodeContext.UserMaskContext != null ? (decodeContext.UserMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
+            alphaMaskJob.data.UserMaskRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.Rect : rect;
+            alphaMaskJob.data.UserMaskContextRect = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Rectangle : rect;
+            alphaMaskJob.data.HasLayerAlphaMask = decodeContext.LayerMaskContext != null ? 1 : 0;
+            alphaMaskJob.data.LayerMaskInvertOnBlend = decodeContext.LayerMaskContext != null ? (decodeContext.LayerMaskContext.Mask.InvertOnBlend ? 1 : 0) : 0;
+            alphaMaskJob.data.LayerMaskRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.Rect : rect;
+            alphaMaskJob.data.LayerMaskContextRect = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Rectangle : rect;
 
-            alphaMaskJob.Data.AlphaChannel0 = decodeContext.AlphaChannel;
-            alphaMaskJob.Data.UserMask = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
-            alphaMaskJob.Data.UserAlphaMask = userAlphaMask;
-            alphaMaskJob.Data.UserAlphaMaskEmpty = userAlphaMaskEmpty;
-            alphaMaskJob.Data.LayerMask = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
-            alphaMaskJob.Data.LayerAlphaMask = layerAlphaMask;
-            alphaMaskJob.Data.LayerAlphaMaskEmpty = layerAlphaMaskEmpty;
-            alphaMaskJob.Data.DecodedImage = surface.color;
-            alphaMaskJob.Data.UserMaskBackgroundColor = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.BackgroundColor : (byte)0;
-            alphaMaskJob.Data.LayerMaskBackgroundColor = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.BackgroundColor : (byte)0;
+            alphaMaskJob.data.AlphaChannel0 = decodeContext.AlphaChannel;
+            alphaMaskJob.data.UserMask = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
+            alphaMaskJob.data.UserAlphaMask = userAlphaMask;
+            alphaMaskJob.data.UserAlphaMaskEmpty = userAlphaMaskEmpty;
+            alphaMaskJob.data.LayerMask = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.ImageData : decodeContext.AlphaChannel;
+            alphaMaskJob.data.LayerAlphaMask = layerAlphaMask;
+            alphaMaskJob.data.LayerAlphaMaskEmpty = layerAlphaMaskEmpty;
+            alphaMaskJob.data.DecodedImage = surface.color;
+            alphaMaskJob.data.UserMaskBackgroundColor = decodeContext.UserMaskContext != null ? decodeContext.UserMaskContext.Mask.BackgroundColor : (byte)0;
+            alphaMaskJob.data.LayerMaskBackgroundColor = decodeContext.LayerMaskContext != null ? decodeContext.LayerMaskContext.Mask.BackgroundColor : (byte)0;
 
             jobHandle = alphaMaskJob.Schedule(jobHandle);
             return jobHandle;
-
         }
 
         ///////////////////////////////////////////////////////////////////////////
@@ -303,7 +292,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         public static void DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer)
         {
             UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
-            var decodeContext = new DecodeContext(psdLayer, pdnLayer.Bounds);
+            var decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
             DecodeDelegate decoder = null;
             DecodeType decoderType = 0;
 
