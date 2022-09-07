@@ -1,8 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using Unity.Collections;
 using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
@@ -87,4 +87,27 @@ namespace UnityEditor.U2D.PSD
         }
     }
 
+    internal static class ImportUtilities
+    {
+        public static string SaveToPng(NativeArray<Color32> buffer, int width, int height)
+        {
+            if (!buffer.IsCreated ||
+                buffer.Length == 0 ||
+                width == 0 ||
+                height == 0)
+                return "No .png generated.";
+            
+            var texture2D = new Texture2D(width, height);
+            texture2D.SetPixels32(buffer.ToArray());
+            var png = texture2D.EncodeToPNG();
+            var path = Application.dataPath + $"/tex_{System.Guid.NewGuid().ToString()}.png";
+            var fileStream = System.IO.File.Create(path);
+            fileStream.Write(png);
+            fileStream.Close();
+            
+            UnityEngine.Object.DestroyImmediate(texture2D);
+
+            return path;
+        }
+    }
 }

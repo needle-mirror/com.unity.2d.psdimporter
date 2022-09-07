@@ -254,10 +254,12 @@ namespace UnityEditor.U2D.PSD
                 CharacterPart cp = srIndex == -1 ? new CharacterPart() : parts[srIndex];
                 cp.spriteId = spriteMetaData.spriteID.ToString();
                 cp.order = psdLayers.FindIndex(l => l.spriteID == spriteMetaData.spriteID);
+                
                 cp.spritePosition = new RectInt();
-                var uvTransform = spriteMetaData.uvTransform;
-                var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x, spriteMetaData.rect.y - uvTransform.y);
-                cp.spritePosition.position = new Vector2Int((int)outlineOffset.x, (int)outlineOffset.y);
+                
+                var spritePos = spriteMetaData.spritePosition;
+                cp.spritePosition.position = new Vector2Int((int)spritePos.x, (int)spritePos.y);
+                
                 cp.spritePosition.size = new Vector2Int((int)spriteMetaData.rect.width, (int)spriteMetaData.rect.height);
                 cp.parentGroup = -1;
                 //Find group
@@ -266,8 +268,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     cp.parentGroup = ParentGroupInFlatten(spritePSDLayer.parentIndex, psdLayers);
                 }
-
-
+                
                 if (srIndex == -1)
                     parts.Add(cp);
                 else

@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
+    /// <summary>
+    /// Custom hidden asset to store meta information of the last import state
+    /// </summary>
     internal class PSDImportData : ScriptableObject
     {
         [SerializeField]
@@ -16,7 +19,7 @@ namespace UnityEditor.U2D.PSD
         }
         
         [SerializeField]
-        public int m_ImportedTextureHeight;
+        int m_ImportedTextureHeight;
         public int importedTextureHeight
         {
             get => m_ImportedTextureHeight;
@@ -88,21 +91,42 @@ namespace UnityEditor.U2D.PSD
         public GameObject go;
         public int index;
     }
-    
-    internal class FlattenLayerData: IPSDLayerMappingStrategyComparable
-    {
-        public int layerID { get; set; }
-        public string name { get; set;}
-        public bool isGroup => true;
-    }
 
     [Serializable]
-    class PSDLayerImportSetting
+    class PSDLayerImportSetting: IPSDLayerMappingStrategyComparable
     {
+        [SerializeField]
+        string m_SpriteId;
+        GUID m_SpriteIDGUID;
+        
         public string name;
         public int layerId;
         public bool flatten;
         public bool isGroup;
+
+        public int layerID => layerId;
+        string IPSDLayerMappingStrategyComparable.name => name;
+        bool IPSDLayerMappingStrategyComparable.isGroup => isGroup;
+        
+        public GUID spriteId
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_SpriteId))
+                {
+                    m_SpriteIDGUID = GUID.Generate();
+                    m_SpriteId = m_SpriteIDGUID.ToString();
+                }
+
+                return m_SpriteIDGUID;
+
+            }
+            set
+            {
+                m_SpriteIDGUID = value;
+                m_SpriteId = m_SpriteIDGUID.ToString();
+            }
+        }
     }
     
     [Serializable]
@@ -147,14 +171,24 @@ namespace UnityEditor.U2D.PSD
             get => m_IsGroup;
             set => m_IsGroup = value;
         }
+        
+        [SerializeField]
+        bool m_IsImported;
+        public bool isImported
+        {
+            get => m_IsImported;
+            set => m_IsImported = value;
+        }
     }
+
     
-    [Serializable]
-    struct SpriteLayerMapping
+    /// <summary>
+    /// Data for extracting layers and colors from PSD
+    /// </summary>
+    class PSDExtractLayerData
     {
-        public string spriteId;
-        public int layerId;
-        public string layerName;
+        public BitmapLayer bitmapLayer;
+        public PSDLayerImportSetting importSetting;
+        public PSDExtractLayerData[] children;
     }
 }
-

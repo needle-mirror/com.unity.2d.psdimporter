@@ -8,6 +8,8 @@
         "Unity.2D.Animation.Editor",
         "Unity.2D.Animation.Runtime",
         "Unity.2D.Sprite.Editor",
+        "Unity.Mathematics",
+        "Unity.Burst",
         "Unity.InternalAPIEngineBridge.001"
     ],
     "includePlatforms": [
@@ -19,6 +21,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2021.3.9f1",
+            "define": "USE_TEXTURE_PLATFORM_FIX"
+        }
+    ],
     "noEngineReferences": false
 }
