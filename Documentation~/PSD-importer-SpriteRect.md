@@ -1,10 +1,8 @@
 # How the PSD Importer uses SpriteRect data
-The PSD Importer can store five separate sets of[ SpriteRect](https://docs.unity3d.com/Packages/com.unity.2d.sprite@1.0/api/UnityEditor.SpriteRect.html) data, with one set for each of the five combinations of Importer property settings below:
+The PSD Importer can store three separate sets of[ SpriteRect](https://docs.unity3d.com/Packages/com.unity.2d.sprite@1.0/api/UnityEditor.SpriteRect.html) data, with one set for each of the three combinations of Importer property settings below:
    1. When [Sprite Mode](PSD-importer-properties.html#SpriteMode) is set to **Single**.
    2. When **Sprite Mode** is set to **Multiple**.
    3. When **Sprite Mode** is set to **Multiple,** and [Individual Sprites (Mosaic)](PSD-importer-properties.html#Mosaic) is enabled.
-   4. When **Sprite Mode** is set to **Multiple**, both **Individual Sprites (Mosaic)** and [Use as Rig](PSD-importer-properties.html#use-as-rig) are enabled, and there is no [Skeleton Asset](PSD-importer-properties.html#main-skeleton) assigned as the [Main Skeleton](PSD-importer-properties.html#main-skeleton).
-   5. When **Sprite Mode** is set to **Multiple**, both **Individual Sprites (Mosaic)** and **Use as Rig** are enabled, and a Skeleton Asset is assigned as the **Main Skeleton**.
 
 Each set of data is persistent, and does not affect or overwrite the data of other sets. This means you can save different SpriteRect data for different importer settings for the same source file. The SpriteRect data persists even if you modify the dimensions and position of images in the source file, as long as the original [Layer ID](https://github.com/adobe-photoshop/generator-core/wiki/Understanding-Layer-IDs-and-Layer-Indices) of the source layers remains the same.
 

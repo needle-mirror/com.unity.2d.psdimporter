@@ -1,129 +1,168 @@
 using System;
 using System.Collections.Generic;
+using Unity.Burst;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace UnityEditor.U2D.PSD
 {
     static class FlattenImageTask
     {
-        static unsafe public void Execute(PSDExtractLayerData[] layer, bool importHiddenLayer, int width, int height, NativeArray<Color32> output)
+        struct LayerData
+        {
+            public IntPtr layerBuffer;
+            public int4 layerRect;
+        }
+        
+        public static unsafe void Execute(in PSDExtractLayerData[] layer, ref NativeArray<Color32> output, bool importHiddenLayer, Vector2Int documentSize)
         {
             UnityEngine.Profiling.Profiler.BeginSample("FlattenImage");
-            List<IntPtr> buffers = new List<IntPtr>();
-            for (int i = layer.Length - 1; i >= 0; --i)
+            
+            var layerData = new List<LayerData>();
+            for (var i = layer.Length - 1; i >= 0; --i)
             {
-                GetBuffersToMergeFromLayer(layer[i], importHiddenLayer, buffers);
+                GetLayerDataToMerge(in layer[i], ref layerData, importHiddenLayer);
             }
 
-            if (buffers.Count == 0)
+            if (layerData.Count == 0)
                 return;
 
-            var layersPerJob = buffers.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
+            var layersPerJob = layerData.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
             layersPerJob = Mathf.Max(layersPerJob, 1);
 
             var job = new FlattenImageInternalJob();
             var combineJob = new FlattenImageInternalJob();
 
-            job.buffers = new NativeArray<IntPtr>(buffers.ToArray(), Allocator.TempJob);
-            for (int i = 0; i < buffers.Count; ++i)
-                job.buffers[i] = buffers[i];
-
-            combineJob.width = job.width = width;
-            combineJob.height = job.height = height;
+            job.inputTextures = new NativeArray<IntPtr>(layerData.Count, Allocator.TempJob);
+            job.inputTextureRects = new NativeArray<int4>(layerData.Count, Allocator.TempJob);
+            
+            for (var i = 0; i < layerData.Count; ++i)
+            {
+                job.inputTextures[i] = layerData[i].layerBuffer;
+                job.inputTextureRects[i] = layerData[i].layerRect;
+            }
 
             job.layersPerJob = layersPerJob;
             job.flipY = false;
             combineJob.flipY = true;
 
-            int jobCount = buffers.Count / layersPerJob + (buffers.Count % layersPerJob > 0 ? 1 : 0);
+            var jobCount = layerData.Count / layersPerJob + (layerData.Count % layersPerJob > 0 ? 1 : 0);
             combineJob.layersPerJob = jobCount;
 
-            NativeArray<byte>[] premergedBuffer = new NativeArray<byte>[jobCount];
-            job.output = new NativeArray<IntPtr>(jobCount, Allocator.TempJob);
-            combineJob.buffers = new NativeArray<IntPtr>(jobCount, Allocator.TempJob);
-
-            for (int i = 0; i < jobCount; ++i)
+            var premergedBuffer = new NativeArray<byte>[jobCount];
+            job.outputTextureSizes = new NativeArray<int2>(jobCount, Allocator.TempJob);
+            job.outputTextures = new NativeArray<IntPtr>(jobCount, Allocator.TempJob);
+            combineJob.inputTextures = new NativeArray<IntPtr>(jobCount, Allocator.TempJob);
+            combineJob.inputTextureRects = new NativeArray<int4>(jobCount, Allocator.TempJob);
+            
+            for (var i = 0; i < jobCount; ++i)
             {
-                premergedBuffer[i] = new NativeArray<byte>(width * height * 4, Allocator.TempJob);
-                job.output[i] = new IntPtr(premergedBuffer[i].GetUnsafePtr());
-                combineJob.buffers[i] = new IntPtr(premergedBuffer[i].GetUnsafeReadOnlyPtr());
+                premergedBuffer[i] = new NativeArray<byte>(documentSize.x * documentSize.y * 4, Allocator.TempJob);
+                job.outputTextureSizes[i] = new int2(documentSize.x, documentSize.y);
+                job.outputTextures[i] = new IntPtr(premergedBuffer[i].GetUnsafePtr());
+                combineJob.inputTextures[i] = new IntPtr(premergedBuffer[i].GetUnsafeReadOnlyPtr());
+                combineJob.inputTextureRects[i] = new int4(0, 0, documentSize.x, documentSize.y);
             }
-            combineJob.output = new NativeArray<IntPtr>(new[] {new IntPtr(output.GetUnsafePtr()), }, Allocator.TempJob);
+            
+            combineJob.outputTextureSizes = new NativeArray<int2>(new [] {new int2(documentSize.x, documentSize.y) }, Allocator.TempJob);
+            combineJob.outputTextures = new NativeArray<IntPtr>(new[] { new IntPtr(output.GetUnsafePtr()) }, Allocator.TempJob);
 
             var handle = job.Schedule(jobCount, 1);
             combineJob.Schedule(1, 1, handle).Complete();
+            
             foreach (var b in premergedBuffer)
             {
                 if (b.IsCreated)
                     b.Dispose();
             }
+            
             UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        static unsafe void GetBuffersToMergeFromLayer(PSDExtractLayerData layer, bool importHiddenLayer, List<IntPtr> buffers)
+        static unsafe void GetLayerDataToMerge(in PSDExtractLayerData layer, ref List<LayerData> layerData, bool importHiddenLayer)
         {
             var bitmapLayer = layer.bitmapLayer;
             var importSetting = layer.importSetting;
             if (!bitmapLayer.Visible && importHiddenLayer == false || importSetting.importLayer == false)
                 return;
+            
             if (bitmapLayer.IsGroup)
             {
-                for (int i = layer.children.Length - 1; i >= 0; --i)
-                    GetBuffersToMergeFromLayer(layer.children[i], importHiddenLayer, buffers);
+                for (var i = layer.children.Length - 1; i >= 0; --i)
+                    GetLayerDataToMerge(layer.children[i], ref layerData, importHiddenLayer);
             }
-            if (bitmapLayer.Surface != null)
-                buffers.Add(new IntPtr(bitmapLayer.Surface.color.GetUnsafeReadOnlyPtr()));
-            else
-                Debug.LogWarning(string.Format("Layer {0} has no color buffer", bitmapLayer.Name));
+
+            if (bitmapLayer.Surface == null || bitmapLayer.localRect == default) 
+                return;
+            
+            var layerRect = bitmapLayer.documentRect;
+            var data = new LayerData()
+            {
+                layerBuffer = new IntPtr(bitmapLayer.Surface.color.GetUnsafeReadOnlyPtr()),
+                layerRect = new int4(layerRect.X, layerRect.Y, layerRect.Width, layerRect.Height)
+            };
+            layerData.Add(data);
         }
 
+        [BurstCompile]
         struct FlattenImageInternalJob : IJobParallelFor
         {
-            [ReadOnly]
-            [DeallocateOnJobCompletion]
-            public NativeArray<IntPtr> buffers;
+            [ReadOnly, DeallocateOnJobCompletion]
+            public NativeArray<IntPtr> inputTextures;
+            [ReadOnly, DeallocateOnJobCompletion]
+            public NativeArray<int4> inputTextureRects;
             [ReadOnly]
             public int layersPerJob;
             [ReadOnly]
-            public int width;
-            [ReadOnly]
-            public int height;
-            [ReadOnly]
             public bool flipY;
+
+            [ReadOnly, DeallocateOnJobCompletion] 
+            public NativeArray<int2> outputTextureSizes;
             [DeallocateOnJobCompletion]
-            public NativeArray<IntPtr> output;
+            public NativeArray<IntPtr> outputTextures;
 
             public unsafe void Execute(int index)
             {
-                var premerge = (Color32*)output[index].ToPointer();
-                for (int layerIndex = index * layersPerJob; layerIndex < (index * layersPerJob) + layersPerJob; ++layerIndex)
+                var outputColor = (Color32*)outputTextures[index].ToPointer();
+                for (var layerIndex = index * layersPerJob; layerIndex < (index * layersPerJob) + layersPerJob; ++layerIndex)
                 {
-                    if (buffers.Length <= layerIndex)
+                    if (inputTextures.Length <= layerIndex)
                         break;
-                    var buffer = (Color32*)buffers[layerIndex].ToPointer();
-                    for (int i = 0; i < height; ++i)
+                    
+                    var inputColor = (Color32*)inputTextures[layerIndex].ToPointer();
+                    var inPosX = inputTextureRects[layerIndex].x;
+                    var inPosY = inputTextureRects[layerIndex].y;
+                    var inWidth = inputTextureRects[layerIndex].z;
+                    var inHeight = inputTextureRects[layerIndex].w;
+
+                    var outWidth = outputTextureSizes[index].x;
+                    var outHeight = outputTextureSizes[index].y;
+                    
+                    for (var y = 0; y < inHeight; ++y)
                     {
-                        int sourceYIndex = i * width;
-                        int destYIndex = flipY ? (height - 1 - i) * width : sourceYIndex;
-                        for (int j = 0; j < width; ++j)
+                        var inY = y * inWidth;
+                        var outY = flipY ? (outHeight - 1 - y - inPosY) * outWidth : (y + inPosY) * outWidth;
+                        
+                        for (var x = 0; x < inWidth; ++x)
                         {
-                            int sourceIndex = sourceYIndex + j;
-                            int destIndex = destYIndex + j;
-                            Color sourceColor = buffer[sourceIndex];
-                            Color destColor = premerge[destIndex];
-                            Color finalColor = new Color();
+                            var inX = inY + x;
+                            var outX = outY + x + inPosX;
 
-                            var destAlpha = destColor.a * (1 - sourceColor.a);
-                            finalColor.a = sourceColor.a + destColor.a * (1 - sourceColor.a);
-                            var premultiplyAlpha = 1 / finalColor.a;
-                            finalColor.r = (sourceColor.r * sourceColor.a + destColor.r * destAlpha) * premultiplyAlpha;
-                            finalColor.g = (sourceColor.g * sourceColor.a + destColor.g * destAlpha) * premultiplyAlpha;
-                            finalColor.b = (sourceColor.b * sourceColor.a + destColor.b * destAlpha) * premultiplyAlpha;
+                            Color inColor = inputColor[inX];
+                            Color prevOutColor = outputColor[outX];
+                            var outColor = new Color();
 
-                            premerge[destIndex] = finalColor;
+                            var destAlpha = prevOutColor.a * (1 - inColor.a);
+                            outColor.a = inColor.a + prevOutColor.a * (1 - inColor.a);
+                            var premultiplyAlpha = 1 / outColor.a;
+                            outColor.r = (inColor.r * inColor.a + prevOutColor.r * destAlpha) * premultiplyAlpha;
+                            outColor.g = (inColor.g * inColor.a + prevOutColor.g * destAlpha) * premultiplyAlpha;
+                            outColor.b = (inColor.b * inColor.a + prevOutColor.b * destAlpha) * premultiplyAlpha;
+
+                            outputColor[outX] = outColor;
                         }
                     }
                 }

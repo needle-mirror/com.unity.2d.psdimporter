@@ -28,6 +28,8 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         bool m_IsVisible;
 
+        [NonSerialized] 
+        Vector2 m_LayerPosition;
         [NonSerialized]
         GameObject m_GameObject;
 
@@ -55,6 +57,7 @@ namespace UnityEditor.U2D.PSD
         public int parentIndex { get { return m_ParentIndex; } private set { m_ParentIndex = value; } }
         public Vector2Int mosaicPosition { get { return m_MosaicPosition; } set { m_MosaicPosition = value; } }
         public GUID spriteID  { get { return new GUID(m_SpriteID); } set { m_SpriteID = value.ToString(); } }
+        public Vector2 layerPosition { get => m_LayerPosition; set => m_LayerPosition = value; }
         public GameObject gameObject { get { return m_GameObject; } set { m_GameObject = value; } }
 
         public bool flatten
@@ -70,8 +73,8 @@ namespace UnityEditor.U2D.PSD
         }
 
         public NativeArray<Color32> texture { get; set; }
-        public int width { get; private set; }
-        public int height { get; private set; }
+        public int width { get; set; }
+        public int height { get; set; }
 
         public void Dispose()
         {

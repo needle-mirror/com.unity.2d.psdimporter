@@ -1,11 +1,27 @@
-# Overview
+# Introduction to PSD Importer
 The **PSD Importer** is an [Asset importer](https://docs.unity3d.com/ScriptReference/AssetImporter.html) that imports [Adobe Photoshop .psb](https://helpx.adobe.com/photoshop/using/file-formats.html#large_document_format_psb) files into Unity, and generates a [Prefab](https://docs.unity3d.com/Manual/Prefabs.html) of Sprites based on the imported source file. The .psb file format is functionally identical to the more common Adobe [.psd format](https://helpx.adobe.com/photoshop/using/file-formats.html#photoshop_format_psd), but supports much larger images than the .psd format (up to 300,000 pixels in any dimension). To convert existing artwork from .psd to .psb format, you can open them in Adobe Photoshop and then save them as .psb files.
 
 Importing .psb files with the PSD Importer allows you to use features such as [Mosaic](PSD-importer-properties.md#Mosaic) (to automatically generate a Sprite sheet from the imported layers) and [Character Rig](PSD-importer-properties.md#Rig) (to reassemble the Sprites of a character as they are arranged in their source files).
 
 The PSD Importer currently only supports two [Texture Modes](https://docs.unity3d.com/Manual/TextureTypes.html):[ Default](https://docs.unity3d.com/Manual/TextureTypes.html#Default) and[ Sprite](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite).
 
-**Note:** The **Sprite Library Asset** is no longer editable from the Skinning Editor of the [2D Animation](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest) from version 6.0 onwards as the Category and Label options have been removed from the Sprite Visibility panel. However, the PSD Importer will continue to automatically generate Sprite Library Assets if relevant data from a previous version is present.
+The different versions of the PSD Importer package are supported by the following versions of Unity respectively:
+
+Package version  | Unity Editor version
+--|--
+9.x.x |  2023.1
+8.x.x  |  2022.2
+7.x.x  |  2022.1
+6.x.x  |  2021.2 or 2021.3
+5.x.x  |  2020.2 or 2020.3
+
+## Support for .psd files
+
+By default .psd files are imported with the Texture Importer. If you wish to instead import a .psd file with the PSD Importer, simply select the .psd file, click on the Importer dropdown and select **UnityEditor.U2D.PSD.PSDImporter**.
+
+![](images/psd-file-import.png)<br/>Importer drop down.
+
+For information on how to automate the selection of an importer, see the [PSD File Importer Override](PSD-override.md) section.
 
 ## Supported and unsupported Photoshop effects
 

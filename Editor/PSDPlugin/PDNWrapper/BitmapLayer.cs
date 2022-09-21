@@ -6,52 +6,12 @@ namespace PDNWrapper
     {
         public static BitmapLayer CreateBackgroundLayer(int w, int h)
         {
-            return new BitmapLayer(w, h, new Rectangle(0, 0, w, h));
+            return new BitmapLayer(new Rectangle(0, 0, w, h));
         }
     }
 
     internal class BitmapLayer
     {
-        int width, height;
-        List<BitmapLayer> m_ChildLayers = new List<BitmapLayer>();
-        
-        public Rectangle Bounds
-        {
-            get {return new Rectangle(0, 0, width, height); }
-        }
-
-        public void Dispose()
-        {
-            Surface.Dispose();
-            foreach (var layer in ChildLayer)
-                layer.Dispose();
-        }
-
-        public BitmapLayer(int w, int h, Rectangle rect)
-        {
-            Surface = new Surface(w, h);
-            width = w;
-            height = h;
-            m_ChildLayers = new List<BitmapLayer>();
-            IsGroup = false;
-            this.rect = rect;
-        }
-
-        public void AddChildLayer(BitmapLayer c)
-        {
-            m_ChildLayers.Add(c);
-            var bound = c.rect;
-            foreach (var child in ChildLayer)
-            {
-                bound.Y = bound.Y > child.rect.Y ? child.rect.Y : bound.Y;
-                bound.X = bound.X > child.rect.X ? child.rect.X : bound.X;
-                bound.Width = bound.Right < child.rect.Right ? child.rect.Right - bound.X : bound.Width;
-                bound.Height = bound.Bottom < child.rect.Bottom ? child.rect.Bottom - bound.Y : bound.Height;
-            }
-
-            rect = bound;
-        }
-        
         public int LayerID { get; set; }
         public bool IsGroup {get; set; }
         public BitmapLayer ParentLayer {get; set; }
@@ -60,7 +20,43 @@ namespace PDNWrapper
         public byte Opacity { get; set; }
         public bool Visible { get; set; }
         public LayerBlendMode BlendMode { get; set; }
-        public Surface Surface { get; set; }
-        public Rectangle rect { get; set; }
+        public Surface Surface { get; }
+        public Rectangle documentRect { get; private set; }
+        public Rectangle localRect { get; }
+
+        readonly List<BitmapLayer> m_ChildLayers;
+
+        public void Dispose()
+        {
+            Surface.Dispose();
+            foreach (var layer in m_ChildLayers)
+                layer.Dispose();
+        }
+
+        public BitmapLayer(Rectangle documentRect)
+        {
+            localRect = new Rectangle(0, 0, documentRect.Width, documentRect.Height);
+            this.documentRect = documentRect;
+            
+            Surface = new Surface(localRect.Width, localRect.Height);
+            
+            m_ChildLayers = new List<BitmapLayer>();
+            IsGroup = false;
+        }
+
+        public void AddChildLayer(BitmapLayer c)
+        {
+            m_ChildLayers.Add(c);
+            var bound = c.documentRect;
+            foreach (var child in ChildLayer)
+            {
+                bound.Y = bound.Y > child.documentRect.Y ? child.documentRect.Y : bound.Y;
+                bound.X = bound.X > child.documentRect.X ? child.documentRect.X : bound.X;
+                bound.Width = bound.Right < child.documentRect.Right ? child.documentRect.Right - bound.X : bound.Width;
+                bound.Height = bound.Bottom < child.documentRect.Bottom ? child.documentRect.Bottom - bound.Y : bound.Height;
+            }
+
+            documentRect = bound;
+        }
     }
 }

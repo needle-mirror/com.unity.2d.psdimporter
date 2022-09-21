@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using PhotoshopFile;
 using UnityEditor.AssetImporters;
-using UnityEditor.U2D.Animation;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
-using UnityEngine.U2D.Animation;
 using UnityEngine.UIElements;
+
+#if ENABLE_2D_ANIMATION
+using UnityEngine.U2D.Animation;
+using UnityEditor.U2D.Animation;
+#endif
 
 namespace UnityEditor.U2D.PSD
 {
@@ -67,17 +70,20 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_DocumentPivot;
         SerializedProperty m_DocumentAlignment;
         SerializedProperty m_GenerateGOHierarchy;
-        SerializedProperty m_PaperDollMode;
         SerializedProperty m_KeepDupilcateSpriteName;
-        SerializedProperty m_SkeletonAssetReferenceID;
         SerializedProperty m_GeneratePhysicsShape;
         SerializedProperty m_LayerMappingOption;
         SerializedProperty m_Padding;
         SerializedProperty m_SpriteSizeExpand;
         SerializedProperty m_SpriteSizeExpandChanged;
+        
+#if ENABLE_2D_ANIMATION        
+        SerializedProperty m_PaperDollMode;
+        SerializedProperty m_SkeletonAssetReferenceID;
+#endif
+        
         uint m_SpriteSizePreviousSize;
         
-        private SkeletonAsset m_SkeletonAsset;
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
         static readonly int s_SwizzleFieldHash = "SwizzleField".GetHashCode();
         
@@ -105,6 +111,10 @@ namespace UnityEditor.U2D.PSD
         int m_LayerTreeViewUpdateCount = 0;
         SerializedProperty m_PlatformSettingsArrProp;
         
+#if ENABLE_2D_ANIMATION
+        SkeletonAsset m_SkeletonAsset;
+#endif
+        
         /// <summary>
         /// Implementation of AssetImporterEditor.OnEnable
         /// </summary>
@@ -118,9 +128,7 @@ namespace UnityEditor.U2D.PSD
             m_DocumentPivot = serializedObject.FindProperty("m_DocumentPivot");
             m_DocumentAlignment = serializedObject.FindProperty("m_DocumentAlignment");
             m_GenerateGOHierarchy = serializedObject.FindProperty("m_GenerateGOHierarchy");
-            m_PaperDollMode = serializedObject.FindProperty("m_PaperDollMode");
             m_KeepDupilcateSpriteName = serializedObject.FindProperty("m_KeepDupilcateSpriteName");
-            m_SkeletonAssetReferenceID = serializedObject.FindProperty("m_SkeletonAssetReferenceID");
             m_GeneratePhysicsShape = serializedObject.FindProperty("m_GeneratePhysicsShape");
             m_LayerMappingOption = serializedObject.FindProperty("m_LayerMappingOption");
             m_Padding = serializedObject.FindProperty("m_Padding");
@@ -164,9 +172,13 @@ namespace UnityEditor.U2D.PSD
                 m_IsPOT &= ((PSDImporter)t).isNPOT;
             }
 
+#if ENABLE_2D_ANIMATION
+            m_PaperDollMode = serializedObject.FindProperty("m_PaperDollMode");
+            m_SkeletonAssetReferenceID = serializedObject.FindProperty("m_SkeletonAssetReferenceID");
 
             var assetPath = AssetDatabase.GUIDToAssetPath(m_SkeletonAssetReferenceID.stringValue);
             m_SkeletonAsset = AssetDatabase.LoadAssetAtPath<SkeletonAsset>(assetPath);
+#endif
 
             var advanceGUIAction = new Action[]
             {
@@ -342,7 +354,7 @@ namespace UnityEditor.U2D.PSD
             if (gameObject != null)
             {
                 var documentSize = new Rect(0, 0, t.importData.documentSize.x / t.pixelsPerUnit, t.importData.documentSize.y / t.pixelsPerUnit);
-                var pivot = (Vector3)PSDImporter.GetPivotPoint(documentSize, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
+                var pivot = (Vector3)ImportUtilities.GetPivotPoint(documentSize, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
                 documentSize.x = -pivot.x;
                 documentSize.y = -pivot.y;
                 m_PreviewRenderUtility = new PSDGameObjectPreviewData(gameObject, m_ShowPivot, documentSize);
@@ -525,6 +537,7 @@ namespace UnityEditor.U2D.PSD
 
         void MainRigPropertyField()
         {
+#if ENABLE_2D_ANIMATION            
             EditorGUI.BeginChangeCheck();
             m_SkeletonAsset = EditorGUILayout.ObjectField(styles.mainSkeletonName, m_SkeletonAsset, typeof(SkeletonAsset), false) as SkeletonAsset;
             if (EditorGUI.EndChangeCheck())
@@ -535,6 +548,7 @@ namespace UnityEditor.U2D.PSD
                 else
                     m_SkeletonAssetReferenceID.stringValue = AssetDatabase.GUIDFromAssetPath(referencePath).ToString();
             }
+#endif
         }
 
         /// <summary>
@@ -584,6 +598,7 @@ namespace UnityEditor.U2D.PSD
 
         bool IsCharacterRigged()
         {
+#if ENABLE_2D_ANIMATION            
             var importer = target as PSDImporter;
             if (importer != null)
             {
@@ -603,6 +618,7 @@ namespace UnityEditor.U2D.PSD
                     }
                 }
             }
+#endif
             return false;
         }
 
@@ -937,6 +953,7 @@ namespace UnityEditor.U2D.PSD
                 GUILayout.Space(5);
             }
 
+#if ENABLE_2D_ANIMATION            
             if (m_EditorFoldOutState.DoCharacterRigUI(styles.characterRigHeaderText))
             {
                 using (new EditorGUI.DisabledScope(m_SpriteMode.intValue != (int)SpriteImportMode.Multiple || m_SpriteMode.hasMultipleDifferentValues || m_MosaicLayers.boolValue == false))
@@ -958,6 +975,7 @@ namespace UnityEditor.U2D.PSD
                 GUILayout.Space(5);
                 //EditorGUILayout.PropertyField(m_PaperDollMode, s_Styles.paperDollMode);
             }
+#endif
         }
 
         void DoOpenSpriteEditorButton()
@@ -1476,7 +1494,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     var t = (PSDImporter)target;
                     var prefabBounds = new Rect(0 , 0, t.importData.documentSize.x/ t.pixelsPerUnit, t.importData.documentSize.y/ t.pixelsPerUnit);
-                    var documentPivot = PSDImporter.GetPivotPoint(prefabBounds, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
+                    var documentPivot = ImportUtilities.GetPivotPoint(prefabBounds, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
                     m_PreviewRenderUtility.DrawPreview(r, "PreBackgroundSolid", documentPivot, m_ShowPivot);    
                 }
                 else
@@ -1636,9 +1654,9 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent mainSkeletonName = EditorGUIUtility.TrTextContent("Main Skeleton", "Main Skeleton to use for Rigging.");
             public readonly GUIContent generalHeaderText = EditorGUIUtility.TrTextContent("General", "General settings.");
             public readonly GUIContent layerImportHeaderText = EditorGUIUtility.TrTextContent("Layer Import","Layer Import settings.");
-            public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture","Texture settings.");
             public readonly GUIContent multiEditLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Multi editing in Layer Management is not supported.","");
+            public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
 
             public readonly int[] falseTrueOptionValue =
             {

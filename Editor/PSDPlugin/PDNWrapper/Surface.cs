@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace PDNWrapper
@@ -15,7 +16,8 @@ namespace PDNWrapper
 
         public void Dispose()
         {
-            if (m_Color.IsCreated)
+            var handle = NativeArrayUnsafeUtility.GetAtomicSafetyHandle(m_Color);
+            if (m_Color.IsCreated && AtomicSafetyHandle.IsHandleValid(handle))
             {
                 m_Color.Dispose();
                 m_Color = default;

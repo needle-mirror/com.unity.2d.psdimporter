@@ -3,10 +3,13 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEditor.U2D.Common;
-using UnityEditor.U2D.Animation;
 using System;
 using UnityEditor.U2D.Sprites;
 using UnityEngine.U2D;
+
+#if ENABLE_2D_ANIMATION
+using UnityEditor.U2D.Animation;
+#endif
 
 namespace UnityEditor.U2D.PSD
 {
@@ -26,7 +29,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetBones(GUID guid, List<SpriteBone> bones)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spriteBone = bones;
         }
@@ -96,7 +99,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spriteOutline = data.Select(x => new SpriteOutline() {outline = x}).ToList();
         }
@@ -108,7 +111,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -129,7 +132,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spritePhysicsOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
         }
@@ -141,7 +144,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -162,7 +165,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetVertices(GUID guid, Vertex2DMetaData[] vertices)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).vertices = vertices.ToList();
         }
@@ -180,7 +183,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetIndices(GUID guid, int[] indices)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).indices = indices;
         }
@@ -198,13 +201,13 @@ namespace UnityEditor.U2D.PSD
 
         public void SetEdges(GUID guid, Vector2Int[] edges)
         {
-            var sprite = dataProvider.GetSpriteDataFromAllMode(guid);
+            var sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).edges = edges;
         }
     }
-
-
+    
+#if ENABLE_2D_ANIMATION
     internal class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
         int ParentGroupInFlatten(Dictionary<int, int> groupDictIndex, List<CharacterGroup> groups, int parentIndex, List<PSDLayer> psdLayers)
@@ -254,10 +257,12 @@ namespace UnityEditor.U2D.PSD
                 CharacterPart cp = srIndex == -1 ? new CharacterPart() : parts[srIndex];
                 cp.spriteId = spriteMetaData.spriteID.ToString();
                 cp.order = psdLayers.FindIndex(l => l.spriteID == spriteMetaData.spriteID);
+                
                 cp.spritePosition = new RectInt();
-                var uvTransform = spriteMetaData.uvTransform;
-                var outlineOffset = new Vector2(spriteMetaData.rect.x - uvTransform.x, spriteMetaData.rect.y - uvTransform.y);
-                cp.spritePosition.position = new Vector2Int((int)outlineOffset.x, (int)outlineOffset.y);
+                
+                var spritePos = spriteMetaData.spritePosition;
+                cp.spritePosition.position = new Vector2Int((int)spritePos.x, (int)spritePos.y);
+                
                 cp.spritePosition.size = new Vector2Int((int)spriteMetaData.rect.width, (int)spriteMetaData.rect.height);
                 cp.parentGroup = -1;
                 //Find group
@@ -266,8 +271,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     cp.parentGroup = ParentGroupInFlatten(groupDictionaryIndex, groups, spritePSDLayer.parentIndex, psdLayers);
                 }
-
-
+                
                 if (srIndex == -1)
                     parts.Add(cp);
                 else
@@ -301,4 +305,5 @@ namespace UnityEditor.U2D.PSD
             return new MainSkeletonData { bones = dataProvider.mainSkeletonBones };
         }
     }
+#endif
 }

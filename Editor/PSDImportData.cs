@@ -77,7 +77,7 @@ namespace UnityEditor.U2D.PSD
                 layerID = layer.LayerID,
                 name = layer.Name,
                 parentIndex = parentIndex,
-                layerSizeOnFile = new Vector2Int(layer.rect.Width, layer.rect.Height)
+                layerSizeOnFile = new Vector2Int(layer.documentRect.Width, layer.documentRect.Height)
             });
             parentIndex = layerData.Count - 1;
             foreach (var fileLayer in layer.ChildLayer)

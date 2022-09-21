@@ -1,11 +1,15 @@
 # Changelog
 
-## [8.0.0] - 2022-08-03
+## [9.0.0-pre.1] - 2022-09-21
 ### Changed
-- Package release version.
+- Simplified the Sprite Meta Data storage. We now have 3 storages; Single Sprite, Multiple Sprites and Mosaiac (Atlased) Sprites.
+- Simplified the Psd Layer storage. We now only have one storage, Psd Layers.
+- PSD Importer no longer depends on 2D Animation.
 
 ### Fixed
-- Fixed exception when showing PSDImporter inspector. (DANB-196)
+- Improved import speed and memory allocation for psd/psb files by reducing the intermediate texture buffers. 
+- Fixed exception when showing PSDImporter inspector. (Case DANB-195)
+- Fixed a case where a .psd/.psb would not import with the correct layer coordinates. 
 
 ## [8.0.0-pre.3] - 2022-05-31
 ### Changed
