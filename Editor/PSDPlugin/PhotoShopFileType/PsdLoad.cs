@@ -107,10 +107,9 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         internal static JobHandle DecodeToPdnLayer(this PhotoshopFile.Layer psdLayer, JobHandle inputDeps, out BitmapLayer pdnLayer)
         {
-            var psdFile = psdLayer.PsdFile;
             psdLayer.CreateMissingChannels();
-
-            pdnLayer = new BitmapLayer(psdFile.ColumnCount, psdFile.RowCount, psdLayer.Rect);
+            
+            pdnLayer = new BitmapLayer(psdLayer.Rect);
             pdnLayer.Name = psdLayer.Name;
             pdnLayer.Opacity = psdLayer.Opacity;
             pdnLayer.Visible = psdLayer.Visible;

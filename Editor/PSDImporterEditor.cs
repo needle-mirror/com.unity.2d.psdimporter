@@ -342,7 +342,7 @@ namespace UnityEditor.U2D.PSD
             if (gameObject != null)
             {
                 var documentSize = new Rect(0, 0, t.importData.documentSize.x / t.pixelsPerUnit, t.importData.documentSize.y / t.pixelsPerUnit);
-                var pivot = (Vector3)PSDImporter.GetPivotPoint(documentSize, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
+                var pivot = (Vector3)ImportUtilities.GetPivotPoint(documentSize, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
                 documentSize.x = -pivot.x;
                 documentSize.y = -pivot.y;
                 m_PreviewRenderUtility = new PSDGameObjectPreviewData(gameObject, m_ShowPivot, documentSize);
@@ -1476,7 +1476,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     var t = (PSDImporter)target;
                     var prefabBounds = new Rect(0 , 0, t.importData.documentSize.x/ t.pixelsPerUnit, t.importData.documentSize.y/ t.pixelsPerUnit);
-                    var documentPivot = PSDImporter.GetPivotPoint(prefabBounds, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
+                    var documentPivot = ImportUtilities.GetPivotPoint(prefabBounds, (SpriteAlignment)m_DocumentAlignment.intValue, m_DocumentPivot.vector2Value);
                     m_PreviewRenderUtility.DrawPreview(r, "PreBackgroundSolid", documentPivot, m_ShowPivot);    
                 }
                 else

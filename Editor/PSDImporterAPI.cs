@@ -284,7 +284,7 @@ namespace UnityEditor.U2D.PSD
         /// <returns>TextureImporterPlatformSettings used for importing the texture for the build target.</returns>
         public TextureImporterPlatformSettings GetImporterPlatformSettings(BuildTarget buildTarget)
         {
-            return GetPlatformTextureSettings(buildTarget);
+            return TextureImporterUtilities.GetPlatformTextureSettings(buildTarget, in m_PlatformSettings);
         }
         
         /// <summary>
@@ -302,7 +302,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public SecondarySpriteTexture[] secondarySpriteTextures
         {
-            get { return secondaryTextures; }
+            get => secondaryTextures;
             set
             {
                 secondaryTextures = value;
@@ -317,7 +317,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public bool useCharacterMode
         {
-            get { return m_CharacterMode; }
+            get => m_CharacterMode;
             set
             {
                 m_CharacterMode = value;
@@ -331,7 +331,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public bool useMosaicMode
         {
-            get { return m_MosaicLayers; }
+            get => m_MosaicLayers;
             set
             {
                 m_MosaicLayers = value;
@@ -344,7 +344,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public uint mosiacPadding
         {
-            get { return (uint)m_Padding; }
+            get => (uint)m_Padding;
             set
             {
                 m_Padding = (int)value;
@@ -357,7 +357,7 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public ushort spriteSizeExpand
         {
-            get { return m_SpriteSizeExpand; }
+            get => m_SpriteSizeExpand;
             set
             {
                 m_SpriteSizeExpand = value;
@@ -366,9 +366,9 @@ namespace UnityEditor.U2D.PSD
             }
         }
         
-        internal TextureImporterSwizzle swizzeR
+        internal TextureImporterSwizzle swizzleR
         {
-            get { return m_TextureImporterSettings.swizzleR; }
+            get => m_TextureImporterSettings.swizzleR;
             set
             {
                 m_TextureImporterSettings.swizzleR = value;
@@ -376,9 +376,9 @@ namespace UnityEditor.U2D.PSD
             }
         }
         
-        internal TextureImporterSwizzle swizzeG
+        internal TextureImporterSwizzle swizzleG
         {
-            get { return m_TextureImporterSettings.swizzleG; }
+            get => m_TextureImporterSettings.swizzleG;
             set
             {
                 m_TextureImporterSettings.swizzleG = value;
@@ -386,9 +386,9 @@ namespace UnityEditor.U2D.PSD
             }
         }
         
-        internal TextureImporterSwizzle swizzeB
+        internal TextureImporterSwizzle swizzleB
         {
-            get { return m_TextureImporterSettings.swizzleB; }
+            get => m_TextureImporterSettings.swizzleB;
             set
             {
                 m_TextureImporterSettings.swizzleB = value;
@@ -396,9 +396,9 @@ namespace UnityEditor.U2D.PSD
             }
         }
         
-        internal TextureImporterSwizzle swizzeA
+        internal TextureImporterSwizzle swizzleA
         {
-            get { return m_TextureImporterSettings.swizzleA; }
+            get => m_TextureImporterSettings.swizzleA;
             set
             {
                 m_TextureImporterSettings.swizzleA = value;
@@ -408,7 +408,7 @@ namespace UnityEditor.U2D.PSD
 
         internal bool sRGBTexture
         {
-            get { return m_TextureImporterSettings.sRGBTexture; }
+            get => m_TextureImporterSettings.sRGBTexture;
             set
             {
                 m_TextureImporterSettings.sRGBTexture = value;
