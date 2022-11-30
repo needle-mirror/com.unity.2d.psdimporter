@@ -47,6 +47,10 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_sRGBTexture;
         SerializedProperty m_AlphaSource;
         SerializedProperty m_Swizzle;
+#if ENABLE_TEXTURE_STREAMING
+        SerializedProperty m_StreamingMipmaps;
+        SerializedProperty m_StreamingMipmapsPriority;
+#endif
         SerializedProperty m_MipMapMode;
         SerializedProperty m_EnableMipMap;
         SerializedProperty m_FadeOut;
@@ -150,6 +154,10 @@ namespace UnityEditor.U2D.PSD
             m_IsReadable = textureImporterSettingsSP.FindPropertyRelative("m_IsReadable");
             m_sRGBTexture = textureImporterSettingsSP.FindPropertyRelative("m_sRGBTexture");
             m_AlphaSource = textureImporterSettingsSP.FindPropertyRelative("m_AlphaSource");
+#if ENABLE_TEXTURE_STREAMING
+            m_StreamingMipmaps = textureImporterSettingsSP.FindPropertyRelative("m_StreamingMipmaps");
+            m_StreamingMipmapsPriority = textureImporterSettingsSP.FindPropertyRelative("m_StreamingMipmapsPriority");
+#endif
             m_MipMapMode = textureImporterSettingsSP.FindPropertyRelative("m_MipMapMode");
             m_EnableMipMap = textureImporterSettingsSP.FindPropertyRelative("m_EnableMipMap");
             m_Swizzle  = textureImporterSettingsSP.FindPropertyRelative("m_Swizzle");
@@ -1093,6 +1101,22 @@ namespace UnityEditor.U2D.PSD
             {
                 EditorGUI.indentLevel++;
                 ToggleFromInt(m_BorderMipMap, styles.borderMipMaps);
+
+#if ENABLE_TEXTURE_STREAMING                
+                ToggleFromInt(m_StreamingMipmaps, styles.streamingMipMaps);
+                if (m_StreamingMipmaps.boolValue && !m_StreamingMipmaps.hasMultipleDifferentValues)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(m_StreamingMipmapsPriority, styles.streamingMipmapsPriority);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        m_StreamingMipmapsPriority.intValue = Mathf.Clamp(m_StreamingMipmapsPriority.intValue, -128, 127);
+                    }
+                    EditorGUI.indentLevel--;
+                }
+#endif                
+                
                 m_MipMapMode.intValue = EditorGUILayout.Popup(styles.mipMapFilter, m_MipMapMode.intValue, styles.mipMapFilterOptions);
 
                 ToggleFromInt(m_MipMapsPreserveCoverage, styles.mipMapsPreserveCoverage);
@@ -1336,6 +1360,13 @@ namespace UnityEditor.U2D.PSD
             if (!m_BorderMipMap.hasMultipleDifferentValues)
                 settings.borderMipmap = m_BorderMipMap.intValue > 0;
 
+#if ENABLE_TEXTURE_STREAMING
+            if (!m_StreamingMipmaps.hasMultipleDifferentValues)
+                settings.streamingMipmaps = m_StreamingMipmaps.intValue > 0;
+            if (!m_StreamingMipmapsPriority.hasMultipleDifferentValues)
+                settings.streamingMipmapsPriority = m_StreamingMipmapsPriority.intValue;
+#endif            
+
             if (!m_MipMapsPreserveCoverage.hasMultipleDifferentValues)
                 settings.mipMapsPreserveCoverage = m_MipMapsPreserveCoverage.intValue > 0;
 
@@ -1558,6 +1589,10 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent generateMipMaps = new GUIContent("Generate Mip Maps");
             public readonly GUIContent sRGBTexture = new GUIContent("sRGB (Color Texture)", "Texture content is stored in gamma space. Non-HDR color textures should enable this flag (except if used for IMGUI).");
             public readonly GUIContent borderMipMaps = new GUIContent("Border Mip Maps");
+#if ENABLE_TEXTURE_STREAMING            
+            public readonly GUIContent streamingMipMaps = EditorGUIUtility.TrTextContent("Mip Streaming", "Only load larger mipmaps as needed to render the current game cameras. Requires texture streaming to be enabled in quality settings.");
+            public readonly GUIContent streamingMipmapsPriority = EditorGUIUtility.TrTextContent("Priority", "Mipmap streaming priority when there's contention for resources. Positive numbers represent higher priority. Valid range is -128 to 127.");
+#endif            
             public readonly GUIContent mipMapsPreserveCoverage = new GUIContent("Mip Maps Preserve Coverage", "The alpha channel of generated Mip Maps will preserve coverage during the alpha test.");
             public readonly GUIContent alphaTestReferenceValue = new GUIContent("Alpha Cutoff Value", "The reference value used during the alpha test. Controls Mip Map coverage.");
             public readonly GUIContent mipMapFilter = new GUIContent("Mip Map Filtering");

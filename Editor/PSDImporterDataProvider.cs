@@ -285,7 +285,7 @@ namespace UnityEditor.U2D.PSD
 
             parts.Reverse();
             cd.parts = parts.ToArray();
-            cd.dimension = dataProvider.documentSize;
+            cd.dimension = dataProvider.canvasSize;
             cd.characterGroups = groups.ToArray();
             return cd;
         }

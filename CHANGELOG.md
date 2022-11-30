@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.0.0-pre.2] - 2022-11-30
+### Fixed
+- Enabled the ability to select mipmap streaming for textures imported with the PSD Importer.
+- Fixed an issue where the amount of alpha removed from layers would not be re-applied as final position offset of the layers.
+- Fixed an issue where the editor would crash when importing .psd/.psb files with their layers outside of the document canvas. (Case DANB-300)
+- Fixed an issue where the generated GameObjects would be laid out differently from how they appear in the DCC tool. (Case DANB-298)
+
 ## [9.0.0-pre.1] - 2022-09-21
 ### Changed
 - Simplified the Sprite Meta Data storage. We now have 3 storages; Single Sprite, Multiple Sprites and Mosaiac (Atlased) Sprites.

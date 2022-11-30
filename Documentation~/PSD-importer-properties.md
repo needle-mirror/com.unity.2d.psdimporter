@@ -153,7 +153,7 @@ To include and maintain the group and hierarchy structure as per the source file
 ![](images/as-per-source-22.2.png)<br/>The generated Prefab of the same source file with **Layer Group** set to **As Per Source File**.
 
 ###Character Rig
-This section is only available if the **Texture Type** is set to **Multiple** and **Import Mode** is set to **Individual Sprites (Mosaic)**.
+This section is only available if the **Texture Type** is set to **Multiple**, **Import Mode** is set to **Individual Sprites (Mosaic)** and the [2D Animation package](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest) is installed.
 
 ![](images/character-rig-22.2.png)
 

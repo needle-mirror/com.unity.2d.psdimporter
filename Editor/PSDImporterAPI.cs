@@ -129,6 +129,33 @@ namespace UnityEditor.U2D.PSD
         }
         
         /// <summary>
+        /// Enable mipmap streaming for the texture.
+        /// <br/><br/>Only load larger mipmaps as needed to render the current game cameras. Requires texture streaming to be enabled in quality settings.
+        /// </summary>
+        public bool streamingMipmaps
+        {
+            get => m_TextureImporterSettings.streamingMipmaps;
+            set
+            {
+                m_TextureImporterSettings.streamingMipmaps = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Mipmap streaming priority when there's contention for resources. Positive numbers represent higher priority. Valid range is -128 to 127.
+        /// </summary>
+        public int streamingMipmapsPriority
+        {
+            get => m_TextureImporterSettings.streamingMipmapsPriority;
+            set
+            {
+                m_TextureImporterSettings.streamingMipmapsPriority = Mathf.Clamp(value, -128, 127);
+                SetDirty();
+            }
+        }
+
+        /// <summary>
         /// Mip level where texture is faded out completely.
         /// </summary>
         public TextureImporterMipFilter mipmapFilter

@@ -48,6 +48,25 @@ namespace UnityEditor.U2D.PSD
             m_SpriteID = new GUID().ToString();
         }
 
+        public PSDLayer(PSDLayer layer)
+        {
+            m_Name = layer.m_Name;
+            m_SpriteName = layer.m_SpriteName;
+            m_IsGroup = layer.m_IsGroup;
+            m_ParentIndex = layer.m_ParentIndex;
+            m_SpriteID = layer.m_SpriteID;
+            m_LayerID = layer.m_LayerID;
+            m_MosaicPosition = layer.m_MosaicPosition;
+            m_Flatten = layer.m_Flatten;
+            m_IsImported = layer.m_IsImported;
+            m_IsVisible = layer.m_IsVisible;
+            m_LayerPosition = layer.m_LayerPosition;
+            m_GameObject = layer.m_GameObject;
+            width = layer.width;
+            height = layer.height;
+            texture = layer.texture;
+        }
+
         public bool isVisible => m_IsVisible;
         public int layerID { get { return m_LayerID; } private set { m_LayerID = value; } }
 
