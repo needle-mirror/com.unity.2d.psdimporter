@@ -1,4 +1,9 @@
 # Changelog
+## [8.0.2] - 2022-12-01
+### Fixed
+- Fixed an issue where the editor would crash when importing .psd/.psb files with their layers outside of the document canvas. (Case DANB-300)
+- Fixed an issue where the amount of alpha removed from layers would not be re-applied as final position offset of the layers.
+- Fixed an issue where the generated GameObjects would be laid out differently from how they appear in the DCC tool. (Case DANB-298)
 
 ## [8.0.1] - 2022-10-11
 ### Fixed

@@ -19,7 +19,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000
-    [ScriptedImporter(22200002, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
+    [ScriptedImporter(22200003, new string[]{"psb"}, new []{"psd"}, AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
@@ -488,7 +488,7 @@ namespace UnityEditor.U2D.PSD
             var outputImageBuffer = new NativeArray<Color32>(doc.width * doc.height, Allocator.Persistent);
             try
             {
-                FlattenImageTask.Execute(m_ExtractData, ref outputImageBuffer, m_ImportHiddenLayers, documentSize);
+                FlattenImageTask.Execute(m_ExtractData, ref outputImageBuffer, m_ImportHiddenLayers, canvasSize);
              
                 var spriteImportData = GetSpriteImportData();
                 if (spriteImportData.Count <= 0 || spriteImportData[0] == null)
@@ -538,7 +538,7 @@ namespace UnityEditor.U2D.PSD
             List<PSDLayer> psdLayers = null;
             try
             {
-                ExtractLayerTask.Execute(in m_ExtractData, out psdLayers, m_ImportHiddenLayers, documentSize);
+                ExtractLayerTask.Execute(in m_ExtractData, out psdLayers, m_ImportHiddenLayers, canvasSize);
                 
                 var mappingStrategy = GetLayerMappingStrategy();
                 var layerUnique = mappingStrategy.LayersUnique(psdLayers.ConvertAll(x => (IPSDLayerMappingStrategyComparable)x));
@@ -586,6 +586,10 @@ namespace UnityEditor.U2D.PSD
 
                 ImagePacker.Pack(layerBuffers.ToArray(), layerWidth.ToArray(), layerHeight.ToArray(), m_Padding, m_SpriteSizeExpand, out outputImageBuffer, out int width, out int height, out RectInt[] spriteData, out Vector2Int[] uvTransform);
                 
+                var packOffsets = new Vector2[spriteData.Length];
+                for (var i = 0; i < packOffsets.Length; ++i)
+                    packOffsets[i] = new Vector2((uvTransform[i].x - spriteData[i].position.x) / -1f, (uvTransform[i].y - spriteData[i].position.y) / -1f);
+
                 var spriteImportData = GetSpriteImportData();
                 if (spriteImportData.Count <= 0 || shouldResliceFromLayer || hasNewLayer)
                 {
@@ -613,12 +617,11 @@ namespace UnityEditor.U2D.PSD
                         
                         psdLayer.spriteName = ImportUtilities.GetUniqueSpriteName(psdLayer.name, spriteNameHash, m_KeepDupilcateSpriteName);
                         spriteSheet.name = psdLayer.spriteName;
-                        spriteSheet.spritePosition = psdLayer.layerPosition;
+                        spriteSheet.spritePosition = psdLayer.layerPosition + packOffsets[i];
                         
                         if(shouldResliceFromLayer)
                             spriteSheet.rect = new Rect(spriteData[i].x, spriteData[i].y, spriteData[i].width, spriteData[i].height);
-                       
-                            
+                        
                         spriteSheet.uvTransform = uvTransform[i];
 
                         psdLayer.spriteID = spriteSheet.spriteID;
@@ -688,7 +691,7 @@ namespace UnityEditor.U2D.PSD
                                 r.height = spriteData[k].height;
                             }
                             spriteSheet.rect = r;
-                            spriteSheet.spritePosition = psdLayers[i].layerPosition;
+                            spriteSheet.spritePosition = psdLayers[i].layerPosition + packOffsets[k];
                         }
 
                         if (spriteSheet != null)
@@ -1227,7 +1230,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        internal Vector2Int documentSize => importData.documentSize;
+        internal Vector2Int canvasSize => importData.documentSize;
 
         SpriteLibraryAsset ProduceSpriteLibAsset(Sprite[] sprites)
         {

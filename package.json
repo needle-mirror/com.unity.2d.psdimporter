@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "8.0.1",
+  "version": "8.0.2",
   "unity": "2022.2",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
@@ -16,14 +16,18 @@
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "8.0.1"
+    "com.unity.2d.psdimporter.tests": "8.0.2"
+  },
+  "_upm": {
+    "changelog": "### Fixed\n- Fixed an issue where the editor would crash when importing .psd/.psb files with their layers outside of the document canvas. (Case DANB-300)\n- Fixed an issue where the amount of alpha removed from layers would not be re-applied as final position offset of the layers.\n- Fixed an issue where the generated GameObjects would be laid out differently from how they appear in the DCC tool. (Case DANB-298)"
   },
   "upmCi": {
-    "footprint": "416b3e291d020809bbacb36c154fb901e9b28821"
+    "footprint": "8ef88654f594021fbcd7ef795e2659378442556f"
   },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@8.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "6fc635d83d4bb0b2640893b8d4a0f3934044aeb5"
+    "revision": "fc4212736e8bcb753039f1a18964b98d929e4093"
   }
 }
