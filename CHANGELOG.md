@@ -1,4 +1,11 @@
 # Changelog
+## [6.0.7] - 2022-12-01
+### Fixed
+- Fixed an issue where the amount of alpha removed from layers would not be re-applied as final position offset of the layers.
+- Fixed an issue where an error would be shown when selecting Import Mode: Merged.
+- Fixed an issue where the editor would crash when importing .psd/.psb files with their layers outside of the document canvas. (Case DANB-300)
+- Fixed an issue where the generated GameObjects would be laid out differently from how they appear in the DCC tool. (Case DANB-298)
+
 ## [6.0.6] - 2022-09-07
 ### Fixed
 - Improved import speed and memory allocation for psd/psb files by reducing the intermediate texture buffers. 

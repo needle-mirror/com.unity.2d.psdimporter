@@ -72,7 +72,7 @@ namespace UnityEditor.U2D.PSD
 
             var handle = job.Schedule(jobCount, 1);
             combineJob.Schedule(1, 1, handle).Complete();
-            
+
             foreach (var b in premergedBuffer)
             {
                 if (b.IsCreated)
@@ -132,8 +132,8 @@ namespace UnityEditor.U2D.PSD
                         break;
                     
                     var inputColor = (Color32*)inputTextures[layerIndex].ToPointer();
-                    var inPosX = inputTextureRects[layerIndex].x;
-                    var inPosY = inputTextureRects[layerIndex].y;
+                    var inStartPosX = inputTextureRects[layerIndex].x;
+                    var inStartPosY = inputTextureRects[layerIndex].y;
                     var inWidth = inputTextureRects[layerIndex].z;
                     var inHeight = inputTextureRects[layerIndex].w;
 
@@ -142,26 +142,37 @@ namespace UnityEditor.U2D.PSD
                     
                     for (var y = 0; y < inHeight; ++y)
                     {
-                        var inY = y * inWidth;
-                        var outY = flipY ? (outHeight - 1 - y - inPosY) * outWidth : (y + inPosY) * outWidth;
+                        var outPosY = y + inStartPosY;
+                        // If pixel is outside of output texture's Y, move to the next pixel.
+                        if (outPosY < 0 || outPosY >= outHeight)
+                            continue;
                         
+                        var inRow = y * inWidth;
+                        var outRow = flipY ? (outHeight - 1 - y - inStartPosY) * outWidth : (y + inStartPosY) * outWidth;
+
                         for (var x = 0; x < inWidth; ++x)
                         {
-                            var inX = inY + x;
-                            var outX = outY + x + inPosX;
+                            var outPosX = x + inStartPosX;
+                            // If pixel is outside of output texture's X, move to the next pixel.
+                            if (outPosX < 0 || outPosX >= outWidth)
+                                continue;
+                            
+                            var inBufferIndex = inRow + x;
+                            var outBufferIndex = outRow + outPosX;
 
-                            Color inColor = inputColor[inX];
-                            Color prevOutColor = outputColor[outX];
+                            Color inColor = inputColor[inBufferIndex];
+                            Color prevOutColor = outputColor[outBufferIndex];
                             var outColor = new Color();
 
                             var destAlpha = prevOutColor.a * (1 - inColor.a);
                             outColor.a = inColor.a + prevOutColor.a * (1 - inColor.a);
-                            var premultiplyAlpha = 1 / outColor.a;
+                            
+                            var premultiplyAlpha = outColor.a > 0.0f ? 1 / outColor.a : 1f;
                             outColor.r = (inColor.r * inColor.a + prevOutColor.r * destAlpha) * premultiplyAlpha;
                             outColor.g = (inColor.g * inColor.a + prevOutColor.g * destAlpha) * premultiplyAlpha;
                             outColor.b = (inColor.b * inColor.a + prevOutColor.b * destAlpha) * premultiplyAlpha;
 
-                            outputColor[outX] = outColor;
+                            outputColor[outBufferIndex] = outColor;
                         }
                     }
                 }

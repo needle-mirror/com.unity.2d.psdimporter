@@ -89,6 +89,7 @@ namespace UnityEditor.U2D.PSD
         PSDImporterEditorLayerTreeView m_LayerTreeView;
         TreeViewState m_TreeViewState;
         PSDImporter m_CurrentTarget;
+        PSDGameObjectPreviewData m_PreviewRenderUtility;
         /// <summary>
         /// Implementation of AssetImporterEditor.OnEnable
         /// </summary>
@@ -183,6 +184,7 @@ namespace UnityEditor.U2D.PSD
             };
             m_TreeViewState = new TreeViewState();
             UpdateLayerTreeView();
+            InitPreview();
         }
 
         /// <summary>
@@ -206,6 +208,37 @@ namespace UnityEditor.U2D.PSD
             }
 
         }
+        
+        void InitPreview()
+        {
+            var t = (PSDImporter)target;
+            var gameObject = AssetDatabase.LoadAssetAtPath<GameObject>(t.assetPath);
+
+            if (m_PreviewRenderUtility != null)
+            {
+                m_PreviewRenderUtility.Dispose();
+                m_PreviewRenderUtility = null;
+            }
+
+            if (gameObject != null)
+            {
+                var documentSize = new Rect(0, 0, t.importData.documentSize.x / t.pixelsPerUnit, t.importData.documentSize.y / t.pixelsPerUnit);
+                m_PreviewRenderUtility = new PSDGameObjectPreviewData(gameObject, documentSize);
+            }
+        }
+
+        /// <summary>
+        /// Implmentation of AssetImporterEditor.OnDisable
+        /// </summary>
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            if (m_PreviewRenderUtility != null)
+            {
+                m_PreviewRenderUtility.Dispose();
+                m_PreviewRenderUtility = null;
+            }
+        }        
         
         void UpdateLayerTreeView()
         {
@@ -345,6 +378,11 @@ namespace UnityEditor.U2D.PSD
             ApplyTexturePlatformSettings();
             base.Apply();
             PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter) target).assetPath;
+            if (m_PreviewRenderUtility != null)
+            {
+                m_PreviewRenderUtility.Dispose();
+                m_PreviewRenderUtility = null;
+            }            
         }
 
         void ApplyTexturePlatformSettings()
@@ -1139,6 +1177,25 @@ namespace UnityEditor.U2D.PSD
 
             return m_TexturePlatformSettingsHelper.HasModified();
         }
+
+        /// <summary>
+        /// Override from AssetImporterEditor to show custom preview.
+        /// </summary>
+        /// <param name="r">Preview Rect.</param>
+        public override void DrawPreview(Rect r)
+        {
+            if (m_PreviewRenderUtility == null)
+                InitPreview();
+
+            if (m_PreviewRenderUtility != null)
+            {
+                var t = (PSDImporter)target;
+                var prefabBounds = new Rect(0 , 0, t.importData.documentSize.x/ t.pixelsPerUnit, t.importData.documentSize.y/ t.pixelsPerUnit);
+                m_PreviewRenderUtility.DrawPreview(r, "PreBackgroundSolid", prefabBounds.center, false);    
+            }
+            else
+                base.DrawPreview(r);
+        }        
 
         internal class Styles
         {
