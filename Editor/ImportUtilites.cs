@@ -40,8 +40,8 @@ namespace UnityEditor.U2D.PSD
         static string GetUniqueName(string name, HashSet<int> stringHash, bool logNewNameGenerated = false, UnityEngine.Object context = null)
         {
             var sanitizedName = string.Copy(SanitizeName(name));
-            string uniqueName = sanitizedName;
-            int index = 1;
+            var uniqueName = sanitizedName;
+            var index = 1;
             while (true)
             {
                 var hash = GetStringHash(uniqueName);
@@ -49,15 +49,22 @@ namespace UnityEditor.U2D.PSD
                 {
                     stringHash.Add(hash);
                     if (logNewNameGenerated && sanitizedName != uniqueName)
-                        Debug.Log(string.Format("Asset name {0} is changed to {1} to ensure uniqueness", name, uniqueName), context);
+                        Debug.Log($"Asset name {name} is changed to {uniqueName} to ensure uniqueness", context);
                     return uniqueName;
                 }
-                uniqueName = string.Format("{0}_{1}", sanitizedName, index);
+                uniqueName = $"{sanitizedName}_{index}";
                 ++index;
             }
         }
+
+        static int GetStringHash(string str)
+        {
+            var md5Hasher = MD5.Create();
+            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(str));
+            return BitConverter.ToInt32(hashed, 0);
+        }
         
-        static string SanitizeName(string name)
+        public static string SanitizeName(string name)
         {
             name = name.Replace('\0', ' ');
             string newName = null;
@@ -69,18 +76,11 @@ namespace UnityEditor.U2D.PSD
 
             if (!string.IsNullOrEmpty(newName))
             {
-                Debug.LogWarning(string.Format("File contains layer with invalid name for generating asset. {0} is renamed to {1}", name, newName));
+                Debug.LogWarning($"File contains layer with invalid name for generating asset. {name} is renamed to {newName}");
                 return newName;
             }
             return name;
-        }
-
-        static int GetStringHash(string str)
-        {
-            MD5 md5Hasher = MD5.Create();
-            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(str));
-            return BitConverter.ToInt32(hashed, 0);
-        }
+        }        
     }
         
     class GameObjectCreationFactory : UniqueNameGenerator
@@ -161,8 +161,9 @@ namespace UnityEditor.U2D.PSD
             
                 if (uniqueNameGenerator.ContainHash(childBitmapLayer.LayerID))
                 {
-                    var importWarning = string.Format("Layer {0}: LayerId is not unique. Mapping will be done by Layer's name.", childBitmapLayer.Name);
-                    var layerName = uniqueNameGenerator.GetUniqueName(childBitmapLayer.Name);
+                    var layerName = UniqueNameGenerator.SanitizeName(childBitmapLayer.Name);
+                    var importWarning = $"Layer {layerName}: LayerId is not unique. Mapping will be done by Layer's name.";
+                    layerName = uniqueNameGenerator.GetUniqueName(layerName);
                     if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
                     childBitmapLayer.LayerID = layerName.GetHashCode();

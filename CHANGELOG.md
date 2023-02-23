@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.0.0] - 2023-02-23
+### Fixed
+- Fixed an issue where warning logs in the console would get cut short due to invalid characters in layer names.
+
 ## [9.0.0-pre.2] - 2022-11-30
 ### Fixed
 - Enabled the ability to select mipmap streaming for textures imported with the PSD Importer.

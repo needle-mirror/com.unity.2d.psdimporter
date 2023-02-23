@@ -347,7 +347,7 @@ namespace UnityEditor.U2D.PSD
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to import file {assetPath}. Ex:{e.Message}");
+                Debug.LogError($"Failed to import file {assetPath}. Error: {e.Message}\n{e.StackTrace}");
             }
             finally
             {
@@ -1163,8 +1163,8 @@ namespace UnityEditor.U2D.PSD
                                     var spriteBones = currentCharacterData.parts.FirstOrDefault(x => new GUID(x.spriteId) == spriteRenderer.sprite.GetSpriteID()).bones.Where(x => x >= 0 && x < boneGOs.Length).Select(x => boneGOs[x]);
                                     if (spriteBones.Any())
                                     {
-                                        spriteSkin.rootBone = root.transform;
-                                        spriteSkin.boneTransforms = spriteBones.Select(x => x.go.transform).ToArray();
+                                        spriteSkin.SetRootBone(root.transform);
+                                        spriteSkin.SetBoneTransforms(spriteBones.Select(x => x.go.transform).ToArray());
                                         if (spriteSkin.isValid)
                                             spriteSkin.CalculateBounds();
                                     }
