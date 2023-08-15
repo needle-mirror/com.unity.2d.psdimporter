@@ -1,4 +1,7 @@
 # Changelog
+## [9.0.1] - 2023-08-15
+### Fixed
+- Fixed case where PSDImporter does not support the PVRTC compression format for the iOS platform. (Case DANB-500)
 
 ## [9.0.0] - 2023-02-23
 ### Fixed
