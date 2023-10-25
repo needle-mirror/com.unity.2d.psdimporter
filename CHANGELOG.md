@@ -1,4 +1,8 @@
 # Changelog
+## [6.0.8] - 2023-10-25
+### Fixed
+- Fixed an issue where PSDImporter atlas size does not follow PVRTC compression format for the iOS platform
+
 ## [6.0.7] - 2022-12-01
 ### Fixed
 - Fixed an issue where the amount of alpha removed from layers would not be re-applied as final position offset of the layers.

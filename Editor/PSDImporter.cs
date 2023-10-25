@@ -507,7 +507,10 @@ namespace UnityEditor.U2D.PSD
 
             var layerIndex = new List<int>();
             var spriteNameHash = new UniqueNameGenerator();
-            
+
+            var platformSettings = GetPlatformTextureSettings(ctx.selectedBuildTarget);
+            bool requireSquarePOT = (TextureImporterFormat.PVRTC_RGB2 <= platformSettings.format && platformSettings.format <= TextureImporterFormat.PVRTC_RGBA4);
+
             var oldPsdLayers = GetPSDLayers();
             List<PSDLayer> psdLayers = null;
             try
@@ -562,7 +565,7 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 const int padding = 4;
-                ImagePacker.Pack(layerBuffers.ToArray(), layerWidth.ToArray(), layerHeight.ToArray(), padding, out output, out int width, out int height, out RectInt[] spriteData, out Vector2Int[] uvTransform);
+                ImagePacker.Pack(layerBuffers.ToArray(), layerWidth.ToArray(), layerHeight.ToArray(), padding, out output, out int width, out int height, out RectInt[] spriteData, out Vector2Int[] uvTransform, requireSquarePOT);
                 
                 var packOffsets = new Vector2[spriteData.Length];
                 for (var i = 0; i < packOffsets.Length; ++i)
