@@ -51,11 +51,11 @@ The Settings tab allows you to customize how the PSD Importer imports a file. Th
     </tr>
     <tr>
       <td rowspan="1"><strong>Extrude Edges</strong></td>
-      <td colspan="2">Select <a href="https://docs.unity3d.com/Manual/TextureTypes.html#Sprite"> Sprite (2D and UI)</a> to import the Texture as a <a href="https://docs.unity3d.com/Manual/Sprites.html">Sprite</a>. The is required to begin using the imported Texture with the <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/">2D Animation</a> package.</td>
+      <td colspan="2">Use the slider to determine how much to extend the Mesh from the edge of the Sprite.</td>
     </tr>
     <tr>
       <td rowspan="1"><strong>Generate Physics Shape</strong></td>
-      <td colspan="2">Select <a href="https://docs.unity3d.com/Manual/TextureTypes.html#Sprite"> Sprite (2D and UI)</a> to import the Texture as a <a href="https://docs.unity3d.com/Manual/Sprites.html">Sprite</a>. The is required to begin using the imported Texture with the <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/">2D Animation</a> package.</td>
+      <td colspan="2">Enable this option to generate a default [Physics Shape](https://docs.unity3d.com/2017.4/Documentation/Manual/SpritePhysicsShapeEditor.html) from the outline of the Sprite, if a [Custom Physics Shape](https://docs.unity3d.com/Manual/CustomPhysicsShape.html) has not be defined</td>
     </tr>
     <tr>
       <td rowspan="1"><strong><a href="#automatic-reslice">Automatic Reslice</a></strong></td>

@@ -1,4 +1,9 @@
 # Changelog
+
+## [8.0.3] - 2023-10-25
+### Fixed
+- Fixed an issue where PSDImporter atlas size does not follow PVRTC compression format for the iOS platform
+
 ## [8.0.2] - 2022-12-01
 ### Fixed
 - Fixed an issue where the editor would crash when importing .psd/.psb files with their layers outside of the document canvas. (Case DANB-300)
