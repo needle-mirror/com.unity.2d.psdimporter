@@ -69,6 +69,7 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_GeneratePhysicsShape;
         SerializedProperty m_LayerMappingOption;
         SerializedProperty m_PlatformSettingsArrProp;
+        SerializedProperty m_Pipeline;
 
         private SkeletonAsset m_SkeletonAsset;
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
@@ -108,6 +109,7 @@ namespace UnityEditor.U2D.PSD
             m_SkeletonAssetReferenceID = serializedObject.FindProperty("m_SkeletonAssetReferenceID");
             m_GeneratePhysicsShape = serializedObject.FindProperty("m_GeneratePhysicsShape");
             m_LayerMappingOption = serializedObject.FindProperty("m_LayerMappingOption");
+            m_Pipeline = serializedObject.FindProperty("m_Pipeline");
             
             var textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
             m_TextureType = textureImporterSettingsSP.FindPropertyRelative("m_TextureType");
@@ -154,7 +156,8 @@ namespace UnityEditor.U2D.PSD
                 AlphaHandlingGUI,
                 POTScaleGUI,
                 ReadableGUI,
-                MipMapGUI
+                MipMapGUI,
+                CustomPipelineGUI,
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Sprite, advanceGUIAction);
 
@@ -162,7 +165,8 @@ namespace UnityEditor.U2D.PSD
             {
                 POTScaleGUI,
                 ReadableGUI,
-                MipMapGUI
+                MipMapGUI,
+                CustomPipelineGUI,
             };
             m_AdvanceInspectorGUI.Add(TextureImporterType.Default, advanceGUIAction);
             
@@ -185,6 +189,14 @@ namespace UnityEditor.U2D.PSD
             m_TreeViewState = new TreeViewState();
             UpdateLayerTreeView();
             InitPreview();
+        }
+
+        void CustomPipelineGUI()
+        {
+            if (Unsupported.IsDeveloperMode())
+            {
+                EditorGUILayout.PropertyField(m_Pipeline);
+            }
         }
 
         /// <summary>

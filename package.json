@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "6.0.8",
+  "version": "6.0.9",
   "unity": "2021.2",
   "unityRelease": "7f1",
   "displayName": "2D PSD Importer",
@@ -12,23 +12,30 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.animation": "7.0.13",
+    "com.unity.2d.animation": "7.1.0",
     "com.unity.2d.common": "6.0.7",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "6.0.8"
+    "com.unity.2d.psdimporter.tests": "6.0.9"
   },
+  "samples": [
+    {
+      "displayName": "Samples",
+      "description": "Samples for using PSDImporter.",
+      "path": "Samples~/PSDImporterSamples"
+    }
+  ],
   "_upm": {
-    "changelog": "### Fixed\n- Fixed an issue where PSDImporter atlas size does not follow PVRTC compression format for the iOS platform"
+    "changelog": "### Fixed\n- Provide custom packing override for users to override to address DANB-526. (Case DANB-526)"
   },
   "upmCi": {
-    "footprint": "26fb4e88d2fa9a182c2864b9a45d88ce5d1477a5"
+    "footprint": "ab90409b253685c853d2f83c0d2850e669098933"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@6.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "681660f0ddc6412f1c6ffdc2f6433c5cc5adbe06"
+    "revision": "296f439c68fb9420382e9bd5ef0e2f626809b7b8"
   }
 }
