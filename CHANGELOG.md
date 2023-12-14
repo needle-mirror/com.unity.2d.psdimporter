@@ -1,5 +1,9 @@
 # Changelog
 
+## [8.0.4] - 2023-12-14
+### Fixed
+- Provide custom packing override for users to override to address DANB-526. (Case DANB-526)
+
 ## [8.0.3] - 2023-10-25
 ### Fixed
 - Fixed an issue where PSDImporter atlas size does not follow PVRTC compression format for the iOS platform
