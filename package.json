@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "unity": "2023.1",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
@@ -11,22 +11,29 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.common": "9.0.2",
+    "com.unity.2d.common": "9.0.4",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "9.0.1"
+    "com.unity.2d.psdimporter.tests": "9.0.2"
   },
+  "samples": [
+    {
+      "displayName": "Samples",
+      "description": "Samples for using PSDImporter.",
+      "path": "Samples~/PSDImporterSamples"
+    }
+  ],
   "_upm": {
-    "changelog": "### Fixed\n- Fixed case where PSDImporter does not support the PVRTC compression format for the iOS platform. (Case DANB-500)"
+    "changelog": "### Fixed\n- Provide custom packing override for users to override to address DANB-526. (Case DANB-526)\n- Fixed layers are not shown in LayerImportSettings after unselecting all layers and applying. (Case DANB-569)"
   },
   "upmCi": {
-    "footprint": "a0d6f3e508ae71cd512a92da6ea47a0df9be61eb"
+    "footprint": "d8630d2026a2a1f0ccffccd1458e4ec610fda110"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@9.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "b0f3a8f8d95618bb6a299742c1bbd4e96699180b"
+    "revision": "de1d2b0a924b0621324b0cfe0fcbef92f03bd2c2"
   }
 }

@@ -1,7 +1,14 @@
 # Changelog
+
+## [9.0.2] - 2024-02-06
+### Fixed
+- Provide custom packing override for users to override to address DANB-526. (Case DANB-526)
+- Fixed layers are not shown in LayerImportSettings after unselecting all layers and applying. (Case DANB-569)
+
 ## [9.0.1] - 2023-08-15
 ### Fixed
 - Fixed case where PSDImporter does not support the PVRTC compression format for the iOS platform. (Case DANB-500)
+- Provide custom packing override for users to override to address DANB-526. (Case DANB-526)
 
 ## [9.0.0] - 2023-02-23
 ### Fixed

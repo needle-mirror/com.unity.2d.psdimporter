@@ -17,7 +17,7 @@ namespace UnityEditor.U2D.PSD
             get => m_ImportedTextureWidth;
             set => m_ImportedTextureWidth = value;
         }
-        
+
         [SerializeField]
         int m_ImportedTextureHeight;
         public int importedTextureHeight
@@ -25,7 +25,7 @@ namespace UnityEditor.U2D.PSD
             get => m_ImportedTextureHeight;
             set => m_ImportedTextureHeight = value;
         }
-        
+
         [SerializeField]
         Vector2Int m_DocumentSize;
         public Vector2Int documentSize
@@ -52,11 +52,7 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         PSDLayerData[] m_PsdLayerData;
-        public PSDLayerData[] psdLayerData
-        {
-            get => m_PsdLayerData;
-            set => m_PsdLayerData = value;
-        }
+        public PSDLayerData[] psdLayerData => m_PsdLayerData;
 
         public void CreatePSDLayerData(List<BitmapLayer> bitmapLayer)
         {
@@ -103,7 +99,7 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         string m_SpriteId;
         GUID m_SpriteIDGUID;
-        
+
         public string name;
         public int layerId;
         public bool flatten;
@@ -113,7 +109,7 @@ namespace UnityEditor.U2D.PSD
         public int layerID => layerId;
         string IPSDLayerMappingStrategyComparable.name => name;
         bool IPSDLayerMappingStrategyComparable.isGroup => isGroup;
-        
+
         public GUID spriteId
         {
             get
@@ -134,7 +130,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
     }
-    
+
     /// <summary>
     /// PSDLayer data for PSDImportData for last import state
     /// </summary>
@@ -180,7 +176,7 @@ namespace UnityEditor.U2D.PSD
             get => m_IsGroup;
             set => m_IsGroup = value;
         }
-        
+
         [SerializeField]
         bool m_IsImported;
         public bool isImported
@@ -196,10 +192,10 @@ namespace UnityEditor.U2D.PSD
             get => m_LayerSizeOnFile;
             set => m_LayerSizeOnFile = value;
         }
-        
+
     }
 
-    
+
     /// <summary>
     /// Data for extracting layers and colors from PSD
     /// </summary>
@@ -210,4 +206,3 @@ namespace UnityEditor.U2D.PSD
         public PSDExtractLayerData[] children;
     }
 }
-
