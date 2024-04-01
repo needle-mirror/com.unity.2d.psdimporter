@@ -7,7 +7,12 @@ namespace UnityEditor.U2D.PSD
 {
     [Serializable]
     internal struct PSDApplyEvent
+#if USE_NEW_EDITOR_ANALYTICS
+        : IAnalytic.IData
+#endif
     {
+        public const string name = "psdImporterApply";
+
         public int instance_id;
         public int texture_type;
         public int sprite_mode;
@@ -20,9 +25,32 @@ namespace UnityEditor.U2D.PSD
         public SpriteAlignment character_alignment;
         public bool is_psd;
         public PsdColorMode color_mode;
-
     }
 
+#if USE_NEW_EDITOR_ANALYTICS
+    [AnalyticInfo(eventName: PSDApplyEvent.name,
+        vendorKey: Analytics.vendorKey,
+        version: Analytics.version,
+        maxEventsPerHour: Analytics.maxEventsPerHour,
+        maxNumberOfElements: Analytics.maxNumberOfElements)]
+    internal class PSDApplyEventAnalytic : IAnalytic
+    {
+        PSDApplyEvent m_EvtData;
+
+        public PSDApplyEventAnalytic(PSDApplyEvent evtData)
+        {
+            m_EvtData = evtData;
+        }
+
+        public bool TryGatherData(out IAnalytic.IData data, out Exception error)
+        {
+            data = m_EvtData;
+            error = null;
+            return true;
+        }
+    }
+#endif
+    
     internal interface IAnalytics
     {
         AnalyticsResult SendApplyEvent(PSDApplyEvent evt);
@@ -31,34 +59,36 @@ namespace UnityEditor.U2D.PSD
     internal static class AnalyticFactory
     {
         static IAnalytics s_Analytics;
-        static public IAnalytics analytics
+
+        public static IAnalytics analytics
         {
-            get
-            {
-                if (s_Analytics == null)
-                    s_Analytics = new Analytics();
-                return s_Analytics;
-            }
-            set { s_Analytics = value; }
+            get => s_Analytics ??= new Analytics();
+            set => s_Analytics = value;
         }
     }
 
     [InitializeOnLoad]
     internal class Analytics : IAnalytics
     {
-        const int k_MaxEventsPerHour = 100;
-        const int k_MaxNumberOfElements = 1000;
-        const string k_VendorKey = "unity.2d.psdimporter";
-        const int k_Version = 1;
+        public const int maxEventsPerHour = 100;
+        public const int maxNumberOfElements = 1000;
+        public const string vendorKey = "unity.2d.psdimporter";
+        public const int version = 1;
 
         static Analytics()
         {
-            EditorAnalytics.RegisterEventWithLimit("psdImporterApply", k_MaxEventsPerHour, k_MaxNumberOfElements, k_VendorKey, k_Version);
+#if !USE_NEW_EDITOR_ANALYTICS
+            EditorAnalytics.RegisterEventWithLimit(PSDApplyEvent.name, maxEventsPerHour, maxNumberOfElements, vendorKey, version);
+#endif
         }
 
         public AnalyticsResult SendApplyEvent(PSDApplyEvent evt)
         {
-            return EditorAnalytics.SendEventWithLimit("psdImporterApply", evt, k_Version);
+#if USE_NEW_EDITOR_ANALYTICS
+            return EditorAnalytics.SendAnalytic(new PSDApplyEventAnalytic(evt));
+#else
+            return EditorAnalytics.SendEventWithLimit(PSDApplyEvent.name, evt, version);
+#endif
         }
     }
 }

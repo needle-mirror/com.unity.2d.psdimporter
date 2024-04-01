@@ -109,6 +109,9 @@ namespace PhotoshopFile
                 LoadImage(reader);
                 DecompressImages();
             }
+
+            reader.Dispose();
+            reader = null;
         }
 
         #endregion
@@ -557,10 +560,10 @@ namespace PhotoshopFile
                         if (depth < 0)
                             throw new PsdInvalidException("Layer section ended without matching start marker.");
                         break;
-                    
+
                     case LayerSectionType.Layer: // Nothing to do here yet.
                         break;
-                    
+
                     default:
                         throw new PsdInvalidException("Unrecognized layer section type.");
                 }
@@ -594,7 +597,7 @@ namespace PhotoshopFile
                 versionInfo.FileVersion = 1;
             }
         }
-        
+
 
         ///////////////////////////////////////////////////////////////////////////
 

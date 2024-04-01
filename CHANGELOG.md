@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.0.3] - 2024-04-01
+### Fixed
+- Fix source file cannot be deleted after subsequent import. (Case DANB-579)
+
+### Changed
+- Updated the Editor Analytics to use the latest APIs.
+
 ## [9.0.2] - 2024-02-06
 ### Fixed
 - Provide custom packing override for users to override to address DANB-526. (Case DANB-526)
