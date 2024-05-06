@@ -770,6 +770,7 @@ namespace UnityEditor.U2D.PSD
 
         void RegisterAssets(AssetImportContext ctx, TextureGenerationOutput output)
         {
+            ctx.AddObjectToAsset("PSDImportData", m_ImportData);
             if ((output.sprites == null || output.sprites.Length == 0) && output.texture == null)
             {
                 Debug.LogWarning(TextContent.noSpriteOrTextureImportWarning, this);
@@ -802,7 +803,6 @@ namespace UnityEditor.U2D.PSD
             RegisterSprites(ctx, output, assetNameGenerator);
             RegisterSkeletonAsset(ctx, output, assetName);
 
-            ctx.AddObjectToAsset("PSDImportData", m_ImportData);
             ctx.SetMainObject(mainAsset);
         }
 

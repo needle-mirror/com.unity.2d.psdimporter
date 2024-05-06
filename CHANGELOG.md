@@ -1,5 +1,9 @@
 # Changelog
 
+## [8.0.5] - 2024-05-06
+### Fixed
+- Fixed layers are not shown in LayerImportSettings after unselecting all layers and applying. (Case DANB-569)
+
 ## [8.0.4] - 2023-12-14
 ### Fixed
 - Provide custom packing override for users to override to address DANB-526. (Case DANB-526)
