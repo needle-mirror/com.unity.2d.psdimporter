@@ -8,6 +8,7 @@
         "Unity.2D.Animation.Editor",
         "Unity.2D.Animation.Runtime",
         "Unity.2D.Sprite.Editor",
+        "Unity.2D.Tilemap.Editor",
         "Unity.Mathematics",
         "Unity.Burst",
         "Unity.InternalAPIEngineBridge.001"
@@ -31,6 +32,16 @@
             "name": "Unity",
             "expression": "2023.2.0a22",
             "define": "USE_NEW_EDITOR_ANALYTICS"
+        },
+        {
+            "name": "com.unity.2d.tilemap",
+            "expression": "1.0.0",
+            "define": "ENABLE_2D_TILEMAP_EDITOR"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.1.0a2",
+            "define": "USE_SPRITE_FRAME_CAPABILITY"
         }
     ],
     "noEngineReferences": false

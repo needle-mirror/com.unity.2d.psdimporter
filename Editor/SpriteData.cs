@@ -32,6 +32,25 @@ namespace UnityEditor.U2D.PSD
             spriteID = sr.spriteID;
         }
 
+        public void Copy(SpriteMetaData sr)
+        {
+            alignment = sr.alignment;
+            border = sr.border;
+            name = sr.name;
+            pivot = GetPivotValue(sr.alignment, sr.pivot);
+            rect = sr.rect;
+            spriteID = sr.spriteID;
+            spriteBone = sr.spriteBone;
+            spriteOutline = sr.spriteOutline;
+            vertices = sr.vertices;
+            spritePhysicsOutline = sr.spritePhysicsOutline;
+            indices = sr.indices;
+            edges = sr.edges;
+            tessellationDetail = sr.tessellationDetail;
+            uvTransform = sr.uvTransform;
+            spritePosition = sr.spritePosition;
+        }
+
         public static Vector2 GetPivotValue(SpriteAlignment alignment, Vector2 customOffset)
         {
             switch (alignment)

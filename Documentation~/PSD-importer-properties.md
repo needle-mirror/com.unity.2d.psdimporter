@@ -1,7 +1,7 @@
 #PSD Importer Inspector properties
 The PSD Importer is available after you import a .psb file into your Project. Select the .psb Asset file and set its **Texture Type** to [Sprite (2D and UI)](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). The PSD Importer properties are split between two main tabs, with the following properties available.
 
-![](images/psdimporter-properties-22.2.png) <br/>PSD Importer Inspector properties
+![](images/psdimporter-properties-6000.1.png) <br/>PSD Importer Inspector properties
 
 ##Settings tab
 The Settings tab allows you to customize how the PSD Importer imports a file. The settings are categorized into individual section fold-outs.
@@ -200,6 +200,11 @@ A skeleton Asset (.skeleton) is an Asset that contains the bone hierarchy struct
 If there is no .skeleton Asset assigned to the importer’s **Main Skeleton** property, then a .skeleton Asset is automatically generated as a  of the imported source file and it will be named ‘[Asset File Name] Skeleton’. You can **share .skeleton Assets** between different generated Prefabs by assigning the same .skeleton as their **Main Skeleton** property when they're imported.
 
 When you open and edit the character in 2D Animation package’s **Skinning Editor**, the module will display the bone hierarchy provided by the skeleton Asset assigned to **Main Skeleton** for rigging.
+
+###Tile Palette
+The following section allows generating Tile assets and Tile Palette where each layer in the source file will also generate a tile asset
+
+![](images/tilepalette-6000.1.png)
 
 ##Layer Management Tab
 The **Layer Management Tab** allows you to customize how the Importer imports the layers from the Photoshop file.

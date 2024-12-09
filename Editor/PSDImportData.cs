@@ -51,6 +51,14 @@ namespace UnityEditor.U2D.PSD
         }
 
         [SerializeField]
+        TextureImporterSettings m_SingleSpriteTextureImporterSettings;
+        public TextureImporterSettings singleSpriteTextureImporterSettings
+        {
+            get => m_SingleSpriteTextureImporterSettings;
+            set => m_SingleSpriteTextureImporterSettings = value;
+        }
+
+        [SerializeField]
         PSDLayerData[] m_PsdLayerData;
         public PSDLayerData[] psdLayerData => m_PsdLayerData;
 

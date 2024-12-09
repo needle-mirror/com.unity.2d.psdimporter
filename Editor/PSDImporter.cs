@@ -12,6 +12,11 @@ using UnityEditor.U2D.Sprites;
 using UnityEngine.U2D;
 using UnityEngine.Scripting.APIUpdating;
 
+#if ENABLE_2D_TILEMAP_EDITOR
+using UnityEditor.Tilemaps;
+using UnityEngine.Tilemaps;
+#endif
+
 #if ENABLE_2D_ANIMATION
 using UnityEditor.U2D.Animation;
 using UnityEngine.U2D.Animation;
@@ -148,6 +153,38 @@ namespace UnityEditor.U2D.PSD
 
         [SerializeField]
         bool m_KeepDupilcateSpriteName = true;
+
+#if ENABLE_2D_TILEMAP_EDITOR
+        [SerializeField]
+        bool m_GenerateTileAssets = false;
+
+        [SerializeField]
+        GridLayout.CellLayout m_TilePaletteCellLayout = GridLayout.CellLayout.Rectangle;
+
+        private static readonly GridLayout.CellSwizzle[] s_TilePaletteexagonSwizzleTypeValue =
+        {
+            GridLayout.CellSwizzle.XYZ,
+            GridLayout.CellSwizzle.YXZ,
+        };
+
+        [SerializeField]
+        int m_TilePaletteHexagonLayout;
+
+        [SerializeField]
+        Vector3 m_TilePaletteCellSize = new Vector3(1, 1, 0);
+
+        [SerializeField]
+        GridPalette.CellSizing m_TilePaletteCellSizing = GridPalette.CellSizing.Automatic;
+
+        [SerializeField]
+        TransparencySortMode m_TransparencySortMode = TransparencySortMode.Default;
+
+        [SerializeField]
+        Vector3 m_TransparencySortAxis = new Vector3(0f, 0f, 1f);
+
+        [SerializeField]
+        TileTemplate m_TileTemplate = null;
+#endif
 
         [SerializeField]
         int m_Padding = 4;
@@ -546,16 +583,83 @@ namespace UnityEditor.U2D.PSD
             {
                 FlattenImageTask.Execute(m_ExtractData, ref outputImageBuffer, m_ImportHiddenLayers, canvasSize);
 
-                m_SingleSpriteImportData[0].name = System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath) + "_1";
-                m_SingleSpriteImportData[0].alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
-                m_SingleSpriteImportData[0].border = m_TextureImporterSettings.spriteBorder;
-                m_SingleSpriteImportData[0].pivot = m_TextureImporterSettings.spritePivot;
-                m_SingleSpriteImportData[0].rect = new Rect(0, 0, doc.width, doc.height);
-
+                m_ImportData.singleSpriteTextureImporterSettings = m_TextureImporterSettings;
                 importData.importedTextureWidth = textureActualWidth = doc.width;
                 importData.importedTextureHeight = textureActualHeight = doc.height;
 
                 var spriteImportData = GetSpriteImportData();
+                if (m_ResliceFromLayer)
+                {
+                    var spriteNameHash = new UniqueNameGenerator();
+                    var oldPsdLayers = GetPSDLayers();
+                    List<PSDLayer> psdLayers = null;
+                    try
+                    {
+                        ExtractLayerTask.Execute(in m_ExtractData, out psdLayers, m_ImportHiddenLayers, canvasSize);
+
+                        var mappingStrategy = GetLayerMappingStrategy();
+                        var layerUnique = mappingStrategy.LayersUnique(psdLayers.ConvertAll(x => (IPSDLayerMappingStrategyComparable)x));
+                        if (!string.IsNullOrEmpty(layerUnique))
+                        {
+                            Debug.LogWarning(layerUnique,this);
+                        }
+                        var layerIndex = new List<int>();
+                        var spriteData = new List<RectInt>();
+                        for (var i = 0; i < psdLayers.Count; ++i)
+                        {
+                            var l = psdLayers[i];
+                            var expectedBufferLength = l.width * l.height;
+                            if (l.texture.IsCreated && l.texture.Length == expectedBufferLength && l.isImported)
+                            {
+                                layerIndex.Add(i);
+                                var rect = new RectInt((int) l.layerPosition.x, (int) l.layerPosition.y, l.width, l.height);
+                                spriteData.Add(rect);
+                            }
+                        }
+
+                        var newSpriteMeta = new List<SpriteMetaData>();
+
+                        for (int i = 0; i < spriteData.Count && i < layerIndex.Count; ++i)
+                        {
+                            var psdLayer = psdLayers[layerIndex[i]];
+                            var spriteSheet = spriteImportData.FirstOrDefault(x => x.spriteID == psdLayer.spriteID);
+                            if (spriteSheet == null)
+                            {
+                                spriteSheet = new SpriteMetaData();
+                                spriteSheet.border = Vector4.zero;
+                                spriteSheet.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
+                                spriteSheet.pivot = m_TextureImporterSettings.spritePivot;
+                                spriteSheet.rect = new Rect(spriteData[i].x, spriteData[i].y, spriteData[i].width, spriteData[i].height);
+                                spriteSheet.spriteID = psdLayer.spriteID;
+                            }
+                            else
+                            {
+                                var r = spriteSheet.rect;
+                                r.position = r.position - psdLayer.mosaicPosition + spriteData[i].position;
+                                spriteSheet.rect = r;
+                            }
+
+                            psdLayer.spriteName = ImportUtilities.GetUniqueSpriteName(psdLayer.name, spriteNameHash, m_KeepDupilcateSpriteName);
+                            spriteSheet.name = psdLayer.spriteName;
+                            spriteSheet.spritePosition = psdLayer.layerPosition;
+
+                            spriteSheet.rect = new Rect(spriteData[i].x, spriteData[i].y, spriteData[i].width, spriteData[i].height);
+
+                            psdLayer.spriteID = spriteSheet.spriteID;
+                            psdLayer.mosaicPosition = spriteData[i].position;
+                            newSpriteMeta.Add(spriteSheet);
+                        }
+                        spriteImportData.Clear();
+                        spriteImportData.AddRange(newSpriteMeta);
+                    }
+                    finally
+                    {
+                        if (psdLayers != null)
+                            foreach (var l in psdLayers)
+                                l.Dispose();
+                    }
+                }
+
                 output = ImportTexture(ctx, outputImageBuffer, doc.width, doc.height, spriteImportData.ToArray());
                 importData.importedTextureWidth = output.texture.width;
                 importData.importedTextureHeight = output.texture.height;
@@ -866,6 +970,7 @@ namespace UnityEditor.U2D.PSD
             RegisterGameObjects(ctx, output, ref mainAsset);
             RegisterSprites(ctx, output, assetNameGenerator);
             RegisterSkeletonAsset(ctx, output, assetName);
+            RegisterTilemapAsset(ctx, output, assetName, ref mainAsset);
             ctx.SetMainObject(mainAsset);
         }
 
@@ -954,6 +1059,59 @@ namespace UnityEditor.U2D.PSD
                     ctx.DependsOnArtifact(primaryAssetPath);
                 }
             }
+#endif
+        }
+
+        void RegisterTilemapAsset(AssetImportContext ctx
+            , TextureGenerationOutput output
+            , string assetName
+            , ref UnityEngine.Object mainAsset)
+        {
+            if (output.texture == null)
+                return;
+
+            if (output.sprites == null)
+                return;
+
+#if ENABLE_2D_TILEMAP_EDITOR
+            if (!m_GenerateTileAssets)
+                return;
+
+            var sprites = new List<Sprite>();
+            foreach (var s in output.sprites)
+            {
+                if(s.rect.width > 4 && s.rect.height > 4)
+                    sprites.Add(s);
+            }
+            var paletteGO = GridPaletteUtility.CreateNewPaletteAsSubAsset(assetName
+                , m_TilePaletteCellLayout
+                , m_TilePaletteCellSizing
+                , m_TilePaletteCellSize
+                , s_TilePaletteexagonSwizzleTypeValue[m_TilePaletteHexagonLayout]
+                , m_TransparencySortMode
+                , m_TransparencySortAxis
+                , new [] { output.texture }
+                , new [] { sprites }
+                , new [] { m_TileTemplate }
+                , out var palette
+                , out var tiles);
+
+            ctx.AddObjectToAsset("GridPalette", palette);
+            foreach (var tile in tiles)
+            {
+                // Use Sprite ID + Tile for pure Tile
+                if (tile is Tile t && t.sprite != null)
+                {
+                    ctx.AddObjectToAsset($"{t.sprite.GetSpriteID()} Tile", tile);
+                }
+                else
+                {
+                    ctx.AddObjectToAsset(tile.name, tile);
+                }
+            }
+
+            ctx.AddObjectToAsset("Palette", paletteGO);
+            mainAsset = paletteGO;
 #endif
         }
 
@@ -1278,7 +1436,7 @@ namespace UnityEditor.U2D.PSD
                 return m_MultiSpriteImportData;
             }
 
-            return m_SingleSpriteImportData;
+            return new List<SpriteMetaData> { GetSingleSpriteImportData() };
         }
 
         internal SpriteMetaData[] GetSpriteMetaData()
@@ -1290,7 +1448,7 @@ namespace UnityEditor.U2D.PSD
                 return m_MultiSpriteImportData.ToArray();
             }
 
-            return new[] { new SpriteMetaData(m_SingleSpriteImportData[0]) };
+            return new[] { GetSingleSpriteImportData() };
         }
 
         internal SpriteRect GetSpriteData(GUID guid)
@@ -1302,7 +1460,26 @@ namespace UnityEditor.U2D.PSD
                 return m_MultiSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
             }
 
-            return m_SingleSpriteImportData[0];
+            return GetSingleSpriteImportData();
+        }
+
+        SpriteMetaData GetSingleSpriteImportData()
+        {
+            SpriteMetaData spriteMetaData = new SpriteMetaData();
+            spriteMetaData.spriteID = AssetDatabase.GUIDFromAssetPath(assetPath);
+            if(m_SingleSpriteImportData == null || m_SingleSpriteImportData.Count < 1 && m_SingleSpriteImportData[0] != null)
+                spriteMetaData.Copy(m_SingleSpriteImportData[0]);
+            if(assetPath != null)
+                spriteMetaData.name = System.IO.Path.GetFileNameWithoutExtension(assetPath) + "_1";
+            if (importData != null)
+            {
+                spriteMetaData.rect = new Rect(0, 0, importData.importedTextureWidth, importData.importedTextureHeight);
+                spriteMetaData.pivot = m_TextureImporterSettings.spritePivot;
+                spriteMetaData.alignment = (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
+                spriteMetaData.border = m_TextureImporterSettings.spriteBorder;
+            }
+
+            return spriteMetaData;
         }
 
         internal Vector2 GetDocumentPivot()

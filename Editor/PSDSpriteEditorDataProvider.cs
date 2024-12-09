@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor.AssetImporters;
 using UnityEditor.U2D.Sprites;
 
-#if ENABLE_2D_ANIMATION 
+#if ENABLE_2D_ANIMATION
 using UnityEditor.U2D.Animation;
 #endif
 
@@ -14,13 +14,13 @@ namespace UnityEditor.U2D.PSD
         SpriteImportMode ISpriteEditorDataProvider.spriteImportMode => spriteImportModeToUse;
         UnityEngine.Object ISpriteEditorDataProvider.targetObject => targetObject;
         internal UnityEngine.Object targetObject => this;
-        
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.pixelsPerUnit.
         /// </summary>
         float ISpriteEditorDataProvider.pixelsPerUnit => pixelsPerUnit;
         internal float pixelsPerUnit => m_TextureImporterSettings.spritePixelsPerUnit;
-        
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.GetDataProvider.
         /// </summary>
@@ -29,8 +29,8 @@ namespace UnityEditor.U2D.PSD
         T ISpriteEditorDataProvider.GetDataProvider<T>()
         {
             return GetDataProvider<T>();
-        }   
-        
+        }
+
         internal T GetDataProvider<T>() where T : class
         {
             if (typeof(T) == typeof(ISpriteBoneDataProvider))
@@ -57,7 +57,13 @@ namespace UnityEditor.U2D.PSD
             {
                 return new SecondaryTextureDataProvider() { dataProvider = this } as T;
             }
-#if ENABLE_2D_ANIMATION            
+#if USE_SPRITE_FRAME_CAPABILITY
+            if (typeof(T) == typeof(ISpriteFrameEditCapability))
+            {
+                return new SpriteFrameEditCapabilityDataProvider() { dataProvider = this } as T;
+            }
+#endif
+#if ENABLE_2D_ANIMATION
             if (typeof(T) == typeof(ICharacterDataProvider))
             {
                 return inCharacterMode ? new CharacterDataProvider { dataProvider = this } as T : null;
@@ -65,12 +71,12 @@ namespace UnityEditor.U2D.PSD
             if (typeof(T) == typeof(IMainSkeletonDataProvider))
             {
                 return inCharacterMode && skeletonAsset != null ? new MainSkeletonDataProvider() { dataProvider = this } as T : null;
-            }          
-#endif  
+            }
+#endif
             else
                 return this as T;
-        }     
-        
+        }
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.HasDataProvider.
         /// </summary>
@@ -79,11 +85,11 @@ namespace UnityEditor.U2D.PSD
         bool ISpriteEditorDataProvider.HasDataProvider(Type type)
         {
             return HasDataProvider(type);
-        }  
-        
+        }
+
         internal bool HasDataProvider(Type type)
         {
-#if ENABLE_2D_ANIMATION            
+#if ENABLE_2D_ANIMATION
             if (inCharacterMode)
             {
                 if (type == typeof(ICharacterDataProvider))
@@ -104,7 +110,7 @@ namespace UnityEditor.U2D.PSD
             else
                 return type.IsAssignableFrom(GetType());
         }
-        
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.Apply.
         /// </summary>
@@ -112,17 +118,17 @@ namespace UnityEditor.U2D.PSD
         {
             Apply();
         }
-        
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.InitSpriteEditorDataProvider.
         /// </summary>
         void ISpriteEditorDataProvider.InitSpriteEditorDataProvider()
         {
             InitSpriteEditorDataProvider();
-        } 
-        
+        }
+
         void InitSpriteEditorDataProvider() {}
-        
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.GetSpriteRects.
         /// </summary>
@@ -131,7 +137,7 @@ namespace UnityEditor.U2D.PSD
         {
             return GetSpriteRects();
         }
-        
+
         internal SpriteRect[] GetSpriteRects()
         {
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
@@ -141,9 +147,9 @@ namespace UnityEditor.U2D.PSD
                 return m_MultiSpriteImportData.Select(x => new SpriteMetaData(x) as SpriteRect).ToArray();
             }
 
-            return new[] { new SpriteMetaData(m_SingleSpriteImportData[0]) };
-        }   
-        
+            return new[] { GetSingleSpriteImportData() };
+        }
+
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.SetSpriteRects.
         /// </summary>
@@ -151,8 +157,8 @@ namespace UnityEditor.U2D.PSD
         void ISpriteEditorDataProvider.SetSpriteRects(SpriteRect[] spriteRects)
         {
             SetSpriteRects(spriteRects);
-        }        
-        
+        }
+
         internal void SetSpriteRects(SpriteRect[] spriteRects)
         {
             var spriteImportData = GetSpriteImportData();
@@ -190,6 +196,6 @@ namespace UnityEditor.U2D.PSD
                     spriteImportData[0] = new SpriteMetaData(spriteRects[0]);
                 }
             }
-        }        
+        }
     }
 }

@@ -80,6 +80,17 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_Padding;
         SerializedProperty m_SpriteSizeExpand;
         SerializedProperty m_SpriteSizeExpandChanged;
+        
+#if ENABLE_2D_TILEMAP_EDITOR
+        SerializedProperty m_GenerateTileAssets;
+        SerializedProperty m_TilePaletteCellLayout;
+        SerializedProperty m_TilePaletteHexagonLayout;
+        SerializedProperty m_TilePaletteCellSize;
+        SerializedProperty m_TilePaletteCellSizing;
+        SerializedProperty m_TransparencySortMode;
+        SerializedProperty m_TransparencySortAxis;
+        SerializedProperty m_TileTemplate;
+#endif
 
 #if ENABLE_2D_ANIMATION
         SerializedProperty m_PaperDollMode;
@@ -190,6 +201,17 @@ namespace UnityEditor.U2D.PSD
             m_SkeletonAsset = AssetDatabase.LoadAssetAtPath<SkeletonAsset>(assetPath);
 #endif
 
+#if ENABLE_2D_TILEMAP_EDITOR            
+            m_GenerateTileAssets = serializedObject.FindProperty("m_GenerateTileAssets");
+            m_TilePaletteCellLayout = serializedObject.FindProperty("m_TilePaletteCellLayout");
+            m_TilePaletteHexagonLayout = serializedObject.FindProperty("m_TilePaletteHexagonLayout");
+            m_TilePaletteCellSize = serializedObject.FindProperty("m_TilePaletteCellSize");
+            m_TilePaletteCellSizing = serializedObject.FindProperty("m_TilePaletteCellSizing");
+            m_TransparencySortMode = serializedObject.FindProperty("m_TransparencySortMode");
+            m_TransparencySortAxis = serializedObject.FindProperty("m_TransparencySortAxis");
+            m_TileTemplate = serializedObject.FindProperty("m_TileTemplate");
+#endif            
+            
             var advanceGUIAction = new Action[]
             {
                 ColorSpaceGUI,
@@ -924,13 +946,10 @@ namespace UnityEditor.U2D.PSD
                 }
             }
             EditorGUILayout.PropertyField(m_GeneratePhysicsShape, styles.generatePhysicsShape);
-            using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue))
+            EditorGUILayout.PropertyField(m_ResliceFromLayer, styles.resliceFromLayer);
+            if (m_ResliceFromLayer.boolValue)
             {
-                EditorGUILayout.PropertyField(m_ResliceFromLayer, styles.resliceFromLayer);
-                if (m_ResliceFromLayer.boolValue)
-                {
-                    EditorGUILayout.HelpBox(styles.resliceFromLayerWarning.text, MessageType.Info, true);
-                }
+                EditorGUILayout.HelpBox(styles.resliceFromLayerWarning.text, MessageType.Info, true);
             }
 
             DoOpenSpriteEditorButton();
@@ -994,6 +1013,83 @@ namespace UnityEditor.U2D.PSD
                 //EditorGUILayout.PropertyField(m_PaperDollMode, s_Styles.paperDollMode);
             }
 #endif
+#if ENABLE_2D_TILEMAP_EDITOR
+            if (m_EditorFoldOutState.DoTilePaletteUI(styles.tilePaletteHeaderText))
+            {
+                EditorGUILayout.PropertyField(m_GenerateTileAssets, styles.generateTileAssets);
+                using (new EditorGUI.DisabledScope(!m_GenerateTileAssets.boolValue))
+                {
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(m_TilePaletteCellLayout);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        // Set useful user settings for certain layouts
+                        switch ((GridLayout.CellLayout) m_TilePaletteCellLayout.enumValueIndex)
+                        {
+                            case GridLayout.CellLayout.Rectangle:
+                            {
+                                m_TilePaletteCellSizing.intValue = (int)GridPalette.CellSizing.Automatic;
+                                m_TilePaletteCellSize.vector3Value = new Vector3(1, 1, 0);
+                                break;
+                            }
+                            case GridLayout.CellLayout.Hexagon:
+                            {
+                                m_TilePaletteCellSizing.intValue = (int)GridPalette.CellSizing.Manual;
+                                m_TilePaletteCellSize.vector3Value = new Vector3(0.8659766f, 1, 0);
+                                break;
+                            }
+                            case GridLayout.CellLayout.Isometric:
+                            {
+                                m_TilePaletteCellSizing.intValue = (int)GridPalette.CellSizing.Manual;
+                                m_TilePaletteCellSize.vector3Value = new Vector3(1, 0.5f, 1);
+                                break;
+                            }
+                            case GridLayout.CellLayout.IsometricZAsY:
+                            {
+                                m_TilePaletteCellSizing.intValue = (int)GridPalette.CellSizing.Manual;
+                                m_TilePaletteCellSize.vector3Value = new Vector3(1, 0.5f, 1);
+                                m_TransparencySortMode.intValue = (int)TransparencySortMode.CustomAxis;
+                                m_TransparencySortAxis.vector3Value = new Vector3(0f, 1f, -0.26f);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (m_TilePaletteCellLayout.enumValueIndex == (int) GridLayout.CellLayout.Hexagon)
+                    {
+                        m_TilePaletteHexagonLayout.intValue = EditorGUILayout.Popup(Styles.tilePaletteHexagonLabel, m_TilePaletteHexagonLayout.intValue, Styles.tilePaletteHexagonSwizzleTypeLabel);
+                    }
+
+                    EditorGUILayout.PropertyField(m_TilePaletteCellSizing);
+                    using (new EditorGUI.DisabledScope(m_TilePaletteCellSizing.enumValueIndex == (int) GridPalette.CellSizing.Automatic))
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField(Styles.tilePaletteCellSizeLabel, GUILayout.Width(EditorGUIUtility.labelWidth));
+                        EditorGUI.BeginChangeCheck();
+                        var val = EditorGUILayout.Vector3Field(GUIContent.none, m_TilePaletteCellSize.vector3Value);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            m_TilePaletteCellSize.vector3Value = val;
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    EditorGUILayout.PropertyField(m_TransparencySortMode);
+                    using (new EditorGUI.DisabledScope(m_TransparencySortMode.enumValueIndex != (int)TransparencySortMode.CustomAxis))
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField(Styles.tilePaletteTransparencySortAxisLabel, GUILayout.Width(EditorGUIUtility.labelWidth));
+                        EditorGUI.BeginChangeCheck();
+                        var val = EditorGUILayout.Vector3Field(GUIContent.none, m_TransparencySortAxis.vector3Value);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            m_TransparencySortAxis.vector3Value = val;
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    EditorGUILayout.PropertyField(m_TileTemplate);
+                }
+            }
+#endif            
         }
 
         void DoOpenSpriteEditorButton()
@@ -1463,7 +1559,7 @@ namespace UnityEditor.U2D.PSD
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
-        /// <returns>false</returns>
+        /// <value>false</value>
         public override bool showImportedObject
         {
             get { return false; }
@@ -1689,6 +1785,7 @@ namespace UnityEditor.U2D.PSD
 
             public readonly GUIContent layerMapping  = EditorGUIUtility.TrTextContent("Layer Mapping", "Options for indicating how layer to Sprite mapping.");
             public readonly GUIContent generatePhysicsShape = EditorGUIUtility.TrTextContent("Generate Physics Shape", "Generates a default physics shape from the outline of the Sprite/s when a physics shape has not been set in the Sprite Editor.");
+            public readonly GUIContent generateTileAssets = EditorGUIUtility.TrTextContent("Generate Tile Assets", "Generates Tile assets from Sprite/s generated by importer.");
             public readonly GUIContent importHiddenLayer = EditorGUIUtility.TrTextContent("Include Hidden Layers", "Settings to determine when hidden layers should be imported.");
             public readonly GUIContent mosaicLayers = EditorGUIUtility.TrTextContent("Import Mode", "Layers will be imported as individual Sprites.");
             public readonly GUIContent characterMode = EditorGUIUtility.TrTextContent("Use as Rig","Enable to support 2D Animation character rigging.");
@@ -1702,6 +1799,16 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture","Texture settings.");
             public readonly GUIContent multiEditLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Multi editing in Layer Management is not supported.","");
             public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
+            
+            public readonly GUIContent tilePaletteHeaderText = EditorGUIUtility.TrTextContent("Tile Palette","Tile Palette settings.");
+            public static readonly GUIContent tilePaletteHexagonLabel = EditorGUIUtility.TrTextContent("Hexagon Type");
+            public static readonly GUIContent[] tilePaletteHexagonSwizzleTypeLabel =
+            {
+                EditorGUIUtility.TrTextContent("Point Top"),
+                EditorGUIUtility.TrTextContent("Flat Top"),
+            };
+            public static readonly GUIContent tilePaletteCellSizeLabel = EditorGUIUtility.TrTextContent("Tile Palette Cell Size");
+            public static readonly GUIContent tilePaletteTransparencySortAxisLabel = EditorGUIUtility.TrTextContent("Transparency Sort Axis");
 
             public readonly int[] falseTrueOptionValue =
             {
@@ -1790,6 +1897,7 @@ namespace UnityEditor.U2D.PSD
         SavedBool m_GeneralFoldout;
         SavedBool m_LayerImportFoldout;
         SavedBool m_CharacterRigFoldout;
+        SavedBool m_TilePaletteFoldout;
         SavedBool m_AdvancedFoldout;
         SavedBool m_TextureFoldout;
         SavedBool m_PlatformSettingsFoldout;
@@ -1799,6 +1907,7 @@ namespace UnityEditor.U2D.PSD
             m_GeneralFoldout = new SavedBool("PSDImporterEditor.m_GeneralFoldout", true);
             m_LayerImportFoldout = new SavedBool("PSDImporterEditor.m_LayerImportFoldout", true);
             m_CharacterRigFoldout = new SavedBool("PSDImporterEditor.m_CharacterRigFoldout", false);
+            m_TilePaletteFoldout = new SavedBool("PSDImporterEditor.m_TilePaletteFoldout", false);
             m_AdvancedFoldout = new SavedBool("PSDImporterEditor.m_AdvancedFoldout", false);
             m_TextureFoldout = new SavedBool("PSDImporterEditor.m_TextureFoldout", false);
             m_PlatformSettingsFoldout = new SavedBool("PSDImporterEditor.m_PlatformSettingsFoldout", false);
@@ -1828,6 +1937,12 @@ namespace UnityEditor.U2D.PSD
             return m_CharacterRigFoldout.value;
         }
 
+        public bool DoTilePaletteUI(GUIContent title)
+        {
+            m_TilePaletteFoldout.value = DoFoldout(title, m_TilePaletteFoldout.value);
+            return m_TilePaletteFoldout.value;
+        }
+        
         public bool DoAdvancedUI(GUIContent title)
         {
             m_AdvancedFoldout.value = DoFoldout(title, m_AdvancedFoldout.value);

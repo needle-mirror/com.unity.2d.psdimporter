@@ -1,5 +1,8 @@
 using System;
 using UnityEditor.AssetImporters;
+#if ENABLE_2D_TILEMAP_EDITOR
+using UnityEditor.Tilemaps;
+#endif
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
@@ -35,7 +38,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Keeps texture borders the same when generating mipmaps.
         /// </summary>
@@ -48,7 +51,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Fades out mip levels to a gray color.
         /// </summary>
@@ -87,7 +90,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Generate Mip Maps.
         /// <br/><br/>Select this to enable mip-map generation. Mipmaps are smaller versions of the Texture that get used when the Texture is very small on screen.
@@ -101,7 +104,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Mip level where texture is faded out completely.
         /// </summary>
@@ -114,7 +117,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Mip level where texture begins to fade out.
         /// </summary>
@@ -127,7 +130,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Enable mipmap streaming for the texture.
         /// <br/><br/>Only load larger mipmaps as needed to render the current game cameras. Requires texture streaming to be enabled in quality settings.
@@ -167,7 +170,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Enables or disables coverage-preserving alpha mipmapping.
         /// <br/><br/>Enable this to rescale the alpha values of computed mipmaps so coverage is preserved. This means a higher percentage of pixels passes the alpha test and lower mipmap levels do not become more transparent. This is disabled by default (set to false).
@@ -181,7 +184,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Selects Single or Manual import mode for Sprite textures.
         /// </summary>
@@ -214,7 +217,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Which type of texture are we dealing with here.
         /// </summary>
@@ -234,7 +237,7 @@ namespace UnityEditor.U2D.PSD
                     throw new ArgumentException("Invalid value. Valid values are TextureImporterType.Sprite or TextureImporterType.Default");
             }
         }
-        
+
         /// <summary>
         /// Texture coordinate wrapping mode.
         /// <br/><br/>Using wrapMode sets the same wrapping mode on all axes. Different per-axis wrap modes can be set using wrapModeU, wrapModeV, wrapModeW. Querying the value returns the U axis wrap mode (same as wrapModeU getter).
@@ -248,7 +251,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Texture U coordinate wrapping mode.
         /// <br/><br/>Controls wrapping mode along texture U (horizontal) axis.
@@ -262,7 +265,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Texture V coordinate wrapping mode.
         /// <br/><br/>Controls wrapping mode along texture V (vertical) axis.
@@ -276,7 +279,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Texture W coordinate wrapping mode for Texture3D.
         /// <br/><br/>Controls wrapping mode along texture W (depth, only relevant for Texture3D) axis.
@@ -313,7 +316,7 @@ namespace UnityEditor.U2D.PSD
         {
             return TextureImporterUtilities.GetPlatformTextureSettings(buildTarget, in m_PlatformSettings);
         }
-        
+
         /// <summary>
         /// Sets the platform settings used by the importer for a given build target.
         /// </summary>
@@ -323,7 +326,7 @@ namespace UnityEditor.U2D.PSD
             SetPlatformTextureSettings(setting);
             SetDirty();
         }
-        
+
         /// <summary>
         /// Secondary textures for the imported Sprites.
         /// </summary>
@@ -351,7 +354,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Sets if importer should generate a mosaic texture from the source layers.
         /// To generate such texture, the importer needs to be set to import Sprites in multiple mode.
@@ -378,7 +381,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         /// <summary>
         /// Sets the value to increase the Sprite size by.
         /// </summary>
@@ -392,7 +395,113 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
+#if ENABLE_2D_TILEMAP_EDITOR
+        /// <summary>
+        /// Sets whether to generate Tile assets.
+        /// </summary>
+        public bool generateTileAssets
+        {
+            get => m_GenerateTileAssets;
+            set
+            {
+                m_GenerateTileAssets = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Cell Layout for generated Tile Palette
+        /// </summary>
+        public GridLayout.CellLayout tilePaletteCellLayout
+        {
+            get => m_TilePaletteCellLayout;
+            set
+            {
+                m_TilePaletteCellLayout = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Hexagonal Layout for generated Tile Palette
+        /// </summary>
+        public int tilePaletteHexagonLayout
+        {
+            get => m_TilePaletteHexagonLayout;
+            set
+            {
+                m_TilePaletteHexagonLayout = value != 0 ? 1 : 0;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Cell Size for generated Tile Palette
+        /// </summary>
+        public Vector3 tilePaletteCellSize
+        {
+            get => m_TilePaletteCellSize;
+            set
+            {
+                m_TilePaletteCellSize = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Cell Sizing for generated Tile Palette
+        /// </summary>
+        public GridPalette.CellSizing tilePaletteCellSizing
+        {
+            get => m_TilePaletteCellSizing;
+            set
+            {
+                m_TilePaletteCellSizing = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Transparency Sort Mode for generated Tile Palette
+        /// </summary>
+        public TransparencySortMode transparencySortMode
+        {
+            get => m_TransparencySortMode;
+            set
+            {
+                m_TransparencySortMode = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Transparency Sort Axis for generated Tile Palette
+        /// </summary>
+        public Vector3 transparencySortAxis
+        {
+            get => m_TransparencySortAxis;
+            set
+            {
+                m_TransparencySortAxis = value;
+                SetDirty();
+            }
+        }
+
+        /// <summary>
+        /// Tile Template for importing Tile Palette
+        /// </summary>
+        public TileTemplate tileTemplate
+        {
+            get => m_TileTemplate;
+            set
+            {
+                m_TileTemplate = value;
+                SetDirty();
+            }
+        }
+#endif
+
         internal TextureImporterSwizzle swizzleR
         {
             get => m_TextureImporterSettings.swizzleR;
@@ -402,7 +511,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         internal TextureImporterSwizzle swizzleG
         {
             get => m_TextureImporterSettings.swizzleG;
@@ -412,7 +521,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         internal TextureImporterSwizzle swizzleB
         {
             get => m_TextureImporterSettings.swizzleB;
@@ -422,7 +531,7 @@ namespace UnityEditor.U2D.PSD
                 SetDirty();
             }
         }
-        
+
         internal TextureImporterSwizzle swizzleA
         {
             get => m_TextureImporterSettings.swizzleA;

@@ -1,5 +1,10 @@
 # Changelog
 
+## [10.0.0] - 2024-12-09
+### Added 
+- Added support for Sprite Frame Editing capabilities where data that are from the source file are locked by default.
+- Added new ability to generate Tile asset and Tile Palette from PSDImporter.
+
 ## [9.0.3] - 2024-04-01
 ### Fixed
 - Fix source file cannot be deleted after subsequent import. (Case DANB-579)

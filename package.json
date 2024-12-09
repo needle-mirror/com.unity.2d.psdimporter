@@ -1,7 +1,8 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "9.0.3",
-  "unity": "2023.1",
+  "version": "10.0.0",
+  "unity": "6000.1",
+  "unityRelease": "0a9",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
   "keywords": [
@@ -11,11 +12,11 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.common": "9.0.4",
+    "com.unity.2d.common": "9.0.7",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "9.0.3"
+    "com.unity.2d.psdimporter.tests": "10.0.0"
   },
   "samples": [
     {
@@ -25,15 +26,15 @@
     }
   ],
   "_upm": {
-    "changelog": "### Fixed\n- Fix source file cannot be deleted after subsequent import. (Case DANB-579)\n\n### Changed\n- Updated the Editor Analytics to use the latest APIs."
+    "changelog": "### Added \n- Added support for Sprite Frame Editing capabilities where data that are from the source file are locked by default.\n- Added new ability to generate Tile asset and Tile Palette from PSDImporter."
   },
   "upmCi": {
-    "footprint": "ec7f070542925957d8aeffef11be9cd939d31bd7"
+    "footprint": "ef5b65d9cab60543bc5d1725bc4d14c685f6bb13"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@9.0/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@10.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "cacb780673a1e5d1e9bd0e398015b1a9924c0922"
+    "revision": "c3aca8670c64fa4c4d765e1f4dfbc9b18fb80001"
   }
 }

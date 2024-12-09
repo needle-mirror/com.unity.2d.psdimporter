@@ -206,7 +206,35 @@ namespace UnityEditor.U2D.PSD
                 ((SpriteMetaData)sprite).edges = edges;
         }
     }
-    
+
+#if USE_SPRITE_FRAME_CAPABILITY
+    internal class SpriteFrameEditCapabilityDataProvider : PSDDataProvider, ISpriteFrameEditCapability
+    {
+        static EditCapability s_MosaicEditCapability = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
+        static EditCapability s_SpriteSheetCapabilities = new EditCapability(EEditCapability.All);
+        static EditCapability s_NonMultipleCapabilities = new EditCapability(EEditCapability.None);
+        static EditCapability s_SingleModeCapabilities = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
+
+        public EditCapability GetEditCapability()
+        {
+            if (dataProvider.spriteImportMode == SpriteImportMode.Multiple)
+            {
+                return dataProvider.useMosaicMode ? s_MosaicEditCapability : s_SpriteSheetCapabilities;
+            }
+            if (dataProvider.spriteImportMode == SpriteImportMode.Single)
+            {
+                return s_SingleModeCapabilities;
+            }
+            return s_NonMultipleCapabilities;
+        }
+
+        public void SetEditCapability(EditCapability editCapability)
+        {
+
+        }
+    }
+#endif
+
 #if ENABLE_2D_ANIMATION
     internal class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
@@ -214,7 +242,7 @@ namespace UnityEditor.U2D.PSD
         {
             if (parentIndex < 0)
                 return -1;
-            
+
             if (groupDictIndex.ContainsKey(parentIndex))
                 return groupDictIndex[parentIndex];
 
@@ -239,13 +267,13 @@ namespace UnityEditor.U2D.PSD
                 parentGroup = GenerateNodeForGroup(layer.parentIndex, psdLayers);
             return psdLayers[index].isGroup && !psdLayers[index].flatten && parentGroup;
         }
-        
+
         public CharacterData GetCharacterData()
         {
             var psdLayers = dataProvider.GetPSDLayers();
             var groupDictionaryIndex = new Dictionary<int, int>();
             var groups = new List<CharacterGroup>();
-            
+
             var cd = dataProvider.characterData;
             cd.pivot = dataProvider.GetDocumentPivot();
             var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
@@ -257,12 +285,12 @@ namespace UnityEditor.U2D.PSD
                 CharacterPart cp = srIndex == -1 ? new CharacterPart() : parts[srIndex];
                 cp.spriteId = spriteMetaData.spriteID.ToString();
                 cp.order = psdLayers.FindIndex(l => l.spriteID == spriteMetaData.spriteID);
-                
+
                 cp.spritePosition = new RectInt();
-                
+
                 var spritePos = spriteMetaData.spritePosition;
                 cp.spritePosition.position = new Vector2Int((int)spritePos.x, (int)spritePos.y);
-                
+
                 cp.spritePosition.size = new Vector2Int((int)spriteMetaData.rect.width, (int)spriteMetaData.rect.height);
                 cp.parentGroup = -1;
                 //Find group
@@ -271,13 +299,13 @@ namespace UnityEditor.U2D.PSD
                 {
                     cp.parentGroup = ParentGroupInFlatten(groupDictionaryIndex, groups, spritePSDLayer.parentIndex, psdLayers);
                 }
-                
+
                 if (srIndex == -1)
                     parts.Add(cp);
                 else
                     parts[srIndex] = cp;
             }
-            
+
             parts.Sort((x, y) =>
             {
                 return x.order.CompareTo(y.order);
