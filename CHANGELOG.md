@@ -1,5 +1,10 @@
 # Changelog
 
+## [10.1.0] - 2025-03-07
+### Fixed
+- DANB-848 Fixed case where scroll down problems occur and the "Apply" button cannot be pressed when the "Advanced" tab is expanded
+- Properly expose Tilemap related APIs in the PSDImporter.
+
 ## [10.0.0] - 2024-12-09
 ### Added 
 - Added support for Sprite Frame Editing capabilities where data that are from the source file are locked by default.

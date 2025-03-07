@@ -1,3 +1,7 @@
+#if UNITY_6000_1_OR_NEWER
+#define ENABLE_2D_TILEMAP_EDITOR
+#endif
+
 using System;
 using UnityEditor.AssetImporters;
 #if ENABLE_2D_TILEMAP_EDITOR

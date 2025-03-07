@@ -1,3 +1,7 @@
+#if UNITY_6000_1_OR_NEWER
+#define ENABLE_2D_TILEMAP_EDITOR
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -80,7 +84,7 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_Padding;
         SerializedProperty m_SpriteSizeExpand;
         SerializedProperty m_SpriteSizeExpandChanged;
-        
+
 #if ENABLE_2D_TILEMAP_EDITOR
         SerializedProperty m_GenerateTileAssets;
         SerializedProperty m_TilePaletteCellLayout;
@@ -201,7 +205,7 @@ namespace UnityEditor.U2D.PSD
             m_SkeletonAsset = AssetDatabase.LoadAssetAtPath<SkeletonAsset>(assetPath);
 #endif
 
-#if ENABLE_2D_TILEMAP_EDITOR            
+#if ENABLE_2D_TILEMAP_EDITOR
             m_GenerateTileAssets = serializedObject.FindProperty("m_GenerateTileAssets");
             m_TilePaletteCellLayout = serializedObject.FindProperty("m_TilePaletteCellLayout");
             m_TilePaletteHexagonLayout = serializedObject.FindProperty("m_TilePaletteHexagonLayout");
@@ -210,8 +214,8 @@ namespace UnityEditor.U2D.PSD
             m_TransparencySortMode = serializedObject.FindProperty("m_TransparencySortMode");
             m_TransparencySortAxis = serializedObject.FindProperty("m_TransparencySortAxis");
             m_TileTemplate = serializedObject.FindProperty("m_TileTemplate");
-#endif            
-            
+#endif
+
             var advanceGUIAction = new Action[]
             {
                 ColorSpaceGUI,
@@ -1054,7 +1058,7 @@ namespace UnityEditor.U2D.PSD
                             }
                         }
                     }
-                    
+
                     if (m_TilePaletteCellLayout.enumValueIndex == (int) GridLayout.CellLayout.Hexagon)
                     {
                         m_TilePaletteHexagonLayout.intValue = EditorGUILayout.Popup(Styles.tilePaletteHexagonLabel, m_TilePaletteHexagonLayout.intValue, Styles.tilePaletteHexagonSwizzleTypeLabel);
@@ -1089,7 +1093,7 @@ namespace UnityEditor.U2D.PSD
                     EditorGUILayout.PropertyField(m_TileTemplate);
                 }
             }
-#endif            
+#endif
         }
 
         void DoOpenSpriteEditorButton()
@@ -1295,7 +1299,7 @@ namespace UnityEditor.U2D.PSD
             EditorGUI.BeginProperty(EditorGUILayout.BeginHorizontal(), label, property);
             EditorGUI.BeginChangeCheck();
             EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-            var rect = EditorGUILayout.GetControlRect(true, EditorGUI.GetPropertyHeight(SerializedPropertyType.Vector4, label), EditorStyles.numberField);
+            var rect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight, EditorStyles.numberField);
             var id = GUIUtility.GetControlID(s_SwizzleFieldHash, FocusType.Keyboard, rect);
             rect = EditorGUI.PrefixLabel(rect, id, label);
             var value = property.uintValue;
@@ -1799,7 +1803,7 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture","Texture settings.");
             public readonly GUIContent multiEditLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Multi editing in Layer Management is not supported.","");
             public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig","Character Rig settings.");
-            
+
             public readonly GUIContent tilePaletteHeaderText = EditorGUIUtility.TrTextContent("Tile Palette","Tile Palette settings.");
             public static readonly GUIContent tilePaletteHexagonLabel = EditorGUIUtility.TrTextContent("Hexagon Type");
             public static readonly GUIContent[] tilePaletteHexagonSwizzleTypeLabel =
@@ -1942,7 +1946,7 @@ namespace UnityEditor.U2D.PSD
             m_TilePaletteFoldout.value = DoFoldout(title, m_TilePaletteFoldout.value);
             return m_TilePaletteFoldout.value;
         }
-        
+
         public bool DoAdvancedUI(GUIContent title)
         {
             m_AdvancedFoldout.value = DoFoldout(title, m_AdvancedFoldout.value);
