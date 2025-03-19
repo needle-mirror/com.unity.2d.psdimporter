@@ -1159,7 +1159,7 @@ namespace UnityEditor.U2D.PSD
             EditorGUI.BeginProperty(EditorGUILayout.BeginHorizontal(), label, property);
             EditorGUI.BeginChangeCheck();
             EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-            var rect = EditorGUILayout.GetControlRect(true, EditorGUI.GetPropertyHeight(SerializedPropertyType.Vector4, label), EditorStyles.numberField);
+            var rect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight, EditorStyles.numberField);
             var id = GUIUtility.GetControlID(s_SwizzleFieldHash, FocusType.Keyboard, rect);
             rect = EditorGUI.PrefixLabel(rect, id, label);
             var value = property.uintValue;
@@ -1416,7 +1416,7 @@ namespace UnityEditor.U2D.PSD
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
-        /// <returns>false</returns>
+        /// <value>false</value>
         public override bool showImportedObject
         {
             get { return false; }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [8.1.0] - 2025-03-19
+
+### Changed
+- Update Unity minimum version.
+
+### Fixed
+- DANB-848 Fixed case where scroll down problems occur and the "Apply" button cannot be pressed when the "Advanced" tab is expanded
+
 ## [8.0.5] - 2024-05-06
 ### Fixed
 - Fixed layers are not shown in LayerImportSettings after unselecting all layers and applying. (Case DANB-569)
