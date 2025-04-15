@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.1.0] - 2025-04-15
+### Fixed
+- Fixed case where "Mip Map Preserve Coverage" is cut off in the Inspector window. (Case DANB-892)
+- Fixed a typo in settings. (Case DANB-891)
+
+### Changed
+- Update Unity minimum version.
+
 ## [6.0.9] - 2023-12-14
 ### Fixed
 - Provide custom packing override for users to override to address DANB-526. (Case DANB-526)

@@ -1093,7 +1093,7 @@ namespace UnityEditor.U2D.PSD
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
-        /// <returns>false</returns>
+        /// <value>false</value>
         public override bool showImportedObject
         {
             get { return false; }

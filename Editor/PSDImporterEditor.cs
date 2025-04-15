@@ -1146,7 +1146,7 @@ namespace UnityEditor.U2D.PSD
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
-        /// <returns>false</returns>
+        /// <value>false</value>
         public override bool showImportedObject
         {
             get { return false; }
@@ -1258,7 +1258,7 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent generateMipMaps = new GUIContent("Generate Mip Maps");
             public readonly GUIContent sRGBTexture = new GUIContent("sRGB (Color Texture)", "Texture content is stored in gamma space. Non-HDR color textures should enable this flag (except if used for IMGUI).");
             public readonly GUIContent borderMipMaps = new GUIContent("Border Mip Maps");
-            public readonly GUIContent mipMapsPreserveCoverage = new GUIContent("Mip Maps Preserve Coverage", "The alpha channel of generated Mip Maps will preserve coverage during the alpha test.");
+            public readonly GUIContent mipMapsPreserveCoverage = new GUIContent("Preserve Coverage", "The alpha channel of generated Mip Maps will preserve coverage during the alpha test.");
             public readonly GUIContent alphaTestReferenceValue = new GUIContent("Alpha Cutoff Value", "The reference value used during the alpha test. Controls Mip Map coverage.");
             public readonly GUIContent mipMapFilter = new GUIContent("Mip Map Filtering");
             public readonly GUIContent[] mipMapFilterOptions =
@@ -1315,7 +1315,7 @@ namespace UnityEditor.U2D.PSD
             
             public readonly GUIContent advancedHeaderText = new GUIContent("Advanced", "Show advanced settings.");
 
-            public readonly GUIContent platformSettingsHeaderText  = new GUIContent("Platform Setttings");
+            public readonly GUIContent platformSettingsHeaderText  = new GUIContent("Platform Settings");
 
             public readonly GUIContent[] platformSettingsSelection;
 
