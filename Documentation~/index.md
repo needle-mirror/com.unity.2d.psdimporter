@@ -20,8 +20,6 @@ Package version  | Unity Editor version
 
 By default .psd files are imported with the Texture Importer. If you wish to instead import a .psd file with the PSD Importer, simply select the .psd file, click on the Importer dropdown and select **UnityEditor.U2D.PSD.PSDImporter**.
 
-![](images/psd-file-import.png)<br/>Importer drop down.
-
 For information on how to automate the selection of an importer, see the [PSD File Importer Override](PSD-override.md) section.
 
 ## Supported and unsupported Photoshop effects

@@ -17,8 +17,8 @@
 using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using PDNWrapper;
 using System.Globalization;
+using PDNWrapper;
 using Unity.Collections;
 
 namespace PhotoshopFile
@@ -118,30 +118,30 @@ namespace PhotoshopFile
         public MaskInfo()
         {
         }
-        
+
         public MaskInfo(PsdBinaryReader reader, Layer layer)
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, MaskInfo");
 
-            var maskLength = reader.ReadUInt32();
+            uint maskLength = reader.ReadUInt32();
             if (maskLength <= 0)
                 return;
 
-            var startPosition = reader.BaseStream.Position;
-            var endPosition = startPosition + maskLength;
+            long startPosition = reader.BaseStream.Position;
+            long endPosition = startPosition + maskLength;
 
             // Read layer mask
-            var rectangle = reader.ReadRectangle();
-            var backgroundColor = reader.ReadByte();
-            var flagsByte = reader.ReadByte();
+            Rectangle rectangle = reader.ReadRectangle();
+            byte backgroundColor = reader.ReadByte();
+            byte flagsByte = reader.ReadByte();
             LayerMask = new Mask(layer, rectangle, backgroundColor, new BitVector32(flagsByte));
 
             // User mask is supplied separately when there is also a vector mask.
             if (maskLength == 36)
             {
-                var userFlagsByte = reader.ReadByte();
-                var userBackgroundColor = reader.ReadByte();
-                var userRectangle = reader.ReadRectangle();
+                byte userFlagsByte = reader.ReadByte();
+                byte userBackgroundColor = reader.ReadByte();
+                Rectangle userRectangle = reader.ReadRectangle();
                 UserMask = new Mask(layer, userRectangle, userBackgroundColor, new BitVector32(userFlagsByte));
             }
             else
@@ -150,7 +150,7 @@ namespace PhotoshopFile
                 if (flagsByte == 16)
                 {
                     // Not using them so just read and discard the values
-                    var maskParameters = new BitVector32(reader.ReadByte());
+                    BitVector32 maskParameters = new BitVector32(reader.ReadByte());
                     if (maskParameters[s_UserMaskDensityBit])
                         reader.ReadByte();
 
@@ -167,9 +167,9 @@ namespace PhotoshopFile
                 // The rest should be vector mask
                 if (reader.BaseStream.Position + 18 <= endPosition)
                 {
-                    var userFlagsByte = reader.ReadByte();
-                    var userBackgroundColor = reader.ReadByte();
-                    var userRectangle = reader.ReadRectangle();
+                    byte userFlagsByte = reader.ReadByte();
+                    byte userBackgroundColor = reader.ReadByte();
+                    Rectangle userRectangle = reader.ReadRectangle();
                     UserMask = new Mask(layer, userRectangle, userBackgroundColor, new BitVector32(userFlagsByte));
                 }
             }

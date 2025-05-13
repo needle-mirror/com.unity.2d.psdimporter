@@ -556,7 +556,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-    void SetDirty()
+        void SetDirty()
         {
             EditorUtility.SetDirty(this);
         }

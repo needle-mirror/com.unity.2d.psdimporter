@@ -36,7 +36,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         public override void OnLoadLayerHeader(PhotoshopFile.Layer layer)
         {
-            var psdFile = layer.PsdFile;
+            PsdFile psdFile = layer.PsdFile;
             if (psdFile.ColorMode == PsdColorMode.Multichannel)
             {
                 PsdLoad.CheckSufficientMemory(psdFile);

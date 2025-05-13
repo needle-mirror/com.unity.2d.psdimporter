@@ -22,7 +22,7 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_ImportLayerProperty;
         int m_ArrayIndex;
         bool m_WasLayerImported;
-        
+
         public string name
         {
             get => m_NameProperty.stringValue;
@@ -66,7 +66,7 @@ namespace UnityEditor.U2D.PSD
                 if (m_FlattenProperty.boolValue != value)
                 {
                     m_FlattenProperty.boolValue = value;
-                    m_FlattenProperty.serializedObject.ApplyModifiedProperties();    
+                    m_FlattenProperty.serializedObject.ApplyModifiedProperties();
                 }
             }
         }
@@ -90,7 +90,7 @@ namespace UnityEditor.U2D.PSD
                 if (m_ImportLayerProperty.boolValue != value)
                 {
                     m_ImportLayerProperty.boolValue = value;
-                    m_ImportLayerProperty.serializedObject.ApplyModifiedProperties();    
+                    m_ImportLayerProperty.serializedObject.ApplyModifiedProperties();
                 }
             }
         }
@@ -107,13 +107,13 @@ namespace UnityEditor.U2D.PSD
                 m_ImportLayerProperty = null;
                 m_Element = null;
             }
-        
+
         }
         void CheckAndAddElement()
         {
             if (m_Element == null)
             {
-                var arraySize = m_Array.arraySize;
+                int arraySize = m_Array.arraySize;
                 m_ArrayIndex = arraySize;
                 m_Array.arraySize = arraySize + 1;
                 m_Element = m_Array.GetArrayElementAtIndex(arraySize);
@@ -179,7 +179,7 @@ namespace UnityEditor.U2D.PSD
 
         protected PSDLayerImportSettingSerializedPropertyWrapper property => m_Property;
 
-        
+
         public virtual bool importLayer
         {
             get => property.importLayer;
@@ -194,12 +194,12 @@ namespace UnityEditor.U2D.PSD
 
         public TreeViewItemData<int> BuildTreeViewItemData()
         {
-            var c =new List<TreeViewItemData<int>>();
+            List<TreeViewItemData<int>> c = new List<TreeViewItemData<int>>();
             if (children != null)
             {
                 c = children.Select(x =>
                 {
-                    var n = (PSDTreeViewNode)x;
+                    PSDTreeViewNode n = (PSDTreeViewNode)x;
                     return n.BuildTreeViewItemData();
                 }).ToList();
             }
@@ -207,14 +207,14 @@ namespace UnityEditor.U2D.PSD
         }
     }
 
-    class PSDFoldoutTreeViewNode :PSDTreeViewNode
+    class PSDFoldoutTreeViewNode : PSDTreeViewNode
     {
         public virtual bool flatten
         {
             get => property.flatten;
             set
             {
-                if(property.flatten != value)
+                if (property.flatten != value)
                     property.flatten = value;
             }
         }
@@ -249,7 +249,7 @@ namespace UnityEditor.U2D.PSD
                 }
             }
         }
-        
+
         public override bool importLayer
         {
             get => m_PsdFileSerializedProperty.importFileNodeState.boolValue;
@@ -263,10 +263,10 @@ namespace UnityEditor.U2D.PSD
             }
         }
     }
-    
+
     class PSDLayerTreeViewNode : PSDTreeViewNode
     {
-        public PSDLayerTreeViewNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property):base(layer, id, property)
+        public PSDLayerTreeViewNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property) : base(layer, id, property)
         { }
     }
 

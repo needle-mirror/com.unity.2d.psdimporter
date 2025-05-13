@@ -40,7 +40,7 @@ namespace PhotoshopFile.Compression
                 return;
             }
 
-            var predictedData = new byte[buffer.Length];
+            byte[] predictedData = new byte[buffer.Length];
             zipImage.Read(predictedData);
 
 

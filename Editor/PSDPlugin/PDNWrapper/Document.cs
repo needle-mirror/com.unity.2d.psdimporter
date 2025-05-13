@@ -16,7 +16,7 @@ namespace PDNWrapper
 
         public void Dispose()
         {
-            foreach (var layer in Layers)
+            foreach (BitmapLayer layer in Layers)
                 layer.Dispose();
         }
 

@@ -34,24 +34,24 @@ namespace PhotoshopFile
 
             // Some keys use a signature of 8B64, but the identity of these keys
             // is undocumented.  We will therefore accept either signature.
-            var signature = reader.ReadAsciiChars(4);
+            string signature = reader.ReadAsciiChars(4);
             if ((signature != "8BIM") && (signature != "8B64"))
             {
                 throw new PsdInvalidException(
                     "LayerInfo signature invalid, must be 8BIM or 8B64.");
             }
 
-            var key = reader.ReadAsciiChars(4);
-            var hasLongLength = LayerInfoUtil.HasLongLength(key, psdFile.IsLargeDocument);
+            string key = reader.ReadAsciiChars(4);
+            bool hasLongLength = LayerInfoUtil.HasLongLength(key, psdFile.IsLargeDocument);
             LayerInfo result = new RawLayerInfo("dummy");
             bool breakFromLoop = false;
             while (!breakFromLoop)
             {
-                var baseStartPosition = reader.BaseStream.Position;
-                var length = hasLongLength
+                long baseStartPosition = reader.BaseStream.Position;
+                long length = hasLongLength
                     ? reader.ReadInt64()
                     : reader.ReadInt32();
-                var startPosition = reader.BaseStream.Position;
+                long startPosition = reader.BaseStream.Position;
 
 
                 switch (key)
@@ -77,7 +77,7 @@ namespace PhotoshopFile
                 }
 
                 // May have additional padding applied.
-                var endPosition = startPosition + length;
+                long endPosition = startPosition + length;
                 if (reader.BaseStream.Position < endPosition)
                     reader.BaseStream.Position = endPosition;
 
@@ -99,7 +99,7 @@ namespace PhotoshopFile
                 //try if we can read the next signature
                 if (reader.BaseStream.Position < fileEndPos)
                 {
-                    var nowPosition = reader.BaseStream.Position;
+                    long nowPosition = reader.BaseStream.Position;
                     signature = reader.ReadAsciiChars(4);
                     if ((signature != "8BIM") && (signature != "8B64"))
                     {

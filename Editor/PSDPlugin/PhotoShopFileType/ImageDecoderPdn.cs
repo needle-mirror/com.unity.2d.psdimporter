@@ -11,20 +11,18 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet;
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PDNWrapper;
 using System.Text;
-
+using PaintDotNet;
+using PDNWrapper;
 using PhotoshopFile;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
-using Unity.Jobs;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
@@ -66,14 +64,14 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 HasAlphaChannel = 0;
                 Channels = layer.Channels.ToIdArray();
 
-                var alphaSize = 4;
+                int alphaSize = 4;
                 if (layer.AlphaChannel != null && layer.AlphaChannel.ImageData.Length > 0)
                 {
                     HasAlphaChannel = 1;
                     alphaSize = layer.AlphaChannel.ImageData.Length;
                     alphaSize = (alphaSize / 4) + (alphaSize % 4 > 0 ? 1 : 0);
                     alphaSize = alphaSize * 4;
-                } 
+                }
                 AlphaChannel = new NativeArray<byte>(alphaSize, Allocator.TempJob);
                 if (HasAlphaChannel > 0)
                     NativeArray<byte>.Copy(layer.AlphaChannel.ImageData, AlphaChannel, layer.AlphaChannel.ImageData.Length);
@@ -87,13 +85,13 @@ namespace PaintDotNet.Data.PhotoshopFileType
                     UserMaskContext = GetMaskContext(layer.Masks.UserMask);
                 }
             }
-            
+
             internal void Cleanup()
             {
                 AlphaChannel.Dispose();
                 ColorModeData.Dispose();
             }
-            
+
             private MaskDecodeContext GetMaskContext(Mask mask)
             {
                 if ((mask == null) || (mask.Disabled))
@@ -133,7 +131,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         internal static byte RGBByteFromHDRFloat(float ptr)
         {
-            var result = (byte)(255 * Math.Pow(ptr, rgbExponent));
+            byte result = (byte)(255 * Math.Pow(ptr, rgbExponent));
             return result;
         }
 
@@ -189,7 +187,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         public static JobHandle DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer, JobHandle inputDeps)
         {
             UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
-            var decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
+            DecodeContext decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
             DecodeDelegate decoder = null;
             DecodeType decoderType = 0;
 
@@ -209,16 +207,16 @@ namespace PaintDotNet.Data.PhotoshopFileType
         /// </summary>
         static JobHandle DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeType decoderType, JobHandle inputDeps)
         {
-            var surface = pdnLayer.Surface;
-            var rect = decodeContext.Rectangle;
+            Surface surface = pdnLayer.Surface;
+            Rectangle rect = decodeContext.Rectangle;
 
             // Convert rows from the Photoshop representation, writing the
             // resulting ARGB values to to the Paint.NET Surface.
 
-            var jobCount = Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
-            var execCount = (rect.Bottom - rect.Top);
-            var sliceCount = execCount / jobCount;
-            var decoderJob = new PDNDecoderJob();
+            int jobCount = Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
+            int execCount = (rect.Bottom - rect.Top);
+            int sliceCount = execCount / jobCount;
+            PDNDecoderJob decoderJob = new PDNDecoderJob();
 
             decoderJob.data.Rect = rect;
             decoderJob.data.SurfaceWidth = surface.width;
@@ -230,22 +228,22 @@ namespace PaintDotNet.Data.PhotoshopFileType
             decoderJob.data.ColorChannel2 = decodeContext.Channels.Length > 2 ? decodeContext.Channels[2].ImageData : decodeContext.Channels[0].ImageData;
             decoderJob.data.ColorChannel3 = decodeContext.Channels.Length > 3 ? decodeContext.Channels[3].ImageData : decodeContext.Channels[0].ImageData;
             decoderJob.data.ColorModeData = decodeContext.ColorModeData;
-            decoderJob.data.DecodedImage  = surface.color;
+            decoderJob.data.DecodedImage = surface.color;
 
             // Schedule the job, returns the JobHandle which can be waited upon later on
-            var jobHandle = decoderJob.Schedule(execCount, sliceCount, inputDeps);
+            JobHandle jobHandle = decoderJob.Schedule(execCount, sliceCount, inputDeps);
 
             // Mask and Alpha.
-            var userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
-            var layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
-            var userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
-            var layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
-            var userAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
-            var layerAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
+            int userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            int layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
+            NativeArray<byte> userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
+            NativeArray<byte> layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
+            NativeArray<byte> userAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
+            NativeArray<byte> layerAlphaMaskEmpty = new NativeArray<byte>(rect.Bottom, Allocator.TempJob);
 
-            var alphaMaskJob = new PDNAlphaMaskJob();
+            PDNAlphaMaskJob alphaMaskJob = new PDNAlphaMaskJob();
 
-            for (var y = rect.Top; y < rect.Bottom; ++y)
+            for (int y = rect.Top; y < rect.Bottom; ++y)
             {
                 if (decodeContext.UserMaskContext != null)
                     userAlphaMaskEmpty[y] = decodeContext.UserMaskContext.IsRowEmpty(y) ? (byte)1 : (byte)0;
@@ -292,7 +290,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         public static void DecodeImage(BitmapLayer pdnLayer, PhotoshopFile.Layer psdLayer)
         {
             UnityEngine.Profiling.Profiler.BeginSample("DecodeImage");
-            var decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
+            DecodeContext decodeContext = new DecodeContext(psdLayer, pdnLayer.localRect);
             DecodeDelegate decoder = null;
             DecodeType decoderType = 0;
 
@@ -315,9 +313,9 @@ namespace PaintDotNet.Data.PhotoshopFileType
         private static void DecodeImage(BitmapLayer pdnLayer, DecodeContext decodeContext, DecodeDelegate decoder)
         {
 
-            var psdLayer = decodeContext.Layer;
-            var surface = pdnLayer.Surface;
-            var rect = decodeContext.Rectangle;
+            PhotoshopFile.Layer psdLayer = decodeContext.Layer;
+            Surface surface = pdnLayer.Surface;
+            Rectangle rect = decodeContext.Rectangle;
 
             // Convert rows from the Photoshop representation, writing the
             // resulting ARGB values to to the Paint.NET Surface.
@@ -332,8 +330,8 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 //var pDestRow = surface.GetRowAddress(y);
                 //var pDestStart = pDestRow + decodeContext.Rectangle.Left;
                 //var pDestEnd = pDestRow + decodeContext.Rectangle.Right;
-                var pDestStart = y * surface.width + decodeContext.Rectangle.Left;
-                var pDestEnd = y * surface.width + decodeContext.Rectangle.Right;
+                int pDestStart = y * surface.width + decodeContext.Rectangle.Left;
+                int pDestEnd = y * surface.width + decodeContext.Rectangle.Right;
 
                 // For 16-bit images, take the higher-order byte from the image
                 // data, which is now in little-endian order.
@@ -347,8 +345,8 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Mask and Alpha.
             int userMaskContextSize = decodeContext.UserMaskContext != null ? decodeContext.Rectangle.Width : 1;
             int layerMaskContextSize = decodeContext.LayerMaskContext != null ? decodeContext.Rectangle.Width : 1;
-            var userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
-            var layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
+            NativeArray<byte> userAlphaMask = new NativeArray<byte>(userMaskContextSize, Allocator.TempJob);
+            NativeArray<byte> layerAlphaMask = new NativeArray<byte>(layerMaskContextSize, Allocator.TempJob);
 
             for (int y = rect.Top; y < rect.Bottom; y++)
             {
@@ -360,8 +358,8 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 //var pDestRow = surface.GetRowAddress(y);
                 //var pDestStart = pDestRow + decodeContext.Rectangle.Left;
                 //var pDestEnd = pDestRow + decodeContext.Rectangle.Right;
-                var pDestStart = y * surface.width + decodeContext.Rectangle.Left;
-                var pDestEnd = y * surface.width + decodeContext.Rectangle.Right;
+                int pDestStart = y * surface.width + decodeContext.Rectangle.Left;
+                int pDestEnd = y * surface.width + decodeContext.Rectangle.Right;
 
                 // For 16-bit images, take the higher-order byte from the image
                 // data, which is now in little-endian order.
@@ -383,14 +381,14 @@ namespace PaintDotNet.Data.PhotoshopFileType
         {
             if (maskContext == null)
                 return;
-            var mask = maskContext.Mask;
+            Mask mask = maskContext.Mask;
 
             // Background color for areas not covered by the mask
             byte backgroundColor = mask.InvertOnBlend
                 ? (byte)(255 - mask.BackgroundColor)
                 : mask.BackgroundColor;
             {
-                var alphaBufferPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(alphaBuffer);
+                void* alphaBufferPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(alphaBuffer);
                 UnsafeUtility.MemSet(alphaBufferPtr, backgroundColor, alphaBuffer.Length);
             }
             if (maskContext.IsRowEmpty(y))
@@ -400,17 +398,17 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
             //////////////////////////////////////
             // Transfer mask into the alpha array
-            var pMaskData = mask.ImageData;
+            NativeArray<byte> pMaskData = mask.ImageData;
             {
                 // Get pointers to starting positions
                 int alphaColumn = maskContext.Rectangle.X - layerContext.Rectangle.X;
-                var pAlpha = alphaColumn;
-                var pAlphaEnd = pAlpha + maskContext.Rectangle.Width;
+                int pAlpha = alphaColumn;
+                int pAlphaEnd = pAlpha + maskContext.Rectangle.Width;
 
                 int maskRow = y - mask.Rect.Y;
                 int maskColumn = maskContext.Rectangle.X - mask.Rect.X;
                 int idxMaskPixel = (maskRow * mask.Rect.Width) + maskColumn;
-                var pMask = idxMaskPixel * layerContext.ByteDepth;
+                int pMask = idxMaskPixel * layerContext.ByteDepth;
 
                 // Take the high-order byte if values are 16-bit (little-endian)
                 if (layerContext.ByteDepth == 2)
@@ -440,10 +438,10 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Set alpha to fully-opaque if there is no alpha channel
             if (0 == hasAlphaChannel)
             {
-                var pDest = pDestStart;
+                int pDest = pDestStart;
                 while (pDest < pDestEnd)
                 {
-                    var c = color[pDest];
+                    Color32 c = color[pDest];
                     c.a = 255;
                     color[pDest] = c;
                     pDest++;
@@ -454,10 +452,10 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 NativeArray<float> srcAlphaChannel = alphaChannel.Reinterpret<float>(1);
                 {
-                    var pDest = pDestStart;
+                    int pDest = pDestStart;
                     while (pDest < pDestEnd)
                     {
-                        var c = color[pDest];
+                        Color32 c = color[pDest];
                         c.a = (byteDepth < 4) ? alphaChannel[idxSrc] : RGBByteFromHDRFloat(srcAlphaChannel[idxSrc / 4]);
 
                         color[pDest] = c;
@@ -492,7 +490,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 pMaskStart += byteDepth;
             }
         }
-        
+
         private static void ApplyPDNMask(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, NativeArray<byte> layerMaskAlpha, NativeArray<byte> userMaskAlpha)
         {
             // Do nothing if there are no masks
@@ -503,12 +501,12 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Apply one mask
             else if ((layerMaskAlpha.Length <= 1) || (userMaskAlpha.Length <= 1))
             {
-                var maskAlpha = (layerMaskAlpha.Length <= 1) ? userMaskAlpha : layerMaskAlpha;
-                var maskStart = 0;
+                NativeArray<byte> maskAlpha = (layerMaskAlpha.Length <= 1) ? userMaskAlpha : layerMaskAlpha;
+                int maskStart = 0;
                 {
                     while (pDestStart < pDestEnd)
                     {
-                        var c = color[pDestStart];
+                        Color32 c = color[pDestStart];
                         c.a = (byte)(color[pDestStart].a * maskAlpha[maskStart] / 255);
                         color[pDestStart] = c;
                         pDestStart++;
@@ -522,11 +520,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 //fixed (byte* pLayerMaskAlpha = &layerMaskAlpha[0],
                 //  pUserMaskAlpha = &userMaskAlpha[0])
                 {
-                    var maskStart = 0;
+                    int maskStart = 0;
                     while (pDestStart < pDestEnd)
                     {
-                        var alphaFactor = (layerMaskAlpha[maskStart]) * (userMaskAlpha[maskStart]);
-                        var c = color[pDestStart];
+                        int alphaFactor = (layerMaskAlpha[maskStart]) * (userMaskAlpha[maskStart]);
+                        Color32 c = color[pDestStart];
                         c.a = (byte)(color[pDestStart].a * alphaFactor / 65025);
                         color[pDestStart] = c;
 
@@ -546,11 +544,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
             NativeArray<float> redChannel = context.Channels[0].ImageData.Reinterpret<float>(1);
             NativeArray<float> greenChannel = context.Channels[1].ImageData.Reinterpret<float>(1);
             NativeArray<float> blueChannel = context.Channels[2].ImageData.Reinterpret<float>(1);
-            
+
             {
                 while (pDestStart < pDestEnd)
                 {
-                    var c = color[pDestStart];
+                    Color32 c = color[pDestStart];
                     c.r = RGBByteFromHDRFloat(redChannel[idxSrc / 4]);
                     c.g = RGBByteFromHDRFloat(greenChannel[idxSrc / 4]);
                     c.b = RGBByteFromHDRFloat(blueChannel[idxSrc / 4]);
@@ -568,7 +566,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 while (pDestStart < pDestEnd)
                 {
                     byte rgbValue = RGBByteFromHDRFloat(channel[idxSrc / 4]);
-                    var c = color[pDestStart];
+                    Color32 c = color[pDestStart];
                     c.r = rgbValue;
                     c.g = rgbValue;
                     c.b = rgbValue;
@@ -590,7 +588,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         {
             while (pDestStart < pDestEnd)
             {
-                var c = color[pDestStart];
+                Color32 c = color[pDestStart];
                 c.r = context.Channels[0].ImageData[idxSrc];
                 c.g = context.Channels[1].ImageData[idxSrc];
                 c.b = context.Channels[2].ImageData[idxSrc];
@@ -621,16 +619,16 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 // CMYK values are stored as complements, presumably to allow for some
                 // measure of compatibility with RGB-only applications.
-                var C = 255 - context.Channels[0].ImageData[idxSrc];
-                var M = 255 - context.Channels[1].ImageData[idxSrc];
-                var Y = 255 - context.Channels[2].ImageData[idxSrc];
-                var K = 255 - context.Channels[3].ImageData[idxSrc];
+                int C = 255 - context.Channels[0].ImageData[idxSrc];
+                int M = 255 - context.Channels[1].ImageData[idxSrc];
+                int Y = 255 - context.Channels[2].ImageData[idxSrc];
+                int K = 255 - context.Channels[3].ImageData[idxSrc];
 
                 int nRed = 255 - Math.Min(255, C * (255 - K) / 255 + K);
                 int nGreen = 255 - Math.Min(255, M * (255 - K) / 255 + K);
                 int nBlue = 255 - Math.Min(255, Y * (255 - K) / 255 + K);
 
-                var c = color[pDestStart];
+                Color32 c = color[pDestStart];
                 c.r = (byte)nRed;
                 c.g = (byte)nGreen;
                 c.b = (byte)nBlue;
@@ -643,14 +641,14 @@ namespace PaintDotNet.Data.PhotoshopFileType
 
         private static void SetPDNRowBitmap(int pDestStart, int pDestEnd, int width, NativeArray<Color32> color, int idxSrc, DecodeContext context)
         {
-            var bitmap = context.Channels[0].ImageData;
+            NativeArray<byte> bitmap = context.Channels[0].ImageData;
             while (pDestStart < pDestEnd)
             {
                 byte mask = (byte)(0x80 >> (idxSrc % 8));
                 byte bwValue = (byte)(bitmap[idxSrc / 8] & mask);
                 bwValue = (bwValue == 0) ? (byte)255 : (byte)0;
 
-                var c = color[pDestStart];
+                Color32 c = color[pDestStart];
                 c.r = bwValue;
                 c.g = bwValue;
                 c.b = bwValue;
@@ -665,11 +663,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
         {
             while (pDestStart < pDestEnd)
             {
-                var level = context.Channels[0].ImageData[idxSrc];
-                var c = color[pDestStart];
+                byte level = context.Channels[0].ImageData[idxSrc];
+                Color32 c = color[pDestStart];
                 c.r = level;
-                c.g  = level;
-                c.b  = level;
+                c.g = level;
+                c.b = level;
                 color[pDestStart] = c;
 
                 pDestStart++;
@@ -682,7 +680,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
             while (pDestStart < pDestEnd)
             {
                 int index = (int)context.Channels[0].ImageData[idxSrc];
-                var c = color[pDestStart];
+                Color32 c = color[pDestStart];
                 c.r = (byte)context.ColorModeData[index];
                 c.g = context.ColorModeData[index + 256];
                 c.b = context.ColorModeData[index + 2 * 256];
@@ -780,7 +778,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 else if (nBlue > 255)
                     nBlue = 255;
 
-                var c = color[pDestStart];
+                Color32 c = color[pDestStart];
                 c.r = (byte)nRed;
                 c.g = (byte)nGreen;
                 c.b = (byte)nBlue;

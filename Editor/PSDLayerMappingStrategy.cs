@@ -11,7 +11,7 @@ namespace UnityEditor.U2D.PSD
         {
             get;
         }
-        
+
         string name
         {
             get;
@@ -22,14 +22,14 @@ namespace UnityEditor.U2D.PSD
             get;
         }
     }
-    
+
     internal interface IPSDLayerMappingStrategy
     {
         bool Compare(IPSDLayerMappingStrategyComparable a, IPSDLayerMappingStrategyComparable b);
         bool Compare(IPSDLayerMappingStrategyComparable a, BitmapLayer b);
         string LayersUnique(IEnumerable<IPSDLayerMappingStrategyComparable> layers);
     }
-    
+
     internal abstract class LayerMappingStrategy<T> : IPSDLayerMappingStrategy
     {
         string m_DuplicatedStringError = L10n.Tr("The following layers have duplicated identifier.");
@@ -40,17 +40,17 @@ namespace UnityEditor.U2D.PSD
         {
             return layer.isGroup;
         }
-        
+
         protected virtual bool IsGroup(BitmapLayer layer)
         {
             return layer.IsGroup;
         }
-        
+
         public bool Compare(IPSDLayerMappingStrategyComparable x, BitmapLayer y)
         {
             return Comparer<T>.Default.Compare(GetID(x), GetID(y)) == 0 && IsGroup(x) == IsGroup(y);
         }
-        
+
         public bool Compare(IPSDLayerMappingStrategyComparable x, IPSDLayerMappingStrategyComparable y)
         {
             return Comparer<T>.Default.Compare(GetID(x), GetID(y)) == 0 && IsGroup(x) == IsGroup(y);
@@ -58,8 +58,8 @@ namespace UnityEditor.U2D.PSD
 
         public string LayersUnique(IEnumerable<IPSDLayerMappingStrategyComparable> layers)
         {
-            var layerNameHash = new HashSet<T>();
-            var layerGroupHash = new HashSet<T>();
+            HashSet<T> layerNameHash = new HashSet<T>();
+            HashSet<T> layerGroupHash = new HashSet<T>();
             return LayersUnique(layers, layerNameHash, layerGroupHash);
         }
 
@@ -67,10 +67,10 @@ namespace UnityEditor.U2D.PSD
         {
             List<string> duplicateLayerName = new List<string>();
             string duplicatedStringError = null;
-            foreach (var layer in layers)
+            foreach (IPSDLayerMappingStrategyComparable layer in layers)
             {
-                var id = GetID(layer);
-                var hash = layer.isGroup ? layerGroupHash : layerNameHash;
+                T id = GetID(layer);
+                HashSet<T> hash = layer.isGroup ? layerGroupHash : layerNameHash;
                 if (hash.Contains(id))
                     duplicateLayerName.Add(layer.name);
                 else
@@ -85,14 +85,14 @@ namespace UnityEditor.U2D.PSD
             return duplicatedStringError;
         }
     }
-    
+
     internal class LayerMappingUseLayerName : LayerMappingStrategy<string>
     {
         protected override string GetID(IPSDLayerMappingStrategyComparable x)
         {
             return x.name.ToLower();
         }
-        
+
         protected override string GetID(BitmapLayer x)
         {
             return x.Name.ToLower();
@@ -105,7 +105,7 @@ namespace UnityEditor.U2D.PSD
         {
             return x.name;
         }
-        
+
         protected override string GetID(BitmapLayer x)
         {
             return x.Name;
@@ -118,7 +118,7 @@ namespace UnityEditor.U2D.PSD
         {
             return x.layerID;
         }
-        
+
         protected override int GetID(BitmapLayer x)
         {
             return x.LayerID;

@@ -14,11 +14,11 @@ namespace UnityEditor.U2D.PSD
         {
             if (!string.IsNullOrEmpty(s_CurrentApplyAssetPath))
             {
-                foreach (var asset in importedAssets)
+                foreach (string asset in importedAssets)
                 {
                     if (asset == s_CurrentApplyAssetPath)
                     {
-                        var obj = AssetDatabase.LoadMainAssetAtPath(asset);
+                        Object obj = AssetDatabase.LoadMainAssetAtPath(asset);
                         Selection.activeObject = obj;
                         Unsupported.SceneTrackerFlushDirty();
                         s_CurrentApplyAssetPath = null;

@@ -145,16 +145,16 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, ImageResource");
 
-            var signature = reader.ReadAsciiChars(4);
-            var resourceIdInt = reader.ReadUInt16();
-            var name = reader.ReadPascalString(2);
-            var dataLength = (int)reader.ReadUInt32();
+            string signature = reader.ReadAsciiChars(4);
+            ushort resourceIdInt = reader.ReadUInt16();
+            string name = reader.ReadPascalString(2);
+            int dataLength = (int)reader.ReadUInt32();
 
-            var dataPaddedLength = Util.RoundUp(dataLength, 2);
-            var endPosition = reader.BaseStream.Position + dataPaddedLength;
+            int dataPaddedLength = Util.RoundUp(dataLength, 2);
+            long endPosition = reader.BaseStream.Position + dataPaddedLength;
 
             ImageResource resource = null;
-            var resourceId = (ResourceID)resourceIdInt;
+            ResourceID resourceId = (ResourceID)resourceIdInt;
             switch (resourceId)
             {
                 case ResourceID.ResolutionInfo:
@@ -209,12 +209,12 @@ namespace PhotoshopFile
 
         public void Set(ImageResource resource)
         {
-            Predicate<ImageResource> matchId = delegate(ImageResource res)
+            Predicate<ImageResource> matchId = delegate (ImageResource res)
                 {
                     return res.ID == resource.ID;
                 };
-            var itemIdx = this.FindIndex(matchId);
-            var lastItemIdx = this.FindLastIndex(matchId);
+            int itemIdx = this.FindIndex(matchId);
+            int lastItemIdx = this.FindLastIndex(matchId);
 
             if (itemIdx == -1)
             {

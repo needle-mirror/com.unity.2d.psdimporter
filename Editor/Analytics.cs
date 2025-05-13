@@ -50,7 +50,7 @@ namespace UnityEditor.U2D.PSD
         }
     }
 #endif
-    
+
     internal interface IAnalytics
     {
         AnalyticsResult SendApplyEvent(PSDApplyEvent evt);

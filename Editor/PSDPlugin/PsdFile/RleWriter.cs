@@ -78,7 +78,7 @@ namespace PhotoshopFile
 
             lock (rleLock)
             {
-                var startPosition = stream.Position;
+                long startPosition = stream.Position;
 
                 this.data = data;
                 this.offset = offset;
@@ -88,7 +88,7 @@ namespace PhotoshopFile
                     //byte* ptrEnd = ptr + count;
                     //var bytesEncoded = EncodeToStream(ptr, ptrEnd);
                     //Debug.Assert(bytesEncoded == count, "Encoded byte count should match the argument.");
-                    var bytesEncoded = EncodeToStream(data, offset, offset + count);
+                    int bytesEncoded = EncodeToStream(data, offset, offset + count);
                     Assert.AreEqual(bytesEncoded, count, "Encoded byte count should match the argument.");
                 }
 
@@ -104,14 +104,14 @@ namespace PhotoshopFile
 
         private void WriteRepeatPacket(int length)
         {
-            var header = unchecked((byte)(1 - length));
+            byte header = unchecked((byte)(1 - length));
             stream.WriteByte(header);
             stream.WriteByte(runValue);
         }
 
         private void WriteLiteralPacket(int length)
         {
-            var header = unchecked((byte)(length - 1));
+            byte header = unchecked((byte)(length - 1));
             stream.WriteByte(header);
             stream.Write(data, idxPacketStart, length);
         }
@@ -159,7 +159,7 @@ namespace PhotoshopFile
             // Loop invariant: Packet is never empty.
             while (start < end)
             {
-                var value = ptr[start];
+                byte value = ptr[start];
 
                 if (packetLength == 1)
                 {

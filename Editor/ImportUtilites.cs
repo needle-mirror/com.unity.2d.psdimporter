@@ -31,20 +31,20 @@ namespace UnityEditor.U2D.PSD
         {
             m_NameHash.Add(GetStringHash(name));
         }
-        
+
         public string GetUniqueName(string name, bool logNewNameGenerated = false, UnityEngine.Object context = null)
         {
             return GetUniqueName(name, m_NameHash);
         }
-        
+
         static string GetUniqueName(string name, HashSet<int> stringHash, bool logNewNameGenerated = false, UnityEngine.Object context = null)
         {
-            var sanitizedName = string.Copy(SanitizeName(name));
-            var uniqueName = sanitizedName;
-            var index = 1;
+            string sanitizedName = string.Copy(SanitizeName(name));
+            string uniqueName = sanitizedName;
+            int index = 1;
             while (true)
             {
-                var hash = GetStringHash(uniqueName);
+                int hash = GetStringHash(uniqueName);
                 if (!stringHash.Contains(hash))
                 {
                     stringHash.Add(hash);
@@ -59,11 +59,11 @@ namespace UnityEditor.U2D.PSD
 
         static int GetStringHash(string str)
         {
-            var md5Hasher = MD5.Create();
-            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(str));
+            MD5 md5Hasher = MD5.Create();
+            byte[] hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(str));
             return BitConverter.ToInt32(hashed, 0);
         }
-        
+
         public static string SanitizeName(string name)
         {
             name = name.Replace('\0', ' ');
@@ -80,23 +80,23 @@ namespace UnityEditor.U2D.PSD
                 return newName;
             }
             return name;
-        }        
+        }
     }
-        
+
     class GameObjectCreationFactory : UniqueNameGenerator
     {
         public GameObjectCreationFactory(IList<string> names)
         {
             if (names != null)
             {
-                foreach (var name in names)
+                foreach (string name in names)
                     GetUniqueName(name);
             }
         }
-        
+
         public GameObject CreateGameObject(string name, params System.Type[] components)
         {
-            var newName = GetUniqueName(name);
+            string newName = GetUniqueName(name);
             return new GameObject(newName, components);
         }
     }
@@ -110,46 +110,46 @@ namespace UnityEditor.U2D.PSD
                 width == 0 ||
                 height == 0)
                 return "No .png generated.";
-            
-            var texture2D = new Texture2D(width, height);
+
+            Texture2D texture2D = new Texture2D(width, height);
             texture2D.SetPixels32(buffer.ToArray());
-            var png = texture2D.EncodeToPNG();
-            var path = Application.dataPath + $"/tex_{System.Guid.NewGuid().ToString()}.png";
-            var fileStream = System.IO.File.Create(path);
+            byte[] png = texture2D.EncodeToPNG();
+            string path = Application.dataPath + $"/tex_{System.Guid.NewGuid().ToString()}.png";
+            System.IO.FileStream fileStream = System.IO.File.Create(path);
             fileStream.Write(png);
             fileStream.Close();
-            
+
             UnityEngine.Object.DestroyImmediate(texture2D);
 
             return path;
         }
-        
+
         public static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, IEnumerable<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
         {
             // first check if all layers are unique. If not, we use back the previous layer id based on name match
-            var uniqueIdSet = new HashSet<int>();
-            var useOldID = false;
-            foreach(var layer in layers)
+            HashSet<int> uniqueIdSet = new HashSet<int>();
+            bool useOldID = false;
+            foreach (BitmapLayer layer in layers)
             {
                 if (uniqueIdSet.Contains(layer.LayerID))
                 {
                     useOldID = true;
-                    break;   
+                    break;
                 }
                 uniqueIdSet.Add(layer.LayerID);
             }
 
-            for (var i = 0; i < layers.Count(); ++i)
+            for (int i = 0; i < layers.Count(); ++i)
             {
-                var childBitmapLayer = layers.ElementAt(i);
+                BitmapLayer childBitmapLayer = layers.ElementAt(i);
                 // fix case 1291323
                 if (useOldID)
                 {
-                    var oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
+                    IEnumerable<PSDLayer> oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
                     if (oldLayers.Count() == 0)
-                        oldLayers = oldPsdLayer.Where(x => x.layerID == childBitmapLayer.Name.GetHashCode()); 
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == childBitmapLayer.Name.GetHashCode());
                     // pick one that is not already on the list
-                    foreach (var ol in oldLayers)
+                    foreach (PSDLayer ol in oldLayers)
                     {
                         if (!uniqueNameGenerator.ContainHash(ol.layerID))
                         {
@@ -158,11 +158,11 @@ namespace UnityEditor.U2D.PSD
                         }
                     }
                 }
-            
+
                 if (uniqueNameGenerator.ContainHash(childBitmapLayer.LayerID))
                 {
-                    var layerName = UniqueNameGenerator.SanitizeName(childBitmapLayer.Name);
-                    var importWarning = $"Layer {layerName}: LayerId is not unique. Mapping will be done by Layer's name.";
+                    string layerName = UniqueNameGenerator.SanitizeName(childBitmapLayer.Name);
+                    string importWarning = $"Layer {layerName}: LayerId is not unique. Mapping will be done by Layer's name.";
                     layerName = uniqueNameGenerator.GetUniqueName(layerName);
                     if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
@@ -176,33 +176,33 @@ namespace UnityEditor.U2D.PSD
                     ValidatePSDLayerId(oldPsdLayer, childBitmapLayer.ChildLayer, uniqueNameGenerator);
                 }
             }
-        }        
-        
+        }
+
         public static void TranslatePivotPoint(Vector2 pivot, Rect rect, out SpriteAlignment alignment, out Vector2 customPivot)
         {
             customPivot = pivot;
             if (new Vector2(rect.xMin, rect.yMax) == pivot)
                 alignment = SpriteAlignment.TopLeft;
-            else if(new Vector2(rect.center.x, rect.yMax) == pivot)
+            else if (new Vector2(rect.center.x, rect.yMax) == pivot)
                 alignment = SpriteAlignment.TopCenter;
-            else if(new Vector2(rect.xMax, rect.yMax) == pivot)
+            else if (new Vector2(rect.xMax, rect.yMax) == pivot)
                 alignment = SpriteAlignment.TopRight;
-            else if(new Vector2(rect.xMin, rect.center.y) == pivot)
+            else if (new Vector2(rect.xMin, rect.center.y) == pivot)
                 alignment = SpriteAlignment.LeftCenter;
-            else if(new Vector2(rect.center.x, rect.center.y) == pivot)
+            else if (new Vector2(rect.center.x, rect.center.y) == pivot)
                 alignment = SpriteAlignment.Center;
-            else if(new Vector2(rect.xMax, rect.center.y) == pivot)
+            else if (new Vector2(rect.xMax, rect.center.y) == pivot)
                 alignment = SpriteAlignment.RightCenter;
-            else if(new Vector2(rect.xMin, rect.yMin) == pivot)
+            else if (new Vector2(rect.xMin, rect.yMin) == pivot)
                 alignment = SpriteAlignment.BottomLeft;
-            else if(new Vector2(rect.center.x, rect.yMin) == pivot)
+            else if (new Vector2(rect.center.x, rect.yMin) == pivot)
                 alignment = SpriteAlignment.BottomCenter;
-            else if(new Vector2(rect.xMax, rect.yMin) == pivot)
+            else if (new Vector2(rect.xMax, rect.yMin) == pivot)
                 alignment = SpriteAlignment.BottomRight;
             else
                 alignment = SpriteAlignment.Custom;
-        }   
-        
+        }
+
         public static Vector2 GetPivotPoint(Rect rect, SpriteAlignment alignment, Vector2 customPivot)
         {
             switch (alignment)
@@ -238,24 +238,24 @@ namespace UnityEditor.U2D.PSD
                     return new Vector2(customPivot.x * rect.width, customPivot.y * rect.height);
             }
             return Vector2.zero;
-        }     
-        
+        }
+
         public static string GetUniqueSpriteName(string name, UniqueNameGenerator generator, bool keepDupilcateSpriteName)
         {
             if (keepDupilcateSpriteName)
                 return name;
             return generator.GetUniqueName(name);
         }
-        
+
         public static bool VisibleInHierarchy(List<PSDLayer> psdGroup, int index)
         {
-            var psdLayer = psdGroup[index];
-            var parentVisible = true;
+            PSDLayer psdLayer = psdGroup[index];
+            bool parentVisible = true;
             if (psdLayer.parentIndex >= 0)
                 parentVisible = VisibleInHierarchy(psdGroup, psdLayer.parentIndex);
             return parentVisible && psdLayer.isVisible;
-        }        
-        
+        }
+
         public static bool IsSpriteMetaDataDefault(SpriteMetaData metaData)
         {
             return metaData.spriteID == default ||
@@ -268,9 +268,9 @@ namespace UnityEditor.U2D.PSD
             categoryName = "";
             if (categories != null)
             {
-                foreach (var category in categories)
+                foreach (SpriteCategory category in categories)
                 {
-                    var index = category.labels.FindIndex(x => x.spriteId == spriteId);
+                    int index = category.labels.FindIndex(x => x.spriteId == spriteId);
                     if (index == 0)
                     {
                         categoryName = category.name;
@@ -281,7 +281,7 @@ namespace UnityEditor.U2D.PSD
                 }
             }
             return true;
-        } 
-#endif                
+        }
+#endif
     }
 }

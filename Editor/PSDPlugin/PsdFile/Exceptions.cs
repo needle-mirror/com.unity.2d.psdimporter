@@ -14,9 +14,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PDNWrapper;
 using System.Linq;
 using System.Text;
+using PDNWrapper;
 
 namespace PhotoshopFile
 {
@@ -36,8 +36,8 @@ namespace PhotoshopFile
     [Serializable]
     internal class RleException : Exception
     {
-        public RleException() {}
+        public RleException() { }
 
-        public RleException(string message) : base(message) {}
+        public RleException(string message) : base(message) { }
     }
 }

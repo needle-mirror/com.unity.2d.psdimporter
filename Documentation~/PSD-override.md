@@ -2,8 +2,6 @@
 
 By default .psd files are imported with the Texture Importer. If you wish to instead import a .psd file with the PSD Importer, simply select the .psd file, click on the Importer dropdown and select **UnityEditor.U2D.PSD.PSDImporter**.
 
-![](images/psd-file-import.png)<br/>Importer drop down.
-
 You can also create a script to automate this process. Below is an example of how this can be done using the `AssetDatabase.SetImporterOverride` method.
 
 ## Example SetImporterOverride script

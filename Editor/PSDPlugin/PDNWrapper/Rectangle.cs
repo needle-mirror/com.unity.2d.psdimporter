@@ -142,7 +142,7 @@ namespace PDNWrapper
                 (comp.Height == this.Height);
         }
 
-        public static bool operator==(Rectangle left, Rectangle right)
+        public static bool operator ==(Rectangle left, Rectangle right)
         {
             return (left.X == right.X
                     && left.Y == right.Y
@@ -150,7 +150,7 @@ namespace PDNWrapper
                     && left.Height == right.Height);
         }
 
-        public static bool operator!=(Rectangle left, Rectangle right)
+        public static bool operator !=(Rectangle left, Rectangle right)
         {
             return !(left == right);
         }
@@ -175,8 +175,8 @@ namespace PDNWrapper
         {
             return (int)((UInt32)X ^
                          (((UInt32)Y << 13) | ((UInt32)Y >> 19)) ^
-                         (((UInt32)Width << 26) | ((UInt32)Width >>  6)) ^
-                         (((UInt32)Height <<  7) | ((UInt32)Height >> 25)));
+                         (((UInt32)Width << 26) | ((UInt32)Width >> 6)) ^
+                         (((UInt32)Height << 7) | ((UInt32)Height >> 25)));
         }
 
         public void Inflate(int width, int height)

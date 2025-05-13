@@ -40,11 +40,11 @@ namespace PhotoshopFile
         public UnicodeAlphaNames(PsdBinaryReader reader, string name, int resourceDataLength)
             : base(name)
         {
-            var endPosition = reader.BaseStream.Position + resourceDataLength;
+            long endPosition = reader.BaseStream.Position + resourceDataLength;
 
             while (reader.BaseStream.Position < endPosition)
             {
-                var channelName = reader.ReadUnicodeString();
+                string channelName = reader.ReadUnicodeString();
 
                 // Photoshop writes out a null terminator for Unicode alpha names.
                 // There is no null terminator on other Unicode strings in PSD files.

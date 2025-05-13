@@ -12,9 +12,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using PDNWrapper;
 using System.IO;
 using System.IO.Compression;
+using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
@@ -76,10 +76,10 @@ namespace PhotoshopFile.Compression
 
         internal override void Read(byte[] buffer)
         {
-            var bytesToRead = (long)Size.Height * BytesPerRow;
+            long bytesToRead = (long)Size.Height * BytesPerRow;
             Util.CheckByteArrayLength(bytesToRead);
 
-            var bytesRead = zipStream.Read(buffer, 0, (int)bytesToRead);
+            int bytesRead = zipStream.Read(buffer, 0, (int)bytesToRead);
             if (bytesRead != bytesToRead)
             {
                 throw new Exception("ZIP stream was not fully decompressed.");
@@ -92,7 +92,7 @@ namespace PhotoshopFile.Compression
             zipStream.Close();
 
             // Do not write the zlib header when the image data is empty
-            var result = (zipDataStream.Length == 2)
+            byte[] result = (zipDataStream.Length == 2)
                 ? new byte[0]
                 : zipDataStream.ToArray();
             return result;

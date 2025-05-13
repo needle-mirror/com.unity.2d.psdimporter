@@ -79,7 +79,7 @@ namespace PhotoshopFile
             SectionType = (LayerSectionType)reader.ReadInt32();
             if (dataLength >= 12)
             {
-                var signature = reader.ReadAsciiChars(4);
+                string signature = reader.ReadAsciiChars(4);
                 if (signature != "8BIM")
                     throw new PsdInvalidException("Invalid section divider signature.");
 

@@ -15,9 +15,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using PDNWrapper;
 using System.IO;
 using System.Text;
+using PDNWrapper;
 
 namespace PhotoshopFile
 {
@@ -66,7 +66,7 @@ namespace PhotoshopFile
 
         public Int16 ReadInt16()
         {
-            var val = reader.ReadInt16();
+            short val = reader.ReadInt16();
             byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 2);
@@ -77,7 +77,7 @@ namespace PhotoshopFile
 
         public Int32 ReadInt32()
         {
-            var val = reader.ReadInt32();
+            int val = reader.ReadInt32();
             byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 4);
@@ -88,7 +88,7 @@ namespace PhotoshopFile
 
         public double ReadDouble()
         {
-            var val = reader.ReadDouble();
+            double val = reader.ReadDouble();
             byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 8);
@@ -96,11 +96,11 @@ namespace PhotoshopFile
             val = BitConverter.ToDouble(b, 0);
             return val;
         }
-        
+
         public Int64 ReadInt64()
         {
-            var val = reader.ReadInt64();
-            var b = BitConverter.GetBytes(val);
+            long val = reader.ReadInt64();
+            byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 8);
             }
@@ -110,8 +110,8 @@ namespace PhotoshopFile
 
         public UInt16 ReadUInt16()
         {
-            var val = reader.ReadUInt16();
-            var b = BitConverter.GetBytes(val);
+            ushort val = reader.ReadUInt16();
+            byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 2);
             }
@@ -121,8 +121,8 @@ namespace PhotoshopFile
 
         public UInt32 ReadUInt32()
         {
-            var val = reader.ReadUInt32();
-            var b = BitConverter.GetBytes(val);
+            uint val = reader.ReadUInt32();
+            byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 4);
             }
@@ -132,8 +132,8 @@ namespace PhotoshopFile
 
         public UInt64 ReadUInt64()
         {
-            var val = reader.ReadUInt64();
-            var b = BitConverter.GetBytes(val);
+            ulong val = reader.ReadUInt64();
+            byte[] b = BitConverter.GetBytes(val);
             {
                 Util.SwapBytes(b, 0, 8);
             }
@@ -151,14 +151,14 @@ namespace PhotoshopFile
         public void ReadPadding(long startPosition, int padMultiple)
         {
             // Pad to specified byte multiple
-            var totalLength = reader.BaseStream.Position - startPosition;
-            var padBytes = Util.GetPadding((int)totalLength, padMultiple);
+            long totalLength = reader.BaseStream.Position - startPosition;
+            int padBytes = Util.GetPadding((int)totalLength, padMultiple);
             ReadBytes(padBytes);
         }
 
         public Rectangle ReadRectangle()
         {
-            var rect = new Rectangle();
+            Rectangle rect = new Rectangle();
             rect.Y = ReadInt32();
             rect.X = ReadInt32();
             rect.Height = ReadInt32() - rect.Y;
@@ -171,8 +171,8 @@ namespace PhotoshopFile
         /// </summary>
         public string ReadAsciiChars(int count)
         {
-            var bytes = reader.ReadBytes(count);
-            var s = Encoding.ASCII.GetString(bytes);
+            byte[] bytes = reader.ReadBytes(count);
+            string s = Encoding.ASCII.GetString(bytes);
             return s;
         }
 
@@ -182,24 +182,24 @@ namespace PhotoshopFile
         /// <param name="padMultiple">Byte multiple that the Pascal string is padded to.</param>
         public string ReadPascalString(int padMultiple)
         {
-            var startPosition = reader.BaseStream.Position;
+            long startPosition = reader.BaseStream.Position;
 
             byte stringLength = ReadByte();
-            var bytes = ReadBytes(stringLength);
+            byte[] bytes = ReadBytes(stringLength);
             ReadPadding(startPosition, padMultiple);
 
             // Default decoder uses best-fit fallback, so it will not throw any
             // exceptions if unknown characters are encountered.
-            var str = encoding.GetString(bytes);
+            string str = encoding.GetString(bytes);
             return str;
         }
 
         public string ReadUnicodeString()
         {
-            var numChars = ReadInt32();
-            var length = 2 * numChars;
-            var data = ReadBytes(length);
-            var str = Encoding.BigEndianUnicode.GetString(data, 0, length);
+            int numChars = ReadInt32();
+            int length = 2 * numChars;
+            byte[] data = ReadBytes(length);
+            string str = Encoding.BigEndianUnicode.GetString(data, 0, length);
 
             return str;
         }

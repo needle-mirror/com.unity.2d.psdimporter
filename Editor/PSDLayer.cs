@@ -28,7 +28,7 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         bool m_IsVisible;
 
-        [NonSerialized] 
+        [NonSerialized]
         Vector2 m_LayerPosition;
         [NonSerialized]
         GameObject m_GameObject;
@@ -75,7 +75,7 @@ namespace UnityEditor.U2D.PSD
         public bool isGroup { get { return m_IsGroup; } private set { m_IsGroup = value; } }
         public int parentIndex { get { return m_ParentIndex; } private set { m_ParentIndex = value; } }
         public Vector2Int mosaicPosition { get { return m_MosaicPosition; } set { m_MosaicPosition = value; } }
-        public GUID spriteID  { get { return new GUID(m_SpriteID); } set { m_SpriteID = value.ToString(); } }
+        public GUID spriteID { get { return new GUID(m_SpriteID); } set { m_SpriteID = value.ToString(); } }
         public Vector2 layerPosition { get => m_LayerPosition; set => m_LayerPosition = value; }
         public GameObject gameObject { get { return m_GameObject; } set { m_GameObject = value; } }
 

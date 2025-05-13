@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Burst;
+using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
@@ -15,17 +15,17 @@ namespace UnityEditor.U2D.PSD
         {
             public int startIndex { get; set; }
             public int endIndex { get; set; }
-            
+
             /// <summary>
             /// The layer's bounding box in document space.
             /// </summary>
             public int4 documentRect { get; set; }
         }
-        
+
         [BurstCompile]
         struct ConvertBufferJob : IJobParallelFor
         {
-            [ReadOnly, DeallocateOnJobCompletion] 
+            [ReadOnly, DeallocateOnJobCompletion]
             public NativeArray<int> inputTextureBufferSizes;
             [ReadOnly, DeallocateOnJobCompletion]
             public NativeArray<IntPtr> inputTextures;
@@ -33,65 +33,65 @@ namespace UnityEditor.U2D.PSD
             public NativeArray<int4> inputLayerRects;
             [ReadOnly, DeallocateOnJobCompletion]
             public NativeArray<LayerGroupData> layerGroupDataData;
-            
-            [ReadOnly, DeallocateOnJobCompletion] 
+
+            [ReadOnly, DeallocateOnJobCompletion]
             public NativeArray<int4> outputLayerRect;
             [DeallocateOnJobCompletion]
             public NativeArray<IntPtr> outputTextures;
             public unsafe void Execute(int groupIndex)
             {
-                var outputColor = (Color32*)outputTextures[groupIndex];
-                var groupStartIndex = layerGroupDataData[groupIndex].startIndex;
-                var groupEndIndex = layerGroupDataData[groupIndex].endIndex;
+                Color32* outputColor = (Color32*)outputTextures[groupIndex];
+                int groupStartIndex = layerGroupDataData[groupIndex].startIndex;
+                int groupEndIndex = layerGroupDataData[groupIndex].endIndex;
 
-                var outStartX = outputLayerRect[groupIndex].x;
-                var outStartY = outputLayerRect[groupIndex].y;
-                var outWidth = outputLayerRect[groupIndex].z;
-                var outHeight = outputLayerRect[groupIndex].w;
+                int outStartX = outputLayerRect[groupIndex].x;
+                int outStartY = outputLayerRect[groupIndex].y;
+                int outWidth = outputLayerRect[groupIndex].z;
+                int outHeight = outputLayerRect[groupIndex].w;
 
-                for (var layerIndex = groupEndIndex; layerIndex >= groupStartIndex; --layerIndex)
+                for (int layerIndex = groupEndIndex; layerIndex >= groupStartIndex; --layerIndex)
                 {
                     if (inputTextures[layerIndex] == IntPtr.Zero)
                         continue;
 
-                    var inputColor = (Color32*)inputTextures[layerIndex];
-                    var inX = inputLayerRects[layerIndex].x;
-                    var inY = inputLayerRects[layerIndex].y;
-                    var inWidth = inputLayerRects[layerIndex].z;
-                    var inHeight = inputLayerRects[layerIndex].w;
+                    Color32* inputColor = (Color32*)inputTextures[layerIndex];
+                    int inX = inputLayerRects[layerIndex].x;
+                    int inY = inputLayerRects[layerIndex].y;
+                    int inWidth = inputLayerRects[layerIndex].z;
+                    int inHeight = inputLayerRects[layerIndex].w;
 
-                    for (var y = 0; y < inHeight; ++y)
+                    for (int y = 0; y < inHeight; ++y)
                     {
-                        var outPosY = (y + inY) - outStartY;
+                        int outPosY = (y + inY) - outStartY;
                         // If pixel is outside of output texture's Y, move to the next pixel.
                         if (outPosY < 0 || outPosY >= outHeight)
                             continue;
-                        
+
                         // Flip Y position on the input texture, because
                         // PSDs textures are stored "upside-down"
-                        var inRow = ((inHeight - 1) - y) * inWidth;
-                        var outRow = outPosY * outWidth;
+                        int inRow = ((inHeight - 1) - y) * inWidth;
+                        int outRow = outPosY * outWidth;
 
-                        for (var x = 0; x < inWidth; ++x)
+                        for (int x = 0; x < inWidth; ++x)
                         {
-                            var outPosX = (x + inX) - outStartX;
+                            int outPosX = (x + inX) - outStartX;
                             // If pixel is outside of output texture's X, move to the next pixel.
                             if (outPosX < 0 || outPosX >= outWidth)
                                 continue;
 
-                            var inBufferIndex = inRow + x;
-                            var outBufferIndex = outRow + outPosX;
+                            int inBufferIndex = inRow + x;
+                            int outBufferIndex = outRow + outPosX;
                             if (outBufferIndex < 0 || outBufferIndex > (outWidth * outHeight))
                                 continue;
 
                             Color inColor = inputColor[inBufferIndex];
                             Color prevOutColor = outputColor[outBufferIndex];
-                            var outColor = new Color();
+                            Color outColor = new Color();
 
-                            var destAlpha = prevOutColor.a * (1 - inColor.a);
+                            float destAlpha = prevOutColor.a * (1 - inColor.a);
                             outColor.a = inColor.a + prevOutColor.a * (1 - inColor.a);
-                            
-                            var premultiplyAlpha = outColor.a > 0.0f ? 1 / outColor.a : 1f;
+
+                            float premultiplyAlpha = outColor.a > 0.0f ? 1 / outColor.a : 1f;
                             outColor.r = (inColor.r * inColor.a + prevOutColor.r * destAlpha) * premultiplyAlpha;
                             outColor.g = (inColor.g * inColor.a + prevOutColor.g * destAlpha) * premultiplyAlpha;
                             outColor.b = (inColor.b * inColor.a + prevOutColor.b * destAlpha) * premultiplyAlpha;
@@ -108,38 +108,38 @@ namespace UnityEditor.U2D.PSD
             outputLayers = new List<PSDLayer>();
             UnityEngine.Profiling.Profiler.BeginSample("ExtractLayer_PrepareJob");
 
-            var inputLayers = new List<PSDLayer>();
+            List<PSDLayer> inputLayers = new List<PSDLayer>();
             ExtractLayerData(in psdExtractLayerData, ref inputLayers, importHiddenLayer, false, true, canvasSize);
-            
-            var layerGroupData = new List<LayerGroupData>();
+
+            List<LayerGroupData> layerGroupData = new List<LayerGroupData>();
             GenerateOutputLayers(in inputLayers, ref outputLayers, ref layerGroupData, false, canvasSize);
 
             if (layerGroupData.Count == 0)
             {
-                foreach (var layer in outputLayers)
+                foreach (PSDLayer layer in outputLayers)
                     layer.texture = default;
                 return;
             }
-            
-            var job = new ConvertBufferJob();
+
+            ConvertBufferJob job = new ConvertBufferJob();
             job.inputTextureBufferSizes = new NativeArray<int>(inputLayers.Count, Allocator.TempJob);
             job.inputTextures = new NativeArray<IntPtr>(inputLayers.Count, Allocator.TempJob);
             job.inputLayerRects = new NativeArray<int4>(inputLayers.Count, Allocator.TempJob);
             job.outputLayerRect = new NativeArray<int4>(layerGroupData.Count, Allocator.TempJob);
             job.outputTextures = new NativeArray<IntPtr>(layerGroupData.Count, Allocator.TempJob);
-            
+
             for (int i = 0, groupIndex = 0; i < inputLayers.Count; ++i)
             {
-                var inputLayer = inputLayers[i];
-                var outputLayer = outputLayers[i];
-                
+                PSDLayer inputLayer = inputLayers[i];
+                PSDLayer outputLayer = outputLayers[i];
+
                 job.inputTextures[i] = inputLayer.texture.IsCreated ? new IntPtr(inputLayer.texture.GetUnsafePtr()) : IntPtr.Zero;
 
-                var isGroupOwner = groupIndex < layerGroupData.Count && layerGroupData[groupIndex].startIndex == i;
+                bool isGroupOwner = groupIndex < layerGroupData.Count && layerGroupData[groupIndex].startIndex == i;
                 if (isGroupOwner)
                 {
                     outputLayer.texture = new NativeArray<Color32>(outputLayer.width * outputLayer.height, Allocator.Persistent);
-                    
+
                     job.outputLayerRect[groupIndex] = new int4((int)outputLayer.layerPosition.x, (int)outputLayer.layerPosition.y, outputLayer.width, outputLayer.height);
                     job.outputTextures[groupIndex] = outputLayer.texture.IsCreated ? new IntPtr(outputLayer.texture.GetUnsafePtr()) : IntPtr.Zero;
                     job.inputTextureBufferSizes[i] = inputLayer.texture.IsCreated ? inputLayer.texture.Length : -1;
@@ -155,48 +155,48 @@ namespace UnityEditor.U2D.PSD
             }
             job.layerGroupDataData = new NativeArray<LayerGroupData>(layerGroupData.ToArray(), Allocator.TempJob);
 
-            var jobsPerThread = layerGroupData.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
+            int jobsPerThread = layerGroupData.Count / (SystemInfo.processorCount == 0 ? 8 : SystemInfo.processorCount);
             jobsPerThread = Mathf.Max(jobsPerThread, 1);
-            var handle = job.Schedule(layerGroupData.Count, jobsPerThread);
+            JobHandle handle = job.Schedule(layerGroupData.Count, jobsPerThread);
             UnityEngine.Profiling.Profiler.EndSample();
             handle.Complete();
         }
 
         static void ExtractLayerData(in PSDExtractLayerData[] inputLayers, ref List<PSDLayer> extractedLayers, bool importHiddenLayer, bool flatten, bool parentGroupVisible, Vector2Int canvasSize)
         {
-            var parentGroupIndex = extractedLayers.Count - 1;
-            
-            foreach (var inputLayer in inputLayers)
+            int parentGroupIndex = extractedLayers.Count - 1;
+
+            foreach (PSDExtractLayerData inputLayer in inputLayers)
             {
-                var bitmapLayer = inputLayer.bitmapLayer;
-                var importSettings = inputLayer.importSetting;
-                var layerVisible = bitmapLayer.Visible && parentGroupVisible;
-                
-                var layerRect = new RectInt(bitmapLayer.documentRect.X, bitmapLayer.documentRect.Y, bitmapLayer.Surface.width, bitmapLayer.Surface.height);
-                
+                PDNWrapper.BitmapLayer bitmapLayer = inputLayer.bitmapLayer;
+                PSDLayerImportSetting importSettings = inputLayer.importSetting;
+                bool layerVisible = bitmapLayer.Visible && parentGroupVisible;
+
+                RectInt layerRect = new RectInt(bitmapLayer.documentRect.X, bitmapLayer.documentRect.Y, bitmapLayer.Surface.width, bitmapLayer.Surface.height);
+
                 if (!bitmapLayer.IsGroup)
                     layerRect.y = (canvasSize.y - layerRect.y - layerRect.height);
 
                 NativeArray<Color32> surface = default;
-                if ((importHiddenLayer || bitmapLayer.Visible) && 
-                    importSettings.importLayer && 
+                if ((importHiddenLayer || bitmapLayer.Visible) &&
+                    importSettings.importLayer &&
                     bitmapLayer.Surface.color.IsCreated &&
                     bitmapLayer.Surface.color.Length > 0)
                     surface = bitmapLayer.Surface.color;
 
-                var extractedLayer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, layerRect.width, layerRect.height, bitmapLayer.LayerID, bitmapLayer.Visible)
+                PSDLayer extractedLayer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, layerRect.width, layerRect.height, bitmapLayer.LayerID, bitmapLayer.Visible)
                 {
                     spriteID = inputLayer.importSetting.spriteId,
                     flatten = bitmapLayer.IsGroup && inputLayer.importSetting.flatten,
                     layerPosition = bitmapLayer.IsGroup ? Vector2.zero : layerRect.position
                 };
-                
+
                 extractedLayer.isImported = (importHiddenLayer || layerVisible) && !flatten && importSettings.importLayer;
                 if (extractedLayer.isGroup)
                     extractedLayer.isImported = extractedLayer.isImported && extractedLayer.flatten;
 
                 extractedLayers.Add(extractedLayer);
-                
+
                 if (inputLayer.children.Length > 0)
                     ExtractLayerData(in inputLayer.children, ref extractedLayers, importHiddenLayer, flatten || extractedLayer.flatten, layerVisible, canvasSize);
             }
@@ -204,26 +204,26 @@ namespace UnityEditor.U2D.PSD
 
         static void GenerateOutputLayers(in List<PSDLayer> inputLayers, ref List<PSDLayer> outputLayers, ref List<LayerGroupData> layerGroupData, bool flatten, Vector2Int canvasSize)
         {
-            var canvasRect = new RectInt(Vector2Int.zero, canvasSize);
-            
-            for (var i = 0; i < inputLayers.Count; ++i)
+            RectInt canvasRect = new RectInt(Vector2Int.zero, canvasSize);
+
+            for (int i = 0; i < inputLayers.Count; ++i)
             {
-                var inputLayer = inputLayers[i];
-                
-                var outputLayer = new PSDLayer(inputLayer);
-                var outputRect = new RectInt((int)outputLayer.layerPosition.x, (int)outputLayer.layerPosition.y, outputLayer.width, outputLayer.height);
-                
+                PSDLayer inputLayer = inputLayers[i];
+
+                PSDLayer outputLayer = new PSDLayer(inputLayer);
+                RectInt outputRect = new RectInt((int)outputLayer.layerPosition.x, (int)outputLayer.layerPosition.y, outputLayer.width, outputLayer.height);
+
                 if (inputLayer.isGroup)
                 {
-                    var childIndices = FindAllChildrenOfParent(i, in inputLayers);
+                    List<int> childIndices = FindAllChildrenOfParent(i, in inputLayers);
                     childIndices.Sort();
-                    
-                    var startIndex = i;
-                    var endIndex = i + childIndices.Count;
-                    
+
+                    int startIndex = i;
+                    int endIndex = i + childIndices.Count;
+
                     if (flatten == false && inputLayer.flatten && startIndex < endIndex)
                     {
-                        var groupBoundingBox = CalculateLayerRectInChildren(in inputLayers, in childIndices);
+                        RectInt groupBoundingBox = CalculateLayerRectInChildren(in inputLayers, in childIndices);
                         layerGroupData.Add(new LayerGroupData()
                         {
                             startIndex = startIndex,
@@ -234,9 +234,9 @@ namespace UnityEditor.U2D.PSD
                         outputRect = groupBoundingBox;
                     }
                 }
-                else if(!inputLayer.isGroup && inputLayer.isImported)
+                else if (!inputLayer.isGroup && inputLayer.isImported)
                 {
-                    var inputRect = new int4((int)inputLayer.layerPosition.x, (int)inputLayer.layerPosition.y, inputLayer.width, inputLayer.height);
+                    int4 inputRect = new int4((int)inputLayer.layerPosition.x, (int)inputLayer.layerPosition.y, inputLayer.width, inputLayer.height);
                     layerGroupData.Add(new LayerGroupData()
                     {
                         startIndex = i,
@@ -244,20 +244,20 @@ namespace UnityEditor.U2D.PSD
                         documentRect = inputRect
                     });
                 }
-                
+
                 CropRect(ref outputRect, canvasRect);
                 outputLayer.layerPosition = outputRect.position;
                 outputLayer.width = outputRect.width;
                 outputLayer.height = outputRect.height;
-                
+
                 outputLayers.Add(outputLayer);
             }
         }
 
         static List<int> FindAllChildrenOfParent(int parentIndex, in List<PSDLayer> layers)
         {
-            var childIndices = new List<int>();
-            for (var i = parentIndex + 1; i < layers.Count; ++i)
+            List<int> childIndices = new List<int>();
+            for (int i = parentIndex + 1; i < layers.Count; ++i)
             {
                 if (layers[i].parentIndex == parentIndex)
                 {
@@ -268,17 +268,17 @@ namespace UnityEditor.U2D.PSD
             }
             return childIndices;
         }
-        
+
         static RectInt CalculateLayerRectInChildren(in List<PSDLayer> inputLayers, in List<int> childIndices)
         {
-            var groupBoundingBox = default(RectInt);
-            for (var m = 0; m < childIndices.Count; ++m)
+            RectInt groupBoundingBox = default(RectInt);
+            for (int m = 0; m < childIndices.Count; ++m)
             {
-                var childLayer = inputLayers[childIndices[m]];
-                if (childLayer.isGroup) 
+                PSDLayer childLayer = inputLayers[childIndices[m]];
+                if (childLayer.isGroup)
                     continue;
-                
-                var layerRect = new RectInt((int) childLayer.layerPosition.x, (int) childLayer.layerPosition.y,
+
+                RectInt layerRect = new RectInt((int)childLayer.layerPosition.x, (int)childLayer.layerPosition.y,
                     childLayer.width, childLayer.height);
                 if (IsRectIntDefault(groupBoundingBox))
                     groupBoundingBox = layerRect;
@@ -287,7 +287,7 @@ namespace UnityEditor.U2D.PSD
             }
 
             return groupBoundingBox;
-        }        
+        }
 
         static bool IsRectIntDefault(RectInt rectInt)
         {
@@ -331,7 +331,7 @@ namespace UnityEditor.U2D.PSD
             if (baseRect.xMax < rectToFitIn.xMax)
                 baseRect.xMax = rectToFitIn.xMax;
             if (baseRect.yMax < rectToFitIn.yMax)
-                baseRect.yMax = rectToFitIn.yMax;            
+                baseRect.yMax = rectToFitIn.yMax;
         }
     }
 }

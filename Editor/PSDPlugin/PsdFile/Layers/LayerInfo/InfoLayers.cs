@@ -74,7 +74,7 @@ namespace PhotoshopFile
                     "Cannot have both regular layers and Additional Info layers");
             }
 
-            var endPosition = reader.BaseStream.Position + dataLength;
+            long endPosition = reader.BaseStream.Position + dataLength;
             psdFile.LoadLayers(reader, false);
 
             if (reader.BaseStream.Position != endPosition)

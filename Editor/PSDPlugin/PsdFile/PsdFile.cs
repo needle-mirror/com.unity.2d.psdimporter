@@ -17,11 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PDNWrapper;
 using System.IO;
 using System.Linq;
 using System.Text;
 using PaintDotNet.Data.PhotoshopFileType;
+using PDNWrapper;
 
 namespace PhotoshopFile
 {
@@ -72,7 +72,7 @@ namespace PhotoshopFile
         public PsdFile(string filename, LoadContext loadContext, ELoadFlag loadFlag = ELoadFlag.All)
             : this()
         {
-            using (var stream = new FileStream(filename, FileMode.Open))
+            using (FileStream stream = new FileStream(filename, FileMode.Open))
             {
                 Load(stream, loadContext, loadFlag);
             }
@@ -93,7 +93,7 @@ namespace PhotoshopFile
         private void Load(Stream stream, LoadContext loadContext, ELoadFlag loadFlag)
         {
             LoadContext = loadContext;
-            var reader = new PsdBinaryReader(stream, loadContext.Encoding);
+            PsdBinaryReader reader = new PsdBinaryReader(stream, loadContext.Encoding);
 
             if ((loadFlag & ELoadFlag.Header) == ELoadFlag.Header)
                 LoadHeader(reader);
@@ -220,7 +220,7 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, File header");
 
-            var signature = reader.ReadAsciiChars(4);
+            string signature = reader.ReadAsciiChars(4);
             if (signature != "8BPS")
                 throw new PsdInvalidException("The given stream is not a valid PSD file");
 
@@ -263,7 +263,7 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, ColorModeData");
 
-            var paletteLength = reader.ReadUInt32();
+            uint paletteLength = reader.ReadUInt32();
             if (paletteLength > 0)
             {
                 ColorModeData = reader.ReadBytes((int)paletteLength);
@@ -303,15 +303,15 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, ImageResources");
 
-            var imageResourcesLength = reader.ReadUInt32();
+            uint imageResourcesLength = reader.ReadUInt32();
             if (imageResourcesLength <= 0)
                 return;
 
-            var startPosition = reader.BaseStream.Position;
-            var endPosition = startPosition + imageResourcesLength;
+            long startPosition = reader.BaseStream.Position;
+            long endPosition = startPosition + imageResourcesLength;
             while (reader.BaseStream.Position < endPosition)
             {
-                var imageResource = ImageResourceFactory.CreateImageResource(reader);
+                ImageResource imageResource = ImageResourceFactory.CreateImageResource(reader);
                 ImageResources.Add(imageResource);
             }
 
@@ -341,14 +341,14 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, Layer and mask info");
 
-            var layersAndMaskLength = IsLargeDocument
+            long layersAndMaskLength = IsLargeDocument
                 ? reader.ReadInt64()
                 : reader.ReadUInt32();
             if (layersAndMaskLength <= 0)
                 return;
 
-            var startPosition = reader.BaseStream.Position;
-            var endPosition = startPosition + layersAndMaskLength;
+            long startPosition = reader.BaseStream.Position;
+            long endPosition = startPosition + layersAndMaskLength;
 
             LoadLayers(reader, true);
             LoadGlobalLayerMask(reader);
@@ -358,12 +358,12 @@ namespace PhotoshopFile
 
             while (reader.BaseStream.Position < endPosition)
             {
-                var info = LayerInfoFactory.Load(reader, this, true, endPosition);
+                LayerInfo info = LayerInfoFactory.Load(reader, this, true, endPosition);
                 AdditionalInfo.Add(info);
 
                 if (info is RawLayerInfo)
                 {
-                    var layerInfo = (RawLayerInfo)info;
+                    RawLayerInfo layerInfo = (RawLayerInfo)info;
                     switch (info.Key)
                     {
                         case "LMsk":
@@ -409,8 +409,8 @@ namespace PhotoshopFile
                 }
             }
 
-            var startPosition = reader.BaseStream.Position;
-            var numLayers = reader.ReadInt16();
+            long startPosition = reader.BaseStream.Position;
+            short numLayers = reader.ReadInt16();
 
             // If numLayers < 0, then number of layers is absolute value,
             // and the first alpha channel contains the transparency data for
@@ -423,7 +423,7 @@ namespace PhotoshopFile
 
             for (int i = 0; i < numLayers; i++)
             {
-                var layer = new Layer(reader, this);
+                Layer layer = new Layer(reader, this);
                 Layers.Add(layer);
             }
 
@@ -433,11 +433,11 @@ namespace PhotoshopFile
             //-----------------------------------------------------------------------
 
             // Load image data for all channels.
-            foreach (var layer in Layers)
+            foreach (Layer layer in Layers)
             {
                 Util.DebugMessage(reader.BaseStream,
                     "Load, Begin, Layer image, layer.Name");
-                foreach (var channel in layer.Channels)
+                foreach (Channel channel in layer.Channels)
                 {
                     channel.LoadPixelData(reader);
                 }
@@ -450,8 +450,8 @@ namespace PhotoshopFile
             {
                 // Layers Info section is documented to be even-padded, but Photoshop
                 // actually pads to 4 bytes.
-                var endPosition = startPosition + sectionLength;
-                var positionOffset = reader.BaseStream.Position - endPosition;
+                long endPosition = startPosition + sectionLength;
+                long positionOffset = reader.BaseStream.Position - endPosition;
                 Debug.Assert(positionOffset > -4,
                     "LoadLayers did not read the full length of the Layers Info section.");
                 Debug.Assert(positionOffset <= 0,
@@ -472,11 +472,11 @@ namespace PhotoshopFile
         /// </summary>
         public void Cleanup()
         {
-            var layersAndComposite = Layers.Concat(new[] { BaseLayer });
+            IEnumerable<Layer> layersAndComposite = Layers.Concat(new[] { BaseLayer });
 
-            foreach (var lac in layersAndComposite)
+            foreach (Layer lac in layersAndComposite)
             {
-                foreach (var c in lac.Channels)
+                foreach (Channel c in lac.Channels)
                 {
                     c.Cleanup();
                 }
@@ -489,23 +489,23 @@ namespace PhotoshopFile
         /// </summary>
         private void DecompressImages()
         {
-            var layersAndComposite = Layers.Concat(new[] { BaseLayer });
+            IEnumerable<Layer> layersAndComposite = Layers.Concat(new[] { BaseLayer });
             //var channels = layersAndComposite.SelectMany(x => x.Channels);
             //Parallel.ForEach(channels, channel =>
             //{
             //  channel.DecodeImageData();
             //});
-            foreach (var lac in layersAndComposite)
+            foreach (Layer lac in layersAndComposite)
             {
-                foreach (var c in lac.Channels)
+                foreach (Channel c in lac.Channels)
                 {
                     c.DecodeImageData();
                 }
             }
 
-            foreach (var layer in Layers)
+            foreach (Layer layer in Layers)
             {
-                foreach (var channel in layer.Channels)
+                foreach (Channel channel in layer.Channels)
                 {
                     if (channel.ID == -2)
                         layer.Masks.LayerMask.ImageData = channel.ImageData;
@@ -520,7 +520,7 @@ namespace PhotoshopFile
         /// </summary>
         private void VerifyInfoLayers()
         {
-            var infoLayersCount = AdditionalInfo.Count(x => x is InfoLayers);
+            int infoLayersCount = AdditionalInfo.Count(x => x is InfoLayers);
             if (infoLayersCount > 1)
             {
                 throw new PsdInvalidException(
@@ -540,14 +540,14 @@ namespace PhotoshopFile
         internal void VerifyLayerSections()
         {
             int depth = 0;
-            foreach (var layer in Enumerable.Reverse(Layers))
+            foreach (Layer layer in Enumerable.Reverse(Layers))
             {
-                var layerSectionInfo = layer.AdditionalInfo.SingleOrDefault(
+                LayerInfo layerSectionInfo = layer.AdditionalInfo.SingleOrDefault(
                         x => x is LayerSectionInfo);
                 if (layerSectionInfo == null)
                     continue;
 
-                var sectionInfo = (LayerSectionInfo)layerSectionInfo;
+                LayerSectionInfo sectionInfo = (LayerSectionInfo)layerSectionInfo;
                 switch (sectionInfo.SectionType)
                 {
                     case LayerSectionType.OpenFolder:
@@ -578,16 +578,16 @@ namespace PhotoshopFile
         /// </summary>
         public void SetVersionInfo()
         {
-            var versionInfo = (VersionInfo)ImageResources.Get(ResourceID.VersionInfo);
+            VersionInfo versionInfo = (VersionInfo)ImageResources.Get(ResourceID.VersionInfo);
             if (versionInfo == null)
             {
                 versionInfo = new VersionInfo();
                 ImageResources.Set(versionInfo);
 
                 // Get the version string.  We don't use the fourth part (revision).
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                var version = assembly.GetName().Version;
-                var versionString = version.Major + "." + version.Minor + "." + version.Build;
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                Version version = assembly.GetName().Version;
+                string versionString = version.Major + "." + version.Minor + "." + version.Build;
 
                 // Strings are not localized since they are not shown to the user.
                 versionInfo.Version = 1;
@@ -607,7 +607,7 @@ namespace PhotoshopFile
         {
             Util.DebugMessage(reader.BaseStream, "Load, Begin, GlobalLayerMask");
 
-            var maskLength = reader.ReadUInt32();
+            uint maskLength = reader.ReadUInt32();
             if (maskLength <= 0)
             {
                 Util.DebugMessage(reader.BaseStream, "Load, End, GlobalLayerMask");
@@ -648,7 +648,7 @@ namespace PhotoshopFile
             {
                 Util.DebugMessage(reader.BaseStream, "Load, Begin, Channel image data");
 
-                var channel = new Channel(i, this.BaseLayer);
+                Channel channel = new Channel(i, this.BaseLayer);
                 channel.ImageCompression = ImageCompression;
                 channel.Length = this.RowCount
                     * Util.BytesPerRow(BaseLayer.Rect.Size, BitDepth);
@@ -665,7 +665,7 @@ namespace PhotoshopFile
                 Util.DebugMessage(reader.BaseStream, "Load, End, Channel image data");
             }
 
-            foreach (var channel in this.BaseLayer.Channels)
+            foreach (Channel channel in this.BaseLayer.Channels)
             {
                 Util.DebugMessage(reader.BaseStream, "Load, Begin, Channel image data");
                 Util.CheckByteArrayLength(channel.Length);
@@ -678,7 +678,7 @@ namespace PhotoshopFile
             if ((ColorMode != PsdColorMode.Multichannel)
                 && (ChannelCount == ColorMode.MinChannelCount() + 1))
             {
-                var alphaChannel = BaseLayer.Channels.Last();
+                Channel alphaChannel = BaseLayer.Channels.Last();
                 alphaChannel.ID = -1;
             }
 

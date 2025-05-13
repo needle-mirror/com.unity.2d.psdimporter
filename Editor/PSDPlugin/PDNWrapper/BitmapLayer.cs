@@ -13,8 +13,8 @@ namespace PDNWrapper
     internal class BitmapLayer
     {
         public int LayerID { get; set; }
-        public bool IsGroup {get; set; }
-        public BitmapLayer ParentLayer {get; set; }
+        public bool IsGroup { get; set; }
+        public BitmapLayer ParentLayer { get; set; }
         public IEnumerable<BitmapLayer> ChildLayer => m_ChildLayers;
         public string Name { get; set; }
         public byte Opacity { get; set; }
@@ -29,7 +29,7 @@ namespace PDNWrapper
         public void Dispose()
         {
             Surface.Dispose();
-            foreach (var layer in m_ChildLayers)
+            foreach (BitmapLayer layer in m_ChildLayers)
                 layer.Dispose();
         }
 
@@ -37,9 +37,9 @@ namespace PDNWrapper
         {
             localRect = new Rectangle(0, 0, documentRect.Width, documentRect.Height);
             this.documentRect = documentRect;
-            
+
             Surface = new Surface(localRect.Width, localRect.Height);
-            
+
             m_ChildLayers = new List<BitmapLayer>();
             IsGroup = false;
         }
@@ -47,8 +47,8 @@ namespace PDNWrapper
         public void AddChildLayer(BitmapLayer c)
         {
             m_ChildLayers.Add(c);
-            var bound = c.documentRect;
-            foreach (var child in ChildLayer)
+            Rectangle bound = c.documentRect;
+            foreach (BitmapLayer child in ChildLayer)
             {
                 bound.Y = bound.Y > child.documentRect.Y ? child.documentRect.Y : bound.Y;
                 bound.X = bound.X > child.documentRect.X ? child.documentRect.X : bound.X;

@@ -14,10 +14,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PDNWrapper;
 using System.IO;
 using System.Linq;
 using System.Text;
+using PDNWrapper;
 using Unity.Collections;
 
 namespace PhotoshopFile
@@ -82,8 +82,8 @@ namespace PhotoshopFile
                 ptr[ptrStart] = (byte)(ptr[ptrStart] ^ 0xff);
                 ptrStart++;
             }
-        }        
-        
+        }
+
         ///////////////////////////////////////////////////////////////////////////
 
         /// <summary>
@@ -238,7 +238,7 @@ namespace PhotoshopFile
                     "value and multiple cannot have opposite signs.");
             }
 
-            var remainder = value % multiple;
+            int remainder = value % multiple;
             if (remainder > 0)
             {
                 value += (multiple - remainder);
@@ -254,11 +254,11 @@ namespace PhotoshopFile
             if ((length < 0) || (padMultiple < 0))
                 throw new ArgumentException();
 
-            var remainder = length % padMultiple;
+            int remainder = length % padMultiple;
             if (remainder == 0)
                 return 0;
 
-            var padding = padMultiple - remainder;
+            int padding = padMultiple - remainder;
             return padding;
         }
 

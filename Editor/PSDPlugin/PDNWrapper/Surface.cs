@@ -16,7 +16,7 @@ namespace PDNWrapper
 
         public void Dispose()
         {
-            var handle = NativeArrayUnsafeUtility.GetAtomicSafetyHandle(m_Color);
+            AtomicSafetyHandle handle = NativeArrayUnsafeUtility.GetAtomicSafetyHandle(m_Color);
             if (m_Color.IsCreated && AtomicSafetyHandle.IsHandleValid(handle))
             {
                 m_Color.Dispose();

@@ -1,10 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.U2D.Common;
+using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEditor.U2D.Common;
-using System;
-using UnityEditor.U2D.Sprites;
 using UnityEngine.U2D;
 
 #if ENABLE_2D_ANIMATION
@@ -22,14 +22,14 @@ namespace UnityEditor.U2D.PSD
     {
         public List<SpriteBone> GetBones(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
             return sprite.spriteBone != null ? sprite.spriteBone.ToList() : new List<SpriteBone>();
         }
 
         public void SetBones(GUID guid, List<SpriteBone> bones)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spriteBone = bones;
         }
@@ -88,10 +88,10 @@ namespace UnityEditor.U2D.PSD
     {
         public List<Vector2[]> GetOutlines(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
 
-            var outline = sprite.spriteOutline;
+            List<SpriteOutline> outline = sprite.spriteOutline;
             if (outline != null)
                 return outline.Select(x => x.outline).ToList();
             return new List<Vector2[]>();
@@ -99,9 +99,9 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).spriteOutline = data.Select(x => new SpriteOutline() {outline = x}).ToList();
+                ((SpriteMetaData)sprite).spriteOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
         }
 
         public float GetTessellationDetail(GUID guid)
@@ -111,7 +111,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -121,9 +121,9 @@ namespace UnityEditor.U2D.PSD
     {
         public List<Vector2[]> GetOutlines(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
-            var outline = sprite.spritePhysicsOutline;
+            List<SpriteOutline> outline = sprite.spritePhysicsOutline;
             if (outline != null)
                 return outline.Select(x => x.outline).ToList();
 
@@ -132,7 +132,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).spritePhysicsOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
         }
@@ -144,7 +144,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).tessellationDetail = value;
         }
@@ -154,9 +154,9 @@ namespace UnityEditor.U2D.PSD
     {
         public Vertex2DMetaData[] GetVertices(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
-            var v = sprite.vertices;
+            List<Vertex2DMetaData> v = sprite.vertices;
             if (v != null)
                 return v.ToArray();
 
@@ -165,16 +165,16 @@ namespace UnityEditor.U2D.PSD
 
         public void SetVertices(GUID guid, Vertex2DMetaData[] vertices)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).vertices = vertices.ToList();
         }
 
         public int[] GetIndices(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
-            var v = sprite.indices;
+            int[] v = sprite.indices;
             if (v != null)
                 return v;
 
@@ -183,16 +183,16 @@ namespace UnityEditor.U2D.PSD
 
         public void SetIndices(GUID guid, int[] indices)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).indices = indices;
         }
 
         public Vector2Int[] GetEdges(GUID guid)
         {
-            var sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
+            SpriteMetaData sprite = ((SpriteMetaData)dataProvider.GetSpriteData(guid));
             Assert.IsNotNull(sprite, string.Format("Sprite not found for GUID:{0}", guid.ToString()));
-            var v = sprite.edges;
+            Vector2Int[] v = sprite.edges;
             if (v != null)
                 return v;
 
@@ -201,7 +201,7 @@ namespace UnityEditor.U2D.PSD
 
         public void SetEdges(GUID guid, Vector2Int[] edges)
         {
-            var sprite = dataProvider.GetSpriteData(guid);
+            SpriteRect sprite = dataProvider.GetSpriteData(guid);
             if (sprite != null)
                 ((SpriteMetaData)sprite).edges = edges;
         }
@@ -246,8 +246,8 @@ namespace UnityEditor.U2D.PSD
             if (groupDictIndex.ContainsKey(parentIndex))
                 return groupDictIndex[parentIndex];
 
-            var groupParentIndex = ParentGroupInFlatten(groupDictIndex, groups, psdLayers[parentIndex].parentIndex, psdLayers);
-            var newGroup = new CharacterGroup()
+            int groupParentIndex = ParentGroupInFlatten(groupDictIndex, groups, psdLayers[parentIndex].parentIndex, psdLayers);
+            CharacterGroup newGroup = new CharacterGroup()
             {
                 name = psdLayers[parentIndex].name,
                 parentGroup = groupParentIndex,
@@ -261,8 +261,8 @@ namespace UnityEditor.U2D.PSD
 
         bool GenerateNodeForGroup(int index, List<PSDLayer> psdLayers)
         {
-            var layer = psdLayers[index];
-            var parentGroup = true;
+            PSDLayer layer = psdLayers[index];
+            bool parentGroup = true;
             if (layer.parentIndex >= 0)
                 parentGroup = GenerateNodeForGroup(layer.parentIndex, psdLayers);
             return psdLayers[index].isGroup && !psdLayers[index].flatten && parentGroup;
@@ -270,31 +270,31 @@ namespace UnityEditor.U2D.PSD
 
         public CharacterData GetCharacterData()
         {
-            var psdLayers = dataProvider.GetPSDLayers();
-            var groupDictionaryIndex = new Dictionary<int, int>();
-            var groups = new List<CharacterGroup>();
+            List<PSDLayer> psdLayers = dataProvider.GetPSDLayers();
+            Dictionary<int, int> groupDictionaryIndex = new Dictionary<int, int>();
+            List<CharacterGroup> groups = new List<CharacterGroup>();
 
-            var cd = dataProvider.characterData;
+            CharacterData cd = dataProvider.characterData;
             cd.pivot = dataProvider.GetDocumentPivot();
-            var parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
-            var spriteRects = dataProvider.GetSpriteMetaData();
+            List<CharacterPart> parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
+            SpriteMetaData[] spriteRects = dataProvider.GetSpriteMetaData();
             parts.RemoveAll(x => Array.FindIndex(spriteRects, y => y.spriteID == new GUID(x.spriteId)) == -1);
-            foreach (var spriteMetaData in spriteRects)
+            foreach (SpriteMetaData spriteMetaData in spriteRects)
             {
-                var srIndex = parts.FindIndex(x => new GUID(x.spriteId) == spriteMetaData.spriteID);
+                int srIndex = parts.FindIndex(x => new GUID(x.spriteId) == spriteMetaData.spriteID);
                 CharacterPart cp = srIndex == -1 ? new CharacterPart() : parts[srIndex];
                 cp.spriteId = spriteMetaData.spriteID.ToString();
                 cp.order = psdLayers.FindIndex(l => l.spriteID == spriteMetaData.spriteID);
 
                 cp.spritePosition = new RectInt();
 
-                var spritePos = spriteMetaData.spritePosition;
+                Vector2 spritePos = spriteMetaData.spritePosition;
                 cp.spritePosition.position = new Vector2Int((int)spritePos.x, (int)spritePos.y);
 
                 cp.spritePosition.size = new Vector2Int((int)spriteMetaData.rect.width, (int)spriteMetaData.rect.height);
                 cp.parentGroup = -1;
                 //Find group
-                var spritePSDLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteMetaData.spriteID);
+                PSDLayer spritePSDLayer = psdLayers.FirstOrDefault(x => x.spriteID == spriteMetaData.spriteID);
                 if (spritePSDLayer != null)
                 {
                     cp.parentGroup = ParentGroupInFlatten(groupDictionaryIndex, groups, spritePSDLayer.parentIndex, psdLayers);

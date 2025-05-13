@@ -43,7 +43,7 @@ namespace PhotoshopFile
 
             // Pin the entire buffer now, so that we don't keep pinning and unpinning
             // for each RLE packet.
-            var ptrBuffer = buffer;
+            byte[] ptrBuffer = buffer;
             //fixed (byte* ptrBuffer = &buffer[0])
             {
                 int bytesLeft = count;
@@ -51,12 +51,12 @@ namespace PhotoshopFile
                 while (bytesLeft > 0)
                 {
                     // ReadByte returns an unsigned byte, but we want a signed byte.
-                    var flagCounter = unchecked((sbyte)stream.ReadByte());
+                    sbyte flagCounter = unchecked((sbyte)stream.ReadByte());
 
                     // Raw packet
                     if (flagCounter > 0)
                     {
-                        var readLength = flagCounter + 1;
+                        int readLength = flagCounter + 1;
                         if (bytesLeft < readLength)
                             throw new RleException("Raw packet overruns the decode window.");
 
@@ -68,8 +68,8 @@ namespace PhotoshopFile
                     // RLE packet
                     else if (flagCounter > -128)
                     {
-                        var runLength = 1 - flagCounter;
-                        var byteValue = (byte)stream.ReadByte();
+                        int runLength = 1 - flagCounter;
+                        byte byteValue = (byte)stream.ReadByte();
                         if (runLength > bytesLeft)
                             throw new RleException("RLE packet overruns the decode window.");
 

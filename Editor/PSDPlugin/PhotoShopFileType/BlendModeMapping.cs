@@ -16,10 +16,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-
 using PaintDotNet;
-using PhotoshopFile;
 using PDNWrapper;
+using PhotoshopFile;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {

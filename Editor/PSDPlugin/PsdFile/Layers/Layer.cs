@@ -18,11 +18,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using PDNWrapper;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using PDNWrapper;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -40,7 +40,7 @@ namespace PhotoshopFile
 
         public bool IsGroup { get; set; }
         public bool IsEndGroupMarker { get; set; }
-        public Layer ParentLayer {get; set; }
+        public Layer ParentLayer { get; set; }
         // ID from Key "lyid"
         public int LayerID { get; set; }
 
@@ -151,14 +151,14 @@ namespace PhotoshopFile
             int numberOfChannels = reader.ReadUInt16();
             for (int channel = 0; channel < numberOfChannels; channel++)
             {
-                var ch = new Channel(reader, this);
+                Channel ch = new Channel(reader, this);
                 Channels.Add(ch);
             }
 
             //-----------------------------------------------------------------------
             //
 
-            var signature = reader.ReadAsciiChars(4);
+            string signature = reader.ReadAsciiChars(4);
             if (signature != "8BIM")
                 throw (new PsdInvalidException("Invalid signature in layer header."));
 
@@ -166,7 +166,7 @@ namespace PhotoshopFile
             Opacity = reader.ReadByte();
             Clipping = reader.ReadBoolean();
 
-            var flagsByte = reader.ReadByte();
+            byte flagsByte = reader.ReadByte();
             flags = new BitVector32(flagsByte);
             reader.ReadByte(); //padding
 
@@ -174,8 +174,8 @@ namespace PhotoshopFile
 
             // This is the total size of the MaskData, the BlendingRangesData, the
             // Name and the AdjustmentLayerInfo.
-            var extraDataSize = reader.ReadUInt32();
-            var extraDataStartPosition = reader.BaseStream.Position;
+            uint extraDataSize = reader.ReadUInt32();
+            long extraDataStartPosition = reader.BaseStream.Position;
 
             Masks = new MaskInfo(reader, this);
             BlendingRangesData = new BlendingRanges(reader, this);
@@ -187,11 +187,11 @@ namespace PhotoshopFile
             long adjustmentLayerEndPos = extraDataStartPosition + extraDataSize;
             while (reader.BaseStream.Position < adjustmentLayerEndPos)
             {
-                var layerInfo = LayerInfoFactory.Load(reader, this.PsdFile, false, adjustmentLayerEndPos);
+                LayerInfo layerInfo = LayerInfoFactory.Load(reader, this.PsdFile, false, adjustmentLayerEndPos);
                 AdditionalInfo.Add(layerInfo);
             }
 
-            foreach (var adjustmentInfo in AdditionalInfo)
+            foreach (LayerInfo adjustmentInfo in AdditionalInfo)
             {
                 switch (adjustmentInfo.Key)
                 {
@@ -216,14 +216,14 @@ namespace PhotoshopFile
         /// </summary>
         public void CreateMissingChannels()
         {
-            var channelCount = this.PsdFile.ColorMode.MinChannelCount();
+            short channelCount = this.PsdFile.ColorMode.MinChannelCount();
             for (short id = 0; id < channelCount; id++)
             {
                 if (!this.Channels.ContainsId(id))
                 {
-                    var size = this.Rect.Height * this.Rect.Width;
+                    int size = this.Rect.Height * this.Rect.Width;
 
-                    var ch = new Channel(id, this);
+                    Channel ch = new Channel(id, this);
                     ch.ImageData = new NativeArray<byte>(size, Allocator.TempJob);
                     unsafe
                     {
@@ -235,6 +235,6 @@ namespace PhotoshopFile
         }
 
         ///////////////////////////////////////////////////////////////////////////
-        
+
     }
 }

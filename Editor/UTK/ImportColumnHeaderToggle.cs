@@ -17,7 +17,7 @@ namespace UnityEditor.U2D.PSD
             AddToClassList(ussClassName);
 
             focusable = false;
-            var checkbackBackground = new VisualElement()
+            VisualElement checkbackBackground = new VisualElement()
             {
                 name = "ImportColumnHeaderToggleCheckmarkBackground"
             };
@@ -35,7 +35,7 @@ namespace UnityEditor.U2D.PSD
             };
             m_DropdownButton.AddToClassList(dropdownClassName);
 
-            var arrow = new VisualElement();
+            VisualElement arrow = new VisualElement();
             arrow.AddToClassList("unity-icon-arrow");
             arrow.pickingMode = PickingMode.Ignore;
             m_DropdownButton.Add(arrow);
@@ -51,9 +51,9 @@ namespace UnityEditor.U2D.PSD
 
         public void SetHeaderImportToggleValue(bool b)
         {
-            if(m_Checkmark.value != b)
+            if (m_Checkmark.value != b)
                 m_Checkmark.SetValueWithoutNotify(b);
         }
     }
-    
+
 }

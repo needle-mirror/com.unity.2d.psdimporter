@@ -12,8 +12,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using PDNWrapper;
 using System.IO.Compression;
+using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
@@ -31,7 +31,7 @@ namespace PhotoshopFile.Compression
         {
             // 16-bitdepth images are delta-encoded word-by-word.  The deltas
             // are thus big-endian and must be reversed for further processing.
-            var zipRawImage = new ZipImage(zipData, size, 16);
+            ZipImage zipRawImage = new ZipImage(zipData, size, 16);
             zipImage = new EndianReverser(zipRawImage);
         }
 
@@ -64,15 +64,15 @@ namespace PhotoshopFile.Compression
             {
                 int rowOffset = Size.Width * i * size;
                 //UInt16* ptrDataRow = ptrData;
-                var ptrDataRowEnd = Size.Width - 1;
+                int ptrDataRowEnd = Size.Width - 1;
 
                 // Start with the last column in the row
                 while (ptrDataRowEnd > 0)
                 {
-                    var v = BitConverter.ToUInt16(ptrData, ptrDataRowEnd * size + rowOffset);
-                    var v1 = BitConverter.ToUInt16(ptrData, (ptrDataRowEnd - 1) * size + rowOffset);
+                    ushort v = BitConverter.ToUInt16(ptrData, ptrDataRowEnd * size + rowOffset);
+                    ushort v1 = BitConverter.ToUInt16(ptrData, (ptrDataRowEnd - 1) * size + rowOffset);
                     v -= v1;
-                    var b = BitConverter.GetBytes(v);
+                    byte[] b = BitConverter.GetBytes(v);
                     for (int c = 0; c < b.Length; ++c)
                     {
                         ptrData[ptrDataRowEnd * size + rowOffset + c] = b[c];
@@ -97,10 +97,10 @@ namespace PhotoshopFile.Compression
                 int start = 1;
                 while (start < Size.Width)
                 {
-                    var v = BitConverter.ToUInt16(ptrData, start * size + rowOffset);
-                    var v1 = BitConverter.ToUInt16(ptrData, (start - 1) * size + rowOffset);
+                    ushort v = BitConverter.ToUInt16(ptrData, start * size + rowOffset);
+                    ushort v1 = BitConverter.ToUInt16(ptrData, (start - 1) * size + rowOffset);
                     v += v1;
-                    var b = BitConverter.GetBytes(v);
+                    byte[] b = BitConverter.GetBytes(v);
                     for (int c = 0; c < b.Length; ++c)
                     {
                         ptrData[start * size + rowOffset + c] = b[c];

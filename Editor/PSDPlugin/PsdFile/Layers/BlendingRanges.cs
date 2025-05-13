@@ -44,7 +44,7 @@ namespace PhotoshopFile
             Util.DebugMessage(reader.BaseStream, "Load, Begin, BlendingRanges");
 
             Layer = layer;
-            var dataLength = reader.ReadInt32();
+            int dataLength = reader.ReadInt32();
             if (dataLength <= 0)
                 return;
 

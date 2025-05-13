@@ -13,9 +13,9 @@
 
 using System;
 using System.Diagnostics;
-using PDNWrapper;
 using System.IO;
 using System.Linq;
+using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
@@ -39,12 +39,12 @@ namespace PhotoshopFile.Compression
 
         internal override void Read(byte[] buffer)
         {
-            var rleStream = new MemoryStream(rleData);
-            var rleReader = new RleReader(rleStream);
-            var bufferIndex = 0;
+            MemoryStream rleStream = new MemoryStream(rleData);
+            RleReader rleReader = new RleReader(rleStream);
+            int bufferIndex = 0;
             for (int i = 0; i < Size.Height; i++)
             {
-                var bytesRead = rleReader.Read(buffer, bufferIndex, BytesPerRow);
+                int bytesRead = rleReader.Read(buffer, bufferIndex, BytesPerRow);
                 if (bytesRead != BytesPerRow)
                 {
                     throw new Exception("RLE row decompressed to unexpected length.");

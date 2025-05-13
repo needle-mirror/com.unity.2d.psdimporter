@@ -34,7 +34,7 @@ namespace UnityEditor.U2D.PSD
         }
 
     }
-    
+
     internal class PSDImporterLayerManagementMultiColumnTreeView : MultiColumnTreeView
     {
         int m_LastArraySize;
@@ -93,7 +93,7 @@ namespace UnityEditor.U2D.PSD
 
         public void Update()
         {
-            foreach (var c in columns)
+            foreach (Column c in columns)
             {
                 if (c is IColumnUpdate)
                 {
@@ -104,19 +104,20 @@ namespace UnityEditor.U2D.PSD
 
         List<TreeViewItemData<int>> BuildTree()
         {
-            var treeViewData = new List<TreeViewItemData<int>>();
+            List<TreeViewItemData<int>> treeViewData = new List<TreeViewItemData<int>>();
             layerImportSetting.serializedObject.Update();
             m_LastArraySize = layerImportSetting.arraySize;
-            var fileRoot = new PSDFileTreeViewNode(m_LayerManagementTreeViewData)
+            PSDFileTreeViewNode fileRoot = new PSDFileTreeViewNode(m_LayerManagementTreeViewData)
             {
-                id = 0, displayName = m_LayerManagementTreeViewData.assetName
+                id = 0,
+                displayName = m_LayerManagementTreeViewData.assetName
             };
 
             //fileRoot.icon = EditorGUIUtility.IconContent("Texture Icon").image as Texture2D;
-            var spWrapper = new List<PSDLayerImportSettingSerializedPropertyWrapper>();
+            List<PSDLayerImportSettingSerializedPropertyWrapper> spWrapper = new List<PSDLayerImportSettingSerializedPropertyWrapper>();
             if (layerImportSetting.arraySize > 0)
             {
-                var firstElement = layerImportSetting.GetArrayElementAtIndex(0);
+                SerializedProperty firstElement = layerImportSetting.GetArrayElementAtIndex(0);
                 for (int i = 0; i < layerImportSetting.arraySize; ++i)
                 {
                     spWrapper.Add(new PSDLayerImportSettingSerializedPropertyWrapper(firstElement, layerImportSetting, null, i));
@@ -125,12 +126,12 @@ namespace UnityEditor.U2D.PSD
             }
             if (importLayerData != null)
             {
-                PSDTreeViewNode[] nodes = new PSDTreeViewNode[importLayerData.Count+1];
+                PSDTreeViewNode[] nodes = new PSDTreeViewNode[importLayerData.Count + 1];
                 nodes[0] = fileRoot;
-                for(int i = 1; i <= importLayerData.Count; ++i)
+                for (int i = 1; i <= importLayerData.Count; ++i)
                 {
-                    var l = importLayerData[i-1];
-                    var importSettingIndex = spWrapper.FindIndex(x => layerMappingStrategy.Compare(x, l));
+                    PSDLayerData l = importLayerData[i - 1];
+                    int importSettingIndex = spWrapper.FindIndex(x => layerMappingStrategy.Compare(x, l));
                     PSDLayerImportSettingSerializedPropertyWrapper importSetting = null;
                     if (importSettingIndex < 0)
                     {
@@ -149,7 +150,7 @@ namespace UnityEditor.U2D.PSD
                         nodes[i] = new PSDGroupTreeViewNode(l, i, importSetting);
                     else
                         nodes[i] = new PSDLayerTreeViewNode(l, i, importSetting);
-                    var node = nodes[i];
+                    PSDTreeViewNode node = nodes[i];
 
                     node.disable = !node.layer.isVisible;
                     while (node.layer.parentIndex != -1 && nodes[i].disable == false)
@@ -159,10 +160,10 @@ namespace UnityEditor.U2D.PSD
                             nodes[i].disable = true;
                         }
 
-                        node = nodes[node.layer.parentIndex+1];
+                        node = nodes[node.layer.parentIndex + 1];
                     }
                 }
-                foreach (var node in nodes)
+                foreach (PSDTreeViewNode node in nodes)
                 {
                     PSDTreeViewNode rootTreeViewNode = null;
                     if (node.layer == null)
@@ -173,7 +174,7 @@ namespace UnityEditor.U2D.PSD
                     }
                     else
                     {
-                        rootTreeViewNode = nodes[node.layer.parentIndex+1];
+                        rootTreeViewNode = nodes[node.layer.parentIndex + 1];
                     }
                     rootTreeViewNode.AddChild(node);
                 }
@@ -189,7 +190,7 @@ namespace UnityEditor.U2D.PSD
 
         public PSDTreeViewNode GetFromIndex(int i)
         {
-            var e = GetItemDataForIndex<int>(i);
+            int e = GetItemDataForIndex<int>(i);
             return m_Data[e];
         }
     }

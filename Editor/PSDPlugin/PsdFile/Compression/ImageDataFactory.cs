@@ -27,7 +27,7 @@ namespace PhotoshopFile.Compression
         ///   image data is to be compressed.</param>
         public static ImageData Create(Channel channel, byte[] data)
         {
-            var bitDepth = channel.Layer.PsdFile.BitDepth;
+            int bitDepth = channel.Layer.PsdFile.BitDepth;
             ImageData imageData;
             switch (channel.ImageCompression)
             {

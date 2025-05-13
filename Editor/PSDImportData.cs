@@ -64,8 +64,8 @@ namespace UnityEditor.U2D.PSD
 
         public void CreatePSDLayerData(List<BitmapLayer> bitmapLayer)
         {
-            var layerData = new List<PSDLayerData>();
-            foreach (var fileLayer in bitmapLayer)
+            List<PSDLayerData> layerData = new List<PSDLayerData>();
+            foreach (BitmapLayer fileLayer in bitmapLayer)
             {
                 CreatePSDLayerData(fileLayer, layerData);
             }
@@ -84,7 +84,7 @@ namespace UnityEditor.U2D.PSD
                 layerSizeOnFile = new Vector2Int(layer.documentRect.Width, layer.documentRect.Height)
             });
             parentIndex = layerData.Count - 1;
-            foreach (var fileLayer in layer.ChildLayer)
+            foreach (BitmapLayer fileLayer in layer.ChildLayer)
             {
                 CreatePSDLayerData(fileLayer, layerData, parentIndex);
             }
@@ -102,7 +102,7 @@ namespace UnityEditor.U2D.PSD
     /// Capture per layer import settings
     /// </summary>
     [Serializable]
-    class PSDLayerImportSetting: IPSDLayerMappingStrategyComparable
+    class PSDLayerImportSetting : IPSDLayerMappingStrategyComparable
     {
         [SerializeField]
         string m_SpriteId;

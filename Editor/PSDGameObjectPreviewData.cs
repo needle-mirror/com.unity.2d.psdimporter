@@ -21,7 +21,7 @@ namespace UnityEditor.U2D.PSD
         GameObject m_PivotInstance;
         GameObject m_Root;
         Rect m_DocumentPivot;
-        
+
         public PSDGameObjectPreviewData(GameObject assetPrefab, bool showPivot, Rect documentPivot)
         {
             m_RenderUtility = new PreviewRenderUtility();
@@ -30,8 +30,8 @@ namespace UnityEditor.U2D.PSD
             m_Root = new GameObject();
             m_PreviewObject = GameObject.Instantiate(assetPrefab, Vector3.zero, Quaternion.identity);
             m_PreviewObject.transform.parent = m_Root.transform;
-            var renderableBounds = GetRenderableBounds(m_PreviewObject);
-            var axisScale = Math.Max(renderableBounds.extents.x, m_RenderableBounds.extents.y) * 0.5f;
+            Bounds renderableBounds = GetRenderableBounds(m_PreviewObject);
+            float axisScale = Math.Max(renderableBounds.extents.x, m_RenderableBounds.extents.y) * 0.5f;
             GameObject pivotGO = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.unity.2d.psdimporter/Editor/Assets/pivot.fbx");
             m_PivotInstance = GameObject.Instantiate(pivotGO, Vector3.zero, Quaternion.identity);
             m_PivotInstance.transform.localScale = new Vector3(axisScale, axisScale, axisScale);
@@ -40,11 +40,11 @@ namespace UnityEditor.U2D.PSD
             m_DocumentPivot = documentPivot;
             m_RenderUtility.AddSingleGO(m_Root);
         }
-        
+
         static Vector2 Drag2D(Vector2 scrollPosition, Rect position)
         {
             int controlId = GUIUtility.GetControlID(s_SliderHash, FocusType.Passive);
-            var current = Event.current;
+            Event current = Event.current;
             switch (current.GetTypeForControl(controlId))
             {
                 case UnityEngine.EventType.MouseDown:
@@ -74,7 +74,7 @@ namespace UnityEditor.U2D.PSD
             }
             return scrollPosition;
         }
-        
+
         public void DrawPreview(Rect r, GUIStyle background, Vector2 offset, bool showPivot)
         {
             if (!ShaderUtil.hardwareSupportsRectRenderTexture)
@@ -85,7 +85,7 @@ namespace UnityEditor.U2D.PSD
             }
             else
             {
-                
+
                 Vector2 vector2 = Drag2D(m_PreviewDir, r);
                 if (vector2 != m_PreviewDir)
                 {
@@ -119,7 +119,7 @@ namespace UnityEditor.U2D.PSD
                     m_Texture = null;
                     m_PreviewRect = r;
                 }
-                
+
                 if (m_Texture == null)
                 {
                     m_PreviewObject.transform.position = m_ShowPivot ? new Vector2(-m_DocumentPivot.x, -m_DocumentPivot.y) - m_GameObjectOffset : Vector2.zero;
@@ -127,7 +127,7 @@ namespace UnityEditor.U2D.PSD
                     DoRenderPreview();
                     m_Texture = m_RenderUtility.EndPreview();
                 }
-                
+
                 GUI.DrawTexture(r, m_Texture, ScaleMode.StretchToFill, false);
             }
         }
@@ -155,36 +155,36 @@ namespace UnityEditor.U2D.PSD
                 GL.LoadProjectionMatrix(m_RenderUtility.camera.projectionMatrix);
                 Handles.color = Color.white;
 
-                var p = (Vector2)m_PreviewObject.transform.position;
+                Vector2 p = (Vector2)m_PreviewObject.transform.position;
                 Handles.DrawLine(m_DocumentPivot.min + p, new Vector2(m_DocumentPivot.min.x, m_DocumentPivot.max.y) + p);
                 Handles.DrawLine(m_DocumentPivot.min + p, new Vector2(m_DocumentPivot.max.x, m_DocumentPivot.min.y) + p);
                 Handles.DrawLine(m_DocumentPivot.max + p, new Vector2(m_DocumentPivot.min.x, m_DocumentPivot.max.y) + p);
                 Handles.DrawLine(m_DocumentPivot.max + p, new Vector2(m_DocumentPivot.max.x, m_DocumentPivot.min.y) + p);
-            
+
                 GL.End();
-                GL.PopMatrix();    
+                GL.PopMatrix();
             }
-            
+
             m_RenderUtility.Render(true);
         }
-        
+
         public static Bounds GetRenderableBounds(GameObject go)
         {
             Bounds bounds = new Bounds();
             if (go == null)
                 return bounds;
-            var renderers = new List<Renderer>();
+            List<Renderer> renderers = new List<Renderer>();
             go.GetComponentsInChildren(renderers);
             foreach (Renderer rendererComponents in renderers)
             {
                 if (bounds.extents == Vector3.zero)
                     bounds = rendererComponents.bounds;
-                else if(rendererComponents.enabled)
+                else if (rendererComponents.enabled)
                     bounds.Encapsulate(rendererComponents.bounds);
             }
             return bounds;
         }
-        
+
         public void Dispose()
         {
             if (m_Disposed)

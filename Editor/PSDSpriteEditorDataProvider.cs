@@ -127,7 +127,7 @@ namespace UnityEditor.U2D.PSD
             InitSpriteEditorDataProvider();
         }
 
-        void InitSpriteEditorDataProvider() {}
+        void InitSpriteEditorDataProvider() { }
 
         /// <summary>
         /// Implementation for ISpriteEditorDataProvider.GetSpriteRects.
@@ -161,13 +161,13 @@ namespace UnityEditor.U2D.PSD
 
         internal void SetSpriteRects(SpriteRect[] spriteRects)
         {
-            var spriteImportData = GetSpriteImportData();
+            System.Collections.Generic.List<SpriteMetaData> spriteImportData = GetSpriteImportData();
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
             {
                 spriteImportData.RemoveAll(data => spriteRects.FirstOrDefault(x => x.spriteID == data.spriteID) == null);
-                foreach (var sr in spriteRects)
+                foreach (SpriteRect sr in spriteRects)
                 {
-                    var importData = spriteImportData.FirstOrDefault(x => x.spriteID == sr.spriteID);
+                    SpriteMetaData importData = spriteImportData.FirstOrDefault(x => x.spriteID == sr.spriteID);
                     if (importData == null)
                         spriteImportData.Add(new SpriteMetaData(sr));
                     else

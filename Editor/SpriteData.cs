@@ -20,7 +20,7 @@ namespace UnityEditor.U2D.PSD
         public Vector2Int uvTransform = Vector2Int.zero;
         public Vector2 spritePosition;
 
-        public SpriteMetaData() {}
+        public SpriteMetaData() { }
 
         public SpriteMetaData(SpriteRect sr)
         {
@@ -84,7 +84,7 @@ namespace UnityEditor.U2D.PSD
 
         public static implicit operator UnityEditor.AssetImporters.SpriteImportData(SpriteMetaData value)
         {
-            var output = new UnityEditor.AssetImporters.SpriteImportData();
+            AssetImporters.SpriteImportData output = new UnityEditor.AssetImporters.SpriteImportData();
             output.name = value.name;
             output.alignment = value.alignment;
             output.rect = value.rect;

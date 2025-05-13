@@ -16,12 +16,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-
-using PhotoshopFile;
-using UnityEngine;
 using PDNWrapper;
+using PhotoshopFile;
 using Unity.Collections;
 using Unity.Jobs;
+using UnityEngine;
 
 namespace PaintDotNet.Data.PhotoshopFileType
 {
@@ -29,15 +28,15 @@ namespace PaintDotNet.Data.PhotoshopFileType
     {
         public static PsdFile Load(System.IO.Stream input, ELoadFlag loadFlag)
         {
-            var loadContext = new DocumentLoadContext();
+            DocumentLoadContext loadContext = new DocumentLoadContext();
             return new PsdFile(input, loadContext, loadFlag);
         }
-        
+
         public static Document Load(System.IO.Stream input)
         {
             // Load and decompress Photoshop file structures
-            var loadContext = new DocumentLoadContext();
-            var psdFile = new PsdFile(input, loadContext);
+            DocumentLoadContext loadContext = new DocumentLoadContext();
+            PsdFile psdFile = new PsdFile(input, loadContext);
 
             // Multichannel images are loaded by processing each channel as a
             // grayscale layer.
@@ -48,14 +47,14 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
 
             // Convert into Paint.NET internal representation
-            var document = new Document(psdFile.ColumnCount, psdFile.RowCount);
+            Document document = new Document(psdFile.ColumnCount, psdFile.RowCount);
 
             if (psdFile.Layers.Count == 0)
             {
                 psdFile.BaseLayer.CreateMissingChannels();
-                var layer = PDNWrapper.Layer.CreateBackgroundLayer(psdFile.ColumnCount, psdFile.RowCount);
+                BitmapLayer layer = PDNWrapper.Layer.CreateBackgroundLayer(psdFile.ColumnCount, psdFile.RowCount);
                 ImageDecoderPdn.DecodeImage(layer, psdFile.BaseLayer);
-                layer.Name = String.IsNullOrEmpty(psdFile.BaseLayer.Name)? "Background" : psdFile.BaseLayer.Name;
+                layer.Name = String.IsNullOrEmpty(psdFile.BaseLayer.Name) ? "Background" : psdFile.BaseLayer.Name;
                 layer.Opacity = psdFile.BaseLayer.Opacity;
                 layer.Visible = psdFile.BaseLayer.Visible;
                 layer.IsGroup = psdFile.BaseLayer.IsGroup;
@@ -80,7 +79,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 */
                 BitmapLayer parent = null;
                 JobHandle jobHandle = default(JobHandle);
-                foreach (var l in Enumerable.Reverse(psdFile.Layers))
+                foreach (PhotoshopFile.Layer l in Enumerable.Reverse(psdFile.Layers))
                 {
                     if (l.IsEndGroupMarker)
                     {
@@ -108,7 +107,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         internal static JobHandle DecodeToPdnLayer(this PhotoshopFile.Layer psdLayer, JobHandle inputDeps, out BitmapLayer pdnLayer)
         {
             psdLayer.CreateMissingChannels();
-            
+
             pdnLayer = new BitmapLayer(psdLayer.Rect);
             pdnLayer.Name = psdLayer.Name;
             pdnLayer.Opacity = psdLayer.Opacity;
@@ -130,17 +129,17 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 throw new PsdInvalidException("Multichannel image should not have layers.");
 
             // Get alpha channel names, preferably in Unicode.
-            var alphaChannelNames = (AlphaChannelNames)psdFile.ImageResources
+            AlphaChannelNames alphaChannelNames = (AlphaChannelNames)psdFile.ImageResources
                 .Get(ResourceID.AlphaChannelNames);
-            var unicodeAlphaNames = (UnicodeAlphaNames)psdFile.ImageResources
+            UnicodeAlphaNames unicodeAlphaNames = (UnicodeAlphaNames)psdFile.ImageResources
                 .Get(ResourceID.UnicodeAlphaNames);
             if ((alphaChannelNames == null) && (unicodeAlphaNames == null))
                 throw new PsdInvalidException("No channel names found.");
 
-            var channelNames = (unicodeAlphaNames != null)
+            List<string> channelNames = (unicodeAlphaNames != null)
                 ? unicodeAlphaNames.ChannelNames
                 : alphaChannelNames.ChannelNames;
-            var channels = psdFile.BaseLayer.Channels;
+            ChannelList channels = psdFile.BaseLayer.Channels;
             if (channels.Count > channelNames.Count)
                 throw new PsdInvalidException("More channels than channel names.");
 
@@ -148,11 +147,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // bottom to top.
             for (int i = channels.Count - 1; i >= 0; i--)
             {
-                var channel = channels[i];
-                var channelName = channelNames[i];
+                Channel channel = channels[i];
+                string channelName = channelNames[i];
 
                 // Copy metadata over from base layer
-                var layer = new PhotoshopFile.Layer(psdFile);
+                PhotoshopFile.Layer layer = new PhotoshopFile.Layer(psdFile);
                 layer.Rect = psdFile.BaseLayer.Rect;
                 layer.Visible = true;
                 layer.Masks = new MaskInfo();
@@ -165,7 +164,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 layer.Opacity = 255;
 
                 // Copy channel image data into the new grayscale layer
-                var layerChannel = new Channel(0, layer);
+                Channel layerChannel = new Channel(0, layer);
                 layerChannel.ImageCompression = channel.ImageCompression;
                 layerChannel.ImageData = new NativeArray<byte>(channel.ImageData, Allocator.Persistent);
                 layer.Channels.Add(layerChannel);
@@ -189,11 +188,11 @@ namespace PaintDotNet.Data.PhotoshopFileType
             // Track the depth of the topmost hidden section.  Any nested sections
             // will be hidden, whether or not they themselves have the flag set.
             int topHiddenSectionDepth = Int32.MaxValue;
-            var layerSectionNames = new Stack<string>();
+            Stack<string> layerSectionNames = new Stack<string>();
 
             // Layers are stored bottom-to-top, but layer sections are specified
             // top-to-bottom.
-            foreach (var layer in Enumerable.Reverse(layers))
+            foreach (PhotoshopFile.Layer layer in Enumerable.Reverse(layers))
             {
                 // Leo: Since we are importing, we don't care if the group is collapsed
                 // Apply to all layers within the layer section, as well as the
@@ -201,7 +200,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
                 //if (layerSectionNames.Count > topHiddenSectionDepth)
                 //    layer.Visible = false;
 
-                var sectionInfo = (LayerSectionInfo)layer.AdditionalInfo
+                LayerSectionInfo sectionInfo = (LayerSectionInfo)layer.AdditionalInfo
                     .SingleOrDefault(x => x is LayerSectionInfo);
                 if (sectionInfo == null)
                     continue;

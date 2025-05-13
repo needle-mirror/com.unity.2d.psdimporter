@@ -34,7 +34,7 @@ namespace PhotoshopFile.Compression
         {
             imageData.Read(buffer);
 
-            var numPixels = Size.Width * Size.Height;
+            int numPixels = Size.Width * Size.Height;
             if (numPixels == 0)
             {
                 return;

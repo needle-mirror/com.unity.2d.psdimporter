@@ -13,27 +13,27 @@ namespace UnityEditor.U2D.PSD
 
         public void Init(PSDImporter importer, IList<TextureImporterPlatformSettings> platformSettingsNeeded)
         {
-            var importerPlatformSettings = importer.GetAllPlatformSettings();
-            
+            TextureImporterPlatformSettings[] importerPlatformSettings = importer.GetAllPlatformSettings();
+
             for (int i = 0; i < importerPlatformSettings.Length; ++i)
             {
-                var tip = importerPlatformSettings[i];
-                var setting = platformSettings.FirstOrDefault(x => x.name == tip.name);
+                TextureImporterPlatformSettings tip = importerPlatformSettings[i];
+                TextureImporterPlatformSettings setting = platformSettings.FirstOrDefault(x => x.name == tip.name);
                 if (setting == null)
                 {
                     platformSettings.Add(tip);
                 }
             }
 
-            foreach (var ps in platformSettingsNeeded)
+            foreach (TextureImporterPlatformSettings ps in platformSettingsNeeded)
             {
-                var setting = platformSettings.FirstOrDefault(x => x.name == ps.name);
+                TextureImporterPlatformSettings setting = platformSettings.FirstOrDefault(x => x.name == ps.name);
                 if (setting == null)
                 {
                     platformSettings.Add(ps);
                 }
             }
         }
-    }    
+    }
 }
 

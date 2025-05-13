@@ -12,8 +12,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using PDNWrapper;
 using System.IO.Compression;
+using PDNWrapper;
 
 namespace PhotoshopFile.Compression
 {
@@ -39,10 +39,10 @@ namespace PhotoshopFile.Compression
         /// </summary>
         public virtual byte[] Read()
         {
-            var imageLongLength = (long)BytesPerRow * Size.Height;
+            long imageLongLength = (long)BytesPerRow * Size.Height;
             Util.CheckByteArrayLength(imageLongLength);
 
-            var buffer = new byte[imageLongLength];
+            byte[] buffer = new byte[imageLongLength];
             Read(buffer);
             return buffer;
         }

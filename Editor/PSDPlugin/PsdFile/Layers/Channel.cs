@@ -17,10 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PDNWrapper;
 using System.Linq;
-using Unity.Collections;
+using PDNWrapper;
 using PhotoshopFile.Compression;
+using Unity.Collections;
 
 namespace PhotoshopFile
 {
@@ -38,9 +38,9 @@ namespace PhotoshopFile
         /// </remarks>
         public Channel[] ToIdArray()
         {
-            var maxId = this.Max(x => x.ID);
-            var idArray = new Channel[maxId + 1];
-            foreach (var channel in this)
+            short maxId = this.Max(x => x.ID);
+            Channel[] idArray = new Channel[maxId + 1];
+            foreach (Channel channel in this)
             {
                 if (channel.ID >= 0)
                     idArray[channel.ID] = channel;
@@ -156,7 +156,7 @@ namespace PhotoshopFile
 
             Util.DebugMessage(reader.BaseStream, "Load, End, Channel, {0}", ID);
         }
-        
+
         internal void Cleanup()
         {
             if (ImageData.IsCreated)
@@ -175,11 +175,11 @@ namespace PhotoshopFile
                 return;
             }
 
-            var endPosition = reader.BaseStream.Position + this.Length;
+            long endPosition = reader.BaseStream.Position + this.Length;
             ImageCompression = (ImageCompression)reader.ReadInt16();
-            var longDataLength = this.Length - 2;
+            long longDataLength = this.Length - 2;
             Util.CheckByteArrayLength(longDataLength);
-            var dataLength = (int)longDataLength;
+            int dataLength = (int)longDataLength;
 
             switch (ImageCompression)
             {
@@ -189,7 +189,7 @@ namespace PhotoshopFile
                 case ImageCompression.Rle:
                     // RLE row lengths
                     RleRowLengths = new RleRowLengths(reader, Rect.Height, Layer.PsdFile.IsLargeDocument);
-                    var rleDataLength = (int)(endPosition - reader.BaseStream.Position);
+                    int rleDataLength = (int)(endPosition - reader.BaseStream.Position);
                     Debug.Assert(rleDataLength == RleRowLengths.Total,
                     "RLE row lengths do not sum to length of channel image data.");
 
@@ -220,10 +220,10 @@ namespace PhotoshopFile
                 return;
             }
 
-            var image = ImageDataFactory.Create(this, ImageDataRaw);
-            var longLength = (long)image.BytesPerRow * Rect.Height;
+            ImageData image = ImageDataFactory.Create(this, ImageDataRaw);
+            long longLength = (long)image.BytesPerRow * Rect.Height;
             Util.CheckByteArrayLength(longLength);
-            var LocalImageData = new byte[longLength];
+            byte[] LocalImageData = new byte[longLength];
             image.Read(LocalImageData);
             ImageData = new NativeArray<byte>(LocalImageData, Allocator.TempJob);
             ImageDataRaw = null; // no longer needed.
