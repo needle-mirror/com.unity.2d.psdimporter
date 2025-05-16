@@ -16,7 +16,6 @@ The Settings tab allows you to customize how the PSD Importer imports a file. Th
 | **Automatic Reslice**    | This is available only when the **Import Mode** is set to [Individual Sprites (Mosaic)](#Mosaic). Enable this setting to regenerate the Sprite from the imported layers and clear any changes you have made to the Sprite and its metadata. |
 
 #### Automatic Reslice
-
 Enable this setting to discard all user modifications for the current set of [SpriteRect](https://docs.unity3d.com/Packages/com.unity.2d.sprite@1.0/api/UnityEditor.SpriteRect.html) data and regenerate all SpriteRects based on the current source file. Extra SpriteRect metadata (such as weights and bones data) persist if they remain valid with the regenerated SpriteRects.
 
 ### Layer Import
@@ -33,7 +32,6 @@ The following section is only available if the **Texture Type** is set to **Mult
 | **Sprite Padding** | Settings to increase the size of each Sprite's rect in the texture when **Import Mode** is set to **Individual Sprites (Mosaic)**. |
 
 #### <a name="Mosaic"></a>Individual Sprites (Mosaic)
-
 Enable this to have the PSD Importer attempt to create a Texture with each layer from the source file laid out in a mosaic manner.
 
 ![Left: A character sprite. Right: The Sprite Editor window, with the parts of the character arranged in one texture.](images/individual-sprites-mosaic-22.2.png)<br/>Individual layers are imported as separate Sprites merged into a single Texture in the form of a mosaic.
@@ -66,8 +64,8 @@ This section is only available if the **Texture Type** is set to **Multiple**, *
 | [Main Skeleton](#main-skeleton)  | This is only available when **Use as Rig** is enabled. Assign the **Skeleton Asset** that this character Prefab’s bone hierarchy will reference. If no Skeleton Asset is assigned, the importer will automatically generate a Skeleton Asset as a sub-Asset of this character. The Skeleton Asset contains the bone hierarchy of the Asset that was defined in the 2D Animation package's [Skinning Editor](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinningEditor.html) (refer to [Skeleton Sharing](http://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest?subfolder=/manual/skeleton-sharing.html) for more information).|
 | **Pivot**   | This is only available when **Use as Rig** is enabled. Select the pivot point of the Sprite. The options are: <ul><li>**Custom:** Define the X and Y coordinates of a custom Pivot location.</li> <li>**(All location choices):** Select the location where you want to place the pivot on the Sprite from the dropdown menu.</li></ul> |
 
-#### Use as Rig
 
+#### Use as Rig
 Enable this property to have the PSD Importer generate a Prefab containing Sprites based on the layers of the imported source file. The PSD Importer also automatically gives the Sprites an [Order in Layer](https://docs.unity3d.com/Manual/2DSorting.html) value that sorts them according to their positions in the layer hierarchy in the source file. As a result, the generated Prefab recreates the arrangement and appearance of the assets in the original source file as closely as possible.
 
 The name of each Sprite in the Prefab is the same as the source layer it is based on, unless a **name collision error** occurs, which is usually due to duplicate names in the source layers.
@@ -105,17 +103,17 @@ To import a hidden layer, select the **Include Hidden Layers** checkbox either i
 To batch select or deselect layers, you can use the drop down menu located at header of the Layer Importing column.
 ![The dropdown menu at the top of the left column. The properties are **Select All Visible Layers**, **Deselect All Visible Layers**, **Select All Hidden Layers**, and **Deselect All Hidden Layers**.](images/import-selection-dropdown-22.2.png)
 
-### Merge Groups
-The Photoshop layers in a Group can be merged into a single Sprite when imported. Hover the cursor over a Group Layer and the **Merge** icon appears on its left.
+### Collapsing Groups
+The Photoshop layers in a Group can be collapsed into a single Sprite when imported. Hover the cursor over a Group Layer and the **Collapse** icon appears on its left.
 
 Click the icon to indicate that the layers in the selected Group should be imported as a single Sprite.
 
-### Separate Groups
-Hovering over a Merged Group layer reveals the Separate icon (the arrow faces upwards).
+### Uncollapsing Groups
+Hovering over a Collapsed Group layer reveals the Uncollapse icon (the arrow faces upwards).
 
-Select the icon again to separate the Group layer and to import all Layers in the Group as separate Sprites.
+Select the icon again to uncollapse the Group layer and to import all Layers in the Group as separate Sprites.
 
 #### Subgroups within Group layers
-If a Group contains other Group layers and is merged, then the layers in the subgroups will also be merged into a single Sprite.
+If a Group contains other Group layers and is collapsed, then the layers in the subgroups will also be collapsed into a single Sprite.
 
-If a child Group is currently set to be merged, then the parent group will have separate icons indicating that are child Groups currently set to merge.
+If a child Group is currently set to be collapsed, then the parent group will have separate icons indicating that are child Groups currently set to collapse.

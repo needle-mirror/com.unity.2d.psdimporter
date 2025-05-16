@@ -1,13 +1,15 @@
 # Changelog
 
-## [10.1.1] - 2025-05-13
+## [11.0.0] - 2025-05-16
+### Changed
+- Update minimum Unity version.
+
 ### Fixed
-- Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
 - Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)
 - Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)
 - Fixed a typo in settings. (Case DANB-891)
 - Fixed case where "Mip Map Preserve Coverage" is cut off in the Inspector window. (Case DANB-892)
-- doc: fix headings and incorrect links in the PSDImporter properties page 
+- doc: fix headings and incorrect links in the PSDImporter properties page
 
 ## [10.1.0] - 2025-03-07
 ### Fixed
@@ -15,7 +17,7 @@
 - Properly expose Tilemap related APIs in the PSDImporter.
 
 ## [10.0.0] - 2024-12-09
-### Added 
+### Added
 - Added support for Sprite Frame Editing capabilities where data that are from the source file are locked by default.
 - Added new ability to generate Tile asset and Tile Palette from PSDImporter.
 
@@ -54,9 +56,9 @@
 - PSD Importer no longer depends on 2D Animation.
 
 ### Fixed
-- Improved import speed and memory allocation for psd/psb files by reducing the intermediate texture buffers. 
+- Improved import speed and memory allocation for psd/psb files by reducing the intermediate texture buffers.
 - Fixed exception when showing PSDImporter inspector. (Case DANB-195)
-- Fixed a case where a .psd/.psb would not import with the correct layer coordinates. 
+- Fixed a case where a .psd/.psb would not import with the correct layer coordinates.
 
 ## [8.0.0-pre.3] - 2022-05-31
 ### Changed
