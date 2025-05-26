@@ -315,7 +315,7 @@ namespace UnityEditor.U2D.PSD
             };
             m_LayerManagementTreeView.RegisterCallback<AttachToPanelEvent>(OnTreeViewAttachedToPanel);
 
-            m_ApplyRevertGUIVisualElement = new IMGUIContainer(ApplyRevertGUIVisualElement)
+            m_ApplyRevertGUIVisualElement = new IMGUIContainer(ApplyRevertGUI)
             {
                 name = "LayerManagementApplyRevertGUI",
                 style =
@@ -351,13 +351,6 @@ namespace UnityEditor.U2D.PSD
             //     m_LayerManagementTreeView.style.height = h;
             //     m_LayerManagementTreeView.MarkDirtyRepaint();
             // }
-        }
-
-        void ApplyRevertGUIVisualElement()
-        {
-            serializedObject.ApplyModifiedProperties();
-            extraDataSerializedObject.ApplyModifiedProperties();
-            ApplyRevertGUI();
         }
 
         void InitPreview()
@@ -425,8 +418,13 @@ namespace UnityEditor.U2D.PSD
         {
             serializedObject.Update();
             extraDataSerializedObject.Update();
+
             DoSettingsUI();
-            ApplyRevertGUIVisualElement();
+
+            serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
+
+            ApplyRevertGUI();
         }
 
         /// <summary>
@@ -513,8 +511,15 @@ namespace UnityEditor.U2D.PSD
 
         void DoLayerManagementUI()
         {
+            serializedObject.Update();
+            extraDataSerializedObject.Update();
+
             EditorGUILayout.PropertyField(m_ImportHiddenLayers, styles.importHiddenLayer);
             var headerRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+
+            serializedObject.ApplyModifiedProperties();
+            extraDataSerializedObject.ApplyModifiedProperties();
+
             if (Event.current.type == EventType.Repaint)
             {
                 GUIStyle header = "RL Header";
@@ -1463,7 +1468,7 @@ namespace UnityEditor.U2D.PSD
         /// Override of AssetImporterEditor.showImportedObject
         /// The property always returns false so that imported objects does not show up in the Inspector.
         /// </summary>
-        /// <returns>false</returns>
+        /// <value>false</value>
         public override bool showImportedObject
         {
             get { return false; }
@@ -1603,7 +1608,7 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent streamingMipMaps = EditorGUIUtility.TrTextContent("Mip Streaming", "Only load larger mipmaps as needed to render the current game cameras. Requires texture streaming to be enabled in quality settings.");
             public readonly GUIContent streamingMipmapsPriority = EditorGUIUtility.TrTextContent("Priority", "Mipmap streaming priority when there's contention for resources. Positive numbers represent higher priority. Valid range is -128 to 127.");
 #endif
-            public readonly GUIContent mipMapsPreserveCoverage = new GUIContent("Mip Maps Preserve Coverage", "The alpha channel of generated Mip Maps will preserve coverage during the alpha test.");
+            public readonly GUIContent mipMapsPreserveCoverage = new GUIContent("Preserve Coverage", "The alpha channel of generated Mip Maps will preserve coverage during the alpha test.");
             public readonly GUIContent alphaTestReferenceValue = new GUIContent("Alpha Cutoff Value", "The reference value used during the alpha test. Controls Mip Map coverage.");
             public readonly GUIContent mipMapFilter = new GUIContent("Mip Map Filtering");
             public readonly GUIContent[] mipMapFilterOptions =
@@ -1660,7 +1665,7 @@ namespace UnityEditor.U2D.PSD
 
             public readonly GUIContent advancedHeaderText = new GUIContent("Advanced", "Show advanced settings.");
 
-            public readonly GUIContent platformSettingsHeaderText  = new GUIContent("Platform Setttings");
+            public readonly GUIContent platformSettingsHeaderText = new GUIContent("Platform Settings");
 
             public readonly GUIContent[] platformSettingsSelection;
 

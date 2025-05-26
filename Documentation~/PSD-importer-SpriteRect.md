@@ -11,29 +11,25 @@ The SpriteRect defines the location of the Sprite on the Texture that Unity gene
 
 ### Moving the SpriteRect
 
-![](images/21_2-Fei-SpriteRect-head-original.png)<br/>Example 1: Original SpriteRect location of the ‘head’ Sprite on the combined Sprite sheet Texture.
-
-![](images/21_2-Fei-SpriteRect-head-moved.png) <br/>Example 2: Drag the corners of the SpriteRect to modify its dimensions and location, or enter the coordinates and dimensions in the Sprite panel.
+![A spritesheet with the parts of a character. The SpriteRect has been dragged from the original position of the head.](images/21_2-Fei-SpriteRect-head-moved.png) <br/>Drag the corners of the SpriteRect to modify its dimensions and location, or enter the coordinates and dimensions in the Sprite panel.
 
 A SpriteRect’s modified dimensions and location on the Texture is reflected for its respective Sprite in the Scene view.
 
-| ![](images/SpriteRect_table1.png)                            | ![](images/SpriteRect_table2.png)                            |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Original character prefab and its ‘head’ Sprite with unmodified SpriteRect data. | Character prefab with its ‘head’ Sprite’s SpriteRect data modified.|
+![Original character prefab and its ‘head’ Sprite with unmodified SpriteRect data.](images/SpriteRect_table1.png)
+Original character prefab and its ‘head’ Sprite with unmodified SpriteRect data.
+
+![Character prefab with its ‘head’ Sprite’s SpriteRect data modified.](images/SpriteRect_table2.png)
+Character prefab with its ‘head’ Sprite’s SpriteRect data modified. The head is now the set of sprites inside the SpriteRect at its new location on the spritesheet.
 
 ### SpriteRect follows the position of its source layer
 When you enable the [Individual Sprites (Mosaic)](PSD-importer-properties.html#IndiSpriteMosaic) importer setting, the PSD Importer arranges the different layers of the source file together to form a single combined Texture when it is imported. The importer generates a SpriteRect for each of these imported layers which follows the position of its associated layer wherever that layer is placed in the combined Mosaic Texture.
 
-![](images/21_2-Fei-SpriteRect-head-moved.png)<br/>Before example: The SpriteRect of the ‘head’ layer after moving its SpriteRect from its original position.
+![A spritesheet with the parts of a character. The SpriteRect for the head has been moved so it contains both the head and other sprites.](images/21_2-Fei-SpriteRect-head-moved.png)<br/>Before example: The SpriteRect of the ‘head’ layer after moving its SpriteRect from its original position.
 
-![](images/21_2-Fei-SpriteRect-head-moved-hidden.png)<br/>After example: Some of the layers are hidden in the source file before it is reimported into the Editor. The reimported Texture is different from the original, but the 'head' layer's SpriteRect follows its source layer to its placement in the new Texture.
+![A spritesheet with the head in the same position, but different sprites elsewhere. The SpriteRect is in the same position.](images/21_2-Fei-SpriteRect-head-moved-hidden.png)<br/>After example: Some of the layers are hidden in the source file before it is reimported into the Editor. The reimported Texture is different from the original, but the 'head' layer's SpriteRect follows its source layer to its placement in the new Texture.
 
 ### Resizing the source file or image
 Note that a SpriteRect’s size and position remains the same if you change the image or canvas size of its source layer in the source file. You must manually edit the size and position of the SpriteRect in the Sprite Editor, or select and apply the [Automatic Reslice](PSD-importer-properties.html#automatic-reslice) option to regenerate the SpriteRect completely from the source file.
-
-![](images/21_2-Fei-SpriteRect-head-original.png)<br/>Before example: Original position and size of the SpriteRect for the generated ‘head’ Sprite from the 'head' layer.
-
-![](images/21_2-Fei-SpriteRect-head-resized.png)<br/>After example: After increasing the size of the 'head' layer, the SpriteRect's position and size remains the same.
 
 SpriteRect data persists until you manually delete the SpriteRect, or select the **Automatic Reslice** option and apply it in the importer settings. When you do this, Unity discards all user modifications for the current set of SpriteRect data and regenerates all the SpriteRects from the current source file.
 
