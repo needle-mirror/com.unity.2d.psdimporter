@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.1.1] - 2025-06-03
+### Fixed
+- Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
+- Fixed case NullReferenceException is thrown when entering Play mode while PSD Importer Inspector is opened. (Case DANB-873)
+- Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)
+- Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)
+- Fixed a typo in settings. (Case DANB-891)
+- Fixed case where "Mip Map Preserve Coverage" is cut off in the Inspector window. (Case DANB-892)
+- doc: fix headings and incorrect links in the PSDImporter properties page
+
 ## [8.1.0] - 2025-03-19
 
 ### Changed

@@ -1,12 +1,12 @@
-#PSD Importer Inspector properties
-The PSD Importer is available after you import a .psb file into your Project. Select the .psb Asset file and set its **Texture Type** to [Sprite (2D and UI)](https://docs.unity3d.com/Manual/TextureTypes.html#Sprite). The PSD Importer properties are split between two main tabs, with the following properties available.
+# PSD Importer Inspector properties
+The PSD Importer is available after you import a .psb file into your Project. Select the .psb Asset file and set its **Texture Type** to [Sprite (2D and UI)](https://docs.unity3d.com/Manual/texture-type-sprite.html). The PSD Importer properties are split between two main tabs, with the following properties available.
 
 ![](images/psdimporter-properties-22.2.png) <br/>PSD Importer Inspector properties
 
-##Settings tab
+## Settings tab
 The Settings tab allows you to customize how the PSD Importer imports a file. The settings are categorized into individual section fold-outs.
 
-###General
+### General
 ![](images/psdimporter-properties-22.2-general.png)
 
 <table>    
@@ -19,7 +19,14 @@ The Settings tab allows you to customize how the PSD Importer imports a file. Th
   <tbody>
     <tr>
       <td rowspan="1"><strong>Texture Type</strong></td>
-      <td colspan="2">Select <a href="https://docs.unity3d.com/Manual/TextureTypes.html#Sprite"> Sprite (2D and UI)</a> to import the Texture as a <a href="https://docs.unity3d.com/Manual/Sprites.html">Sprite</a>. The is required to begin using the imported Texture with the <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/">2D Animation</a> package.</td>
+      <td colspan="2"> Select 
+        <a href="https://docs.unity3d.com/Manual/texture-type-sprite.html">Sprite (2D and UI)</a> 
+        to import the Texture as a 
+        <a href="https://docs.unity3d.com/Manual/Sprites.html">Sprite</a>. 
+        The is required to begin using the imported Texture with the 
+        <a href="https://docs.unity3d.com/Packages/com.unity.2d.animation@latest/">2D Animation</a> 
+        package.
+      </td>
     </tr>
     <tr>
       <td rowspan="3"><strong>Sprite Mode</strong></td>
@@ -55,7 +62,13 @@ The Settings tab allows you to customize how the PSD Importer imports a file. Th
     </tr>
     <tr>
       <td rowspan="1"><strong>Generate Physics Shape</strong></td>
-      <td colspan="2">Enable this option to generate a default [Physics Shape](https://docs.unity3d.com/2017.4/Documentation/Manual/SpritePhysicsShapeEditor.html) from the outline of the Sprite, if a [Custom Physics Shape](https://docs.unity3d.com/Manual/CustomPhysicsShape.html) has not be defined</td>
+      <td colspan="2">
+        Enable this option to generate a default 
+        <a href="https://docs.unity3d.com/2017.4/Documentation/Manual/SpritePhysicsShapeEditor.html">Physics Shape</a>
+        from the outline of the Sprite, if a 
+        <a href="https://docs.unity3d.com/Manual/CustomPhysicsShape.html">Custom Physics Shape</a>
+        has not be defined
+      </td>
     </tr>
     <tr>
       <td rowspan="1"><strong><a href="#automatic-reslice">Automatic Reslice</a></strong></td>
@@ -64,10 +77,10 @@ The Settings tab allows you to customize how the PSD Importer imports a file. Th
   </tbody>
 </table>
 
-####Automatic Reslice
+#### Automatic Reslice
 Enable this setting to discard all user modifications for the current set of [SpriteRect](https://docs.unity3d.com/Packages/com.unity.2d.sprite@1.0/api/UnityEditor.SpriteRect.html) data and regenerate all SpriteRects based on the current source file. Extra SpriteRect metadata (such as weights and bones data) persist if they remain valid with the regenerated SpriteRects.
 
-###Layer Import
+### Layer Import
 The following section is only available if the **Texture Type** is set to **Multiple**.
 
 ![](images/psdimporter-properties-22.2-layerimport.png)
@@ -129,20 +142,20 @@ The following section is only available if the **Texture Type** is set to **Mult
   </tbody>
 </table>
 
-####<a name="Mosaic"></a>Individual Sprites (Mosaic)
+#### <a name="Mosaic"></a>Individual Sprites (Mosaic)
 Enable this to have the PSD Importer attempt to create a Texture with each layer from the source file laid out in a mosaic manner.
 
 ![](images/individual-sprites-mosaic-22.2.png)<br/>Individual layers are imported as separate Sprites merged into a single Texture in the form of a mosaic.
 
-####Merged
+#### Merged
 Enable this option to have the PSD Importer create a Texture with the layers from the Photoshop source file as if all [layers were flattened](https://helpx.adobe.com/photoshop/using/layers.html).
 
 ![](images/merged-layers-22.2.png)
 
-####Keep Duplicate Names
+#### Keep Duplicate Names
 Unity's default import behavior when there are duplicate names is to append "_[number]" to the Sprites and SpriteRects it generates from source layers with identical names. Enable this feature to instead have Unity give both Sprites and SpriteRects the exact same name as their source layer, even when they are duplicate names.
 
-####Layer Group
+#### Layer Group
 
 By default, the importer only generates GameObjects for layers in the source file. This is for performance reasons to minimize the number of GameObjects needed for the Prefab.
 
@@ -152,7 +165,7 @@ To include and maintain the group and hierarchy structure as per the source file
 
 ![](images/as-per-source-22.2.png)<br/>The generated Prefab of the same source file with **Layer Group** set to **As Per Source File**.
 
-###Character Rig
+### Character Rig
 This section is only available if the **Texture Type** is set to **Multiple** and **Import Mode** is set to **Individual Sprites (Mosaic)**.
 
 ![](images/character-rig-22.2.png)
@@ -187,34 +200,34 @@ This section is only available if the **Texture Type** is set to **Multiple** an
   </tbody>
 </table>
 
-####Use as Rig
+#### Use as Rig
 Enable this property to have the PSD Importer generate a Prefab containing Sprites based on the layers of the imported source file. The PSD Importer also automatically gives the Sprites an [Order in Layer](https://docs.unity3d.com/Manual/2DSorting.html) value that sorts them according to their positions in the layer hierarchy in the source file. As a result, the generated Prefab recreates the arrangement and appearance of the assets in the original source file as closely as possible.
 
 The name of each Sprite in the Prefab is the same as the source layer it is based on, unless a **name collision error** occurs, which is usually due to duplicate names in the source layers.
 
 If the Sprite contains [bone](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinEdToolsShortcuts.html%23bone-tools) or [weight](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinEdToolsShortcuts.html%23weight-tools) data, the PSD Importer automatically adds the Sprite Skin component to it. This happens if the Sprite has been [rigged](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/CharacterRig.html) with bones and weights in the [Skinning Editor](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinningEditor.html) already and the source file is being reimported, or you have manually [copied and pasted](https://docs.unity3d.com/Packages/com.unity.2d.animation@latest?subfolder=/manual/SkinEdToolsShortcuts.html%23copy-and-paste-behavior) the bone and weight data onto the Sprites.
 
-####Main Skeleton
+#### Main Skeleton
 A skeleton Asset (.skeleton) is an Asset that contains the bone hierarchy structure that can be animated with the 2D Animation package. The **Main Skeleton** property is only available when you import a .psb file with the **Use As Rig** importer setting enabled. After importing the .psb file, assign a .skeleton Asset to the **Main Skeleton** property to have the generated prefab character be automatically rigged with the bone hierarchy structure contained in that .skeleton Asset.
 
 If there is no .skeleton Asset assigned to the importer’s **Main Skeleton** property, then a .skeleton Asset is automatically generated as a  of the imported source file and it will be named ‘[Asset File Name] Skeleton’. You can **share .skeleton Assets** between different generated Prefabs by assigning the same .skeleton as their **Main Skeleton** property when they're imported.
 
 When you open and edit the character in 2D Animation package’s **Skinning Editor**, the module will display the bone hierarchy provided by the skeleton Asset assigned to **Main Skeleton** for rigging.
 
-##Layer Management Tab
+## Layer Management Tab
 The **Layer Management Tab** allows you to customize how the Importer imports the layers from the Photoshop file.
 
 ![](images/layer-management-tab-22.2.png)
 
-###Layer hierarchy tree
+### Layer hierarchy tree
 [Group layers](https://helpx.adobe.com/photoshop/using/selecting-grouping-linking-layers.html) in Photoshop are represented with a fold-out folder icon ![](images/group-layers-icon.png) in the hierarchy tree of the Layer Management tab, while regular Photoshop layers in Photoshop represented only by their names.
 
-###Layer visibility
+### Layer visibility
 Groups or layers that are hidden in the source file are indicated with different color text compared to visible groups or layers.
 
 ![](images/layer-visibility-hidden-layer-22.2.png)
 
-###Layer Importing
+### Layer Importing
 The checkbox on each Group/Layer indicates if the Group or Layer from the Photoshop file should be imported. The Group or Layer will be imported when the checkbox is selected.  
 
 Clear the **Include Hidden Layers** option in the **Layer Management Tab** or [Settings Tab](#settings-tab) will only import visible layers from the source file.
@@ -230,19 +243,19 @@ To import a hidden layer, select the **Include Hidden Layers** checkbox either i
 To batch select or deselect layers, you can use the drop down menu located at header of the Layer Importing column.
 ![](images/import-selection-dropdown-22.2.png)
 
-### Collapsing Groups
-The Photoshop layers in a Group can be collapsed into a single Sprite when imported. Hover the cursor over a Group Layer and the **Collapse** icon appears on its left.
-![](images/layer-tab-collapse-22.2.png)<br/>Collapse icon with arrow facing down.
+### Merge Groups
+The Photoshop layers in a Group can be merged into a single Sprite when imported. Hover the cursor over a Group Layer and the **Merge** icon appears on its left.
+![](images/layer-tab-collapse-22.2.png)<br/>Merge icon with arrow facing down.
 
 Click the icon to indicate that the layers in the selected Group should be imported as a single Sprite.
 
-### Uncollapsing Groups
-Hovering over a Collapsed Group layer reveals the Uncollapse icon (the arrow faces upwards).
+### Separate Groups
+Hovering over a Merged Group layer reveals the Separate icon (the arrow faces upwards).
 
-![](images/layer-tab-uncollapse-22.2.png)<br/>Select the icon again to uncollapse the Group layer and to import all Layers in the Group as separate Sprites.
+![](images/layer-tab-uncollapse-22.2.png)<br/>Select the icon again to separate the Group layer and to import all Layers in the Group as separate Sprites.
 
 #### Subgroups within Group layers
-If a Group contains other Group layers and is collapsed, then the layers in the subgroups will also be collapsed into a single Sprite.
+If a Group contains other Group layers and is merged, then the layers in the subgroups will also be merged into a single Sprite.
 
 ![](images/layer-tab-subgroup-child-collapse-22.2.png)
-If a child Group is currently set to be collapsed, then the parent group will have separate icons indicating that are child Groups currently set to collapse.
+If a child Group is currently set to be merged, then the parent group will have separate icons indicating that are child Groups currently set to merge.

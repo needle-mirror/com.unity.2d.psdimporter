@@ -32,17 +32,16 @@ namespace UnityEditor.U2D.PSD
             mappingStrategy = ((PSDImporter)so.targetObject).GetLayerMappingStrategy();
             layerImportSettings = so.FindProperty("m_PSDLayerImportSetting");
         }
-        
+
     }
     
-    [Serializable]
     internal class PSDImporterLayerManagementMultiColumnTreeView : MultiColumnTreeView
     {
         int m_LastArraySize;
         LayerManagementTreeViewData m_LayerManagementTreeViewData;
         PSDTreeViewNode[] m_Data;
         UILayerImportColumn m_LayerImportColumn;
-        
+
         public void UpdateTreeView(SerializedObject so)
         {
             m_LayerManagementTreeViewData.Update(so);
@@ -65,10 +64,10 @@ namespace UnityEditor.U2D.PSD
                 name = "UILayerNameColumn",
             };
             columns.Add(col);
-            
+
             columns.primaryColumnName = "UILayerNameColumn";
         }
-        
+
         public PSDImporterLayerManagementMultiColumnTreeView(SerializedObject so)
         {
             viewDataKey = "PSDImporterLayerManagementMultiColumnTreeView-ViewDataKey";
@@ -79,19 +78,19 @@ namespace UnityEditor.U2D.PSD
         }
 
         public PSDTreeViewNode[] data => m_Data;
-        
+
         public bool importHidden => m_LayerManagementTreeViewData.importHiddenLayers.boolValue;
 
         SerializedProperty layerImportSetting => m_LayerManagementTreeViewData.layerImportSettings;
         IList<PSDLayerData> importLayerData => m_LayerManagementTreeViewData.importData.psdLayerData;
         IPSDLayerMappingStrategy layerMappingStrategy => m_LayerManagementTreeViewData.mappingStrategy;
-        
+
         void RebuildTree()
         {
             SetRootItems(BuildTree());
             Rebuild();
         }
-        
+
         public void Update()
         {
             foreach (var c in columns)
@@ -102,7 +101,7 @@ namespace UnityEditor.U2D.PSD
                 }
             }
         }
-        
+
         List<TreeViewItemData<int>> BuildTree()
         {
             var treeViewData = new List<TreeViewItemData<int>>();
@@ -145,7 +144,7 @@ namespace UnityEditor.U2D.PSD
                         importSetting = spWrapper[importSettingIndex];
                         spWrapper.RemoveAt(importSettingIndex);
                     }
-                    
+
                     if (l != null && l.isGroup)
                         nodes[i] = new PSDGroupTreeViewNode(l, i, importSetting);
                     else
@@ -185,7 +184,7 @@ namespace UnityEditor.U2D.PSD
                 m_Data = new[] { fileRoot };
             }
             treeViewData.Add(fileRoot.BuildTreeViewItemData());
-            return treeViewData;   
+            return treeViewData;
         }
 
         public PSDTreeViewNode GetFromIndex(int i)

@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "unity": "2022.3",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
@@ -11,12 +11,12 @@
   ],
   "category": "2D",
   "dependencies": {
-    "com.unity.2d.animation": "9.2.0",
-    "com.unity.2d.common": "8.1.0",
+    "com.unity.2d.animation": "9.2.1",
+    "com.unity.2d.common": "8.1.1",
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "8.1.0"
+    "com.unity.2d.psdimporter.tests": "8.1.1"
   },
   "samples": [
     {
@@ -26,15 +26,15 @@
     }
   ],
   "_upm": {
-    "changelog": "### Changed\n- Update Unity minimum version.\n\n### Fixed\n- DANB-848 Fixed case where scroll down problems occur and the \"Apply\" button cannot be pressed when the \"Advanced\" tab is expanded"
+    "changelog": "### Fixed\n- Fixed case Layer Separation toggle icon is invisible when the icon state is \"separated\" with mousedown. (Case DANB-949)\n- Fixed case NullReferenceException is thrown when entering Play mode while PSD Importer Inspector is opened. (Case DANB-873)\n- Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)\n- Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)\n- Fixed a typo in settings. (Case DANB-891)\n- Fixed case where \"Mip Map Preserve Coverage\" is cut off in the Inspector window. (Case DANB-892)\n- doc: fix headings and incorrect links in the PSDImporter properties page"
   },
   "upmCi": {
-    "footprint": "5b165f35f6065b0b1839cd420a1cf2c508616449"
+    "footprint": "24924e4aa7dfd7c0819fd10576a330851e2fd572"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@8.1/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "854e7c330168787e9d4ea0311c42dadc256cb889"
+    "revision": "0d24ea02a356f3336d244513238a90d66283247d"
   }
 }
