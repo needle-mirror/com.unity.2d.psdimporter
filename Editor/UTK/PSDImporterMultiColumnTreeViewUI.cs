@@ -113,7 +113,6 @@ namespace UnityEditor.U2D.PSD
                 displayName = m_LayerManagementTreeViewData.assetName
             };
 
-            //fileRoot.icon = EditorGUIUtility.IconContent("Texture Icon").image as Texture2D;
             List<PSDLayerImportSettingSerializedPropertyWrapper> spWrapper = new List<PSDLayerImportSettingSerializedPropertyWrapper>();
             if (layerImportSetting.arraySize > 0)
             {

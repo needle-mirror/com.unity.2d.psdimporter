@@ -149,8 +149,12 @@ namespace UnityEditor.U2D.PSD
         }
     }
 
-    class PSDTreeViewNode : TreeViewItem
+    class PSDTreeViewNode
     {
+        public int id;
+        public string displayName;
+        public List<PSDTreeViewNode> children = new List<PSDTreeViewNode>();
+        public PSDTreeViewNode parent;
         PSDLayerData m_Layer;
         bool m_Disable = false;
         public PSDLayerData layer => m_Layer;
@@ -179,7 +183,6 @@ namespace UnityEditor.U2D.PSD
 
         protected PSDLayerImportSettingSerializedPropertyWrapper property => m_Property;
 
-
         public virtual bool importLayer
         {
             get => property.importLayer;
@@ -192,16 +195,19 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        public void AddChild(PSDTreeViewNode child)
+        {
+            if (child == null) return;
+            children.Add(child);
+            child.parent = this;
+        }
+
         public TreeViewItemData<int> BuildTreeViewItemData()
         {
             List<TreeViewItemData<int>> c = new List<TreeViewItemData<int>>();
             if (children != null)
             {
-                c = children.Select(x =>
-                {
-                    PSDTreeViewNode n = (PSDTreeViewNode)x;
-                    return n.BuildTreeViewItemData();
-                }).ToList();
+                c = children.Select(n => n.BuildTreeViewItemData()).ToList();
             }
             return new TreeViewItemData<int>(id, id, c);
         }
@@ -274,9 +280,7 @@ namespace UnityEditor.U2D.PSD
     {
         public PSDGroupTreeViewNode(PSDLayerData layer, int id, PSDLayerImportSettingSerializedPropertyWrapper property)
             : base(layer, id, property)
-        {
-            this.icon = EditorGUIUtility.FindTexture(EditorResources.folderIconName);
-        }
+        { }
     }
 }
 

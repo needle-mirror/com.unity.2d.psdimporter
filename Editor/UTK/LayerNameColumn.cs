@@ -6,8 +6,12 @@ namespace UnityEditor.U2D.PSD
 {
     internal class UICellLabelElement : UICellElement
     {
+        static readonly Texture2D s_FolderIcon = EditorGUIUtility.FindTexture("Folder Icon") as Texture2D;
+
         Label m_Label;
         VisualElement m_FolderIcon;
+        bool m_ShowFolderIcon;
+
         public UICellLabelElement()
         {
             m_FolderIcon = new VisualElement()
@@ -27,15 +31,22 @@ namespace UnityEditor.U2D.PSD
             set { m_Label.text = value; }
         }
 
-        public void EnableFolderIcon(Texture2D v)
+        public bool showFolderIcon
         {
-            if (v != null)
+            get => m_ShowFolderIcon;
+            set
             {
-                m_FolderIcon.SetHiddenFromLayout(false);
-                m_FolderIcon.style.backgroundImage = new StyleBackground(v);
+                m_ShowFolderIcon = value;
+                if (m_ShowFolderIcon)
+                {
+                    m_FolderIcon.SetHiddenFromLayout(false);
+                    m_FolderIcon.style.backgroundImage = new StyleBackground(s_FolderIcon);
+                }
+                else
+                {
+                    m_FolderIcon.SetHiddenFromLayout(true);
+                }
             }
-            else
-                m_FolderIcon.SetHiddenFromLayout(true);
         }
     }
 
@@ -56,7 +67,7 @@ namespace UnityEditor.U2D.PSD
             PSDTreeViewNode item = treeView.GetFromIndex(index);
             UICellLabelElement label = (UICellLabelElement)e;
             label.text = item.displayName;
-            label.EnableFolderIcon(item.icon);
+            label.showFolderIcon = item is PSDGroupTreeViewNode;
             label.SetEnabled(!item.disable);
             if (item.disable)
                 label.tooltip = Tooltips.layerHiddenToolTip;

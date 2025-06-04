@@ -103,17 +103,17 @@ To import a hidden layer, select the **Include Hidden Layers** checkbox either i
 To batch select or deselect layers, you can use the drop down menu located at header of the Layer Importing column.
 ![The dropdown menu at the top of the left column. The properties are **Select All Visible Layers**, **Deselect All Visible Layers**, **Select All Hidden Layers**, and **Deselect All Hidden Layers**.](images/import-selection-dropdown-22.2.png)
 
-### Collapsing Groups
-The Photoshop layers in a Group can be collapsed into a single Sprite when imported. Hover the cursor over a Group Layer and the **Collapse** icon appears on its left.
+### Merge Groups
+The Photoshop layers in a Group can be merged into a single Sprite when imported. Hover the cursor over a Group Layer and the **Merge** icon appears on its left.
 
 Click the icon to indicate that the layers in the selected Group should be imported as a single Sprite.
 
-### Uncollapsing Groups
-Hovering over a Collapsed Group layer reveals the Uncollapse icon (the arrow faces upwards).
+### Separate Groups
+Hovering over a Merged Group layer reveals the Separate icon (the arrow faces upwards).
 
-Select the icon again to uncollapse the Group layer and to import all Layers in the Group as separate Sprites.
+Select the icon again to separate the Group layer and to import all Layers in the Group as separate Sprites.
 
 #### Subgroups within Group layers
-If a Group contains other Group layers and is collapsed, then the layers in the subgroups will also be collapsed into a single Sprite.
+If a Group contains other Group layers and is merged, then the layers in the subgroups will also be merged into a single Sprite.
 
-If a child Group is currently set to be collapsed, then the parent group will have separate icons indicating that are child Groups currently set to collapse.
+If a child Group is currently set to be merged, then the parent group will have separate icons indicating that are child Groups currently set to merge.

@@ -135,7 +135,7 @@ UICellLabelElement
 
 #UICellCollapseToggle .unity-toggle__input:checked
 {
-    background-image: var(--layer-collapsed-icon);
+    background-image: var(--layer-separated-icon);
     width: var(--collapse-icon-width);
     height: var(--collapse-icon-height);
     align-items: center;
@@ -147,6 +147,20 @@ UICellLabelElement
     width: var(--collapse-icon-width);
     height: var(--collapse-icon-height);
     align-items: center;
+}
+
+#UICellCollapseToggle:active .unity-toggle__input
+{
+    background-image: var(--layer-separated-icon);
+    width: var(--collapse-icon-width);
+    height: var(--collapse-icon-height);
+}
+
+#UICellCollapseToggle:active .unity-toggle__input:checked
+{
+    background-image: var(--layer-collapsed-icon);
+    width: var(--collapse-icon-width);
+    height: var(--collapse-icon-height);
 }
 
 #UICellCollapseToggle .unity-base-field__label--mixed-value:hover

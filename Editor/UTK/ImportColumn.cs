@@ -176,10 +176,9 @@ namespace UnityEditor.U2D.PSD
                 while (parent != null)
                 {
                     bool import = false;
-                    foreach (IMGUI.Controls.TreeViewItem c in parent.children)
+                    foreach (PSDTreeViewNode c in parent.children)
                     {
-                        PSDTreeViewNode n = (PSDTreeViewNode)c;
-                        if (n.importLayer)
+                        if (c.importLayer)
                         {
                             import = true;
                             break;
@@ -196,9 +195,8 @@ namespace UnityEditor.U2D.PSD
             treeViewNode.importLayer = value;
             if (treeViewNode.children != null)
             {
-                foreach (IMGUI.Controls.TreeViewItem c in treeViewNode.children)
+                foreach (PSDTreeViewNode p in treeViewNode.children)
                 {
-                    PSDTreeViewNode p = (PSDTreeViewNode)c;
                     p.importLayer = value;
                     SetChildrenNodeImport(p, value);
                 }

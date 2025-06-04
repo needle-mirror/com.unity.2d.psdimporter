@@ -1,6 +1,11 @@
 # Changelog
 
-## [11.0.0] - 2025-05-16
+## [11.0.1] - 2025-06-04
+### Fixed
+- Replaced deprecated non-generic IMGUI TreeViewItem. (Case DANB-1004)
+- Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
+
+## [11.0.0] - 2025-05-07
 ### Changed
 - Update minimum Unity version.
 
