@@ -6,6 +6,8 @@ using System.Text;
 using PDNWrapper;
 using Unity.Collections;
 using UnityEngine;
+using UnityEditor.AssetImporters;
+
 
 #if ENABLE_2D_ANIMATION
 using UnityEditor.U2D.Animation;
@@ -124,7 +126,7 @@ namespace UnityEditor.U2D.PSD
             return path;
         }
 
-        public static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, IEnumerable<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator)
+        public static void ValidatePSDLayerId(IEnumerable<PSDLayer> oldPsdLayer, IEnumerable<BitmapLayer> layers, UniqueNameGenerator uniqueNameGenerator, ScriptedImporter importer)
         {
             // first check if all layers are unique. If not, we use back the previous layer id based on name match
             HashSet<int> uniqueIdSet = new HashSet<int>();
@@ -167,13 +169,13 @@ namespace UnityEditor.U2D.PSD
                     if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
                     childBitmapLayer.LayerID = layerName.GetHashCode();
-                    Debug.LogWarning(importWarning);
+                    Debug.LogWarning(importWarning, importer);
                 }
                 else
                     uniqueNameGenerator.AddHash(childBitmapLayer.LayerID);
                 if (childBitmapLayer.ChildLayer != null)
                 {
-                    ValidatePSDLayerId(oldPsdLayer, childBitmapLayer.ChildLayer, uniqueNameGenerator);
+                    ValidatePSDLayerId(oldPsdLayer, childBitmapLayer.ChildLayer, uniqueNameGenerator, importer);
                 }
             }
         }

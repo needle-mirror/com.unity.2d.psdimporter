@@ -438,7 +438,7 @@ namespace UnityEditor.U2D.PSD
             if (layerMappingOption == ELayerMappingOption.UseLayerId)
             {
                 UniqueNameGenerator uniqueNameGenerator = new UniqueNameGenerator();
-                ImportUtilities.ValidatePSDLayerId(GetPSDLayers(), doc.Layers, uniqueNameGenerator);
+                ImportUtilities.ValidatePSDLayerId(GetPSDLayers(), doc.Layers, uniqueNameGenerator, this);
             }
         }
 

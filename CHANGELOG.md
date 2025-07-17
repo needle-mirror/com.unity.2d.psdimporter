@@ -1,5 +1,10 @@
 # Changelog
 
+## [12.0.0] - 2025-07-17
+### Changed
+- Update minimum Unity version.
+- Highlight a PSD file when clicking the console log about layer ID duplication.
+
 ## [11.0.1] - 2025-06-04
 ### Fixed
 - Replaced deprecated non-generic IMGUI TreeViewItem. (Case DANB-1004)
@@ -10,6 +15,7 @@
 - Update minimum Unity version.
 
 ### Fixed
+- Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
 - Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)
 - Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)
 - Fixed a typo in settings. (Case DANB-891)
