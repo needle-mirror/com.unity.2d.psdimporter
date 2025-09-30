@@ -613,7 +613,7 @@ namespace UnityEditor.U2D.PSD
 
             PSDApplyEvent evt = new PSDApplyEvent()
             {
-                instance_id = target.GetInstanceID(),
+                instance_id = target.GetEntityId(),
                 texture_type = m_TextureType.intValue,
                 sprite_mode = m_SpriteMode.intValue,
                 mosaic_layer = m_MosaicLayers.boolValue,

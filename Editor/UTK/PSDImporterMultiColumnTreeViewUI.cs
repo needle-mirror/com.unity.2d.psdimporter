@@ -136,7 +136,7 @@ namespace UnityEditor.U2D.PSD
                     {
                         importSetting = new PSDLayerImportSettingSerializedPropertyWrapper(null, layerImportSetting, l, layerImportSetting.arraySize)
                         {
-                            wasLayerImported = l.isVisible || m_LayerManagementTreeViewData.importHiddenLayers.boolValue
+                            wasLayerImported = (l.isVisible || m_LayerManagementTreeViewData.importHiddenLayers.boolValue) && !l.IsEmpty
                         };
                     }
                     else
@@ -151,10 +151,11 @@ namespace UnityEditor.U2D.PSD
                         nodes[i] = new PSDLayerTreeViewNode(l, i, importSetting);
                     PSDTreeViewNode node = nodes[i];
 
-                    node.disable = !node.layer.isVisible;
+                    node.disable = !node.layer.isVisible || node.layer.IsEmpty;
                     while (node.layer.parentIndex != -1 && nodes[i].disable == false)
                     {
-                        if (!node.layer.isVisible || !nodes[node.layer.parentIndex + 1].layer.isVisible)
+                        PSDTreeViewNode parentNode = nodes[node.layer.parentIndex + 1];
+                        if (!node.layer.isVisible || node.layer.IsEmpty || !parentNode.layer.isVisible || parentNode.layer.IsEmpty)
                         {
                             nodes[i].disable = true;
                         }

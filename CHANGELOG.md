@@ -1,5 +1,10 @@
 # Changelog
 
+## [13.0.0] - 2025-09-30
+### Changed
+- Update Unity min version for package.
+- Exclude empty layers from import.
+
 ## [12.0.0] - 2025-07-17
 ### Changed
 - Update minimum Unity version.

@@ -24,6 +24,8 @@ namespace PDNWrapper
         public Rectangle documentRect { get; private set; }
         public Rectangle localRect { get; }
 
+        public bool IsEmpty => !(documentRect.Width > 0 && documentRect.Height > 0);
+
         readonly List<BitmapLayer> m_ChildLayers;
 
         public void Dispose()
@@ -57,6 +59,25 @@ namespace PDNWrapper
             }
 
             documentRect = bound;
+        }
+
+        public bool ShouldImport(bool importHiddenLayer, bool parentGroupVisible = true)
+        {
+            bool layerVisible = Visible && parentGroupVisible;
+            if (!IsGroup)
+            {
+                return (importHiddenLayer || layerVisible) && !IsEmpty;
+            }
+
+            foreach (BitmapLayer child in ChildLayer)
+            {
+                if (child.ShouldImport(importHiddenLayer, layerVisible))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

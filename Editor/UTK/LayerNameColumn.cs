@@ -70,7 +70,7 @@ namespace UnityEditor.U2D.PSD
             label.showFolderIcon = item is PSDGroupTreeViewNode;
             label.SetEnabled(!item.disable);
             if (item.disable)
-                label.tooltip = Tooltips.layerHiddenToolTip;
+                label.tooltip = item.layer.IsEmpty ? Tooltips.layerEmptyToolTip : Tooltips.layerHiddenToolTip;
             else
                 label.tooltip = "";
         }
