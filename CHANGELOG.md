@@ -1,5 +1,10 @@
 # Changelog
 
+## [13.0.1] - 2025-10-30
+### Fixed
+- Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)
+- Correct layer mask position relative to its layer. (DANB-1177)
+
 ## [13.0.0] - 2025-09-30
 ### Changed
 - Update Unity min version for package.
