@@ -1,5 +1,9 @@
 # Changelog
 
+## [8.1.2] - 2025-11-04
+### Fixed
+- Correct layer mask position relative to its layer. (DANB-1177)
+
 ## [8.1.1] - 2025-06-03
 ### Fixed
 - Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
