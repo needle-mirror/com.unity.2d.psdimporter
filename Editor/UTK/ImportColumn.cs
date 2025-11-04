@@ -78,11 +78,18 @@ namespace UnityEditor.U2D.PSD
             
         }
         
+        string TooltipForNode(PSDTreeViewNode node)
+        {
+            return node.layer?.IsEmpty == true ? Tooltips.emptyLayerNotImportWarning : Tooltips.hiddenLayerNotImportWarning;
+        }
+
         public override void BindPSDNode(int index, PSDImporterLayerManagementMultiColumnTreeView treeView)
         {
             base.BindPSDNode(index, treeView);
             var node = psdTreeViewNode;
             m_WarningIcon.visible = node.disable; 
+            if (m_WarningIcon.visible)
+                m_WarningIcon.tooltip = TooltipForNode(node);
             if (node is PSDFoldoutTreeViewNode)
             {
                 var collapsable = (PSDFoldoutTreeViewNode)node; 
@@ -116,8 +123,10 @@ namespace UnityEditor.U2D.PSD
             var node = psdTreeViewNode;
             if (node != null)
             {
-                m_WarningIcon.visible = node.disable && treeView.importHidden == false;
-                if(m_ImportToggle.value != node.importLayer)
+                m_WarningIcon.visible = node.disable && (treeView.importHidden == false || node.layer?.IsEmpty == true);
+                if (m_WarningIcon.visible)
+                    m_WarningIcon.tooltip = TooltipForNode(node);
+                if (m_ImportToggle.value != node.importLayer)
                     m_ImportToggle.SetValueWithoutNotify(node.importLayer);
                 if (node is PSDFoldoutTreeViewNode)
                 {

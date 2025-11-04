@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "9.1.0",
+  "version": "9.1.1",
   "unity": "6000.0",
   "displayName": "2D PSD Importer",
   "description": "A ScriptedImporter for importing Adobe Photoshop PSB (Photoshop Big) file format. The ScriptedImporter is currently targeted for users who wants to create multi Sprite character animation using Unity 2D Animation Package.",
@@ -15,7 +15,7 @@
     "com.unity.2d.sprite": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "9.1.0"
+    "com.unity.2d.psdimporter.tests": "9.1.1"
   },
   "samples": [
     {
@@ -25,15 +25,15 @@
     }
   ],
   "_upm": {
-    "changelog": "### Fixed\n- Fixed case Layer Separation toggle icon is invisible when the icon state is \"separated\" with mousedown. (Case DANB-949)\n- Fixed case NullReferenceException is thrown when entering Play mode while PSD Importer Inspector is opened. (Case DANB-873)\n- Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)\n- Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)\n- Fixed case where \"Mip Map Preserve Coverage\" is cut off in the Inspector window. (Case DANB-892)\n- Fixed a typo in settings. (Case DANB-891)\n- doc: fix headings and incorrect links in the PSDImporter properties page"
+    "changelog": "### Changed\n- Exclude empty layers from import.\n\n### Fixed\n- Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)\n- Correct layer mask position relative to its layer. (DANB-1177)"
   },
   "upmCi": {
-    "footprint": "a535d5eab2387ba8f132220ec26b8a00674305a7"
+    "footprint": "55d9c47e5420bb0f8bf3f0a5ceb0b2c1a540e8d5"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@9.1/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "383370d5a0ac5360369e71e96aa41ade8ed5c1b5"
+    "revision": "f43e67d78ae3da693e9e47fb8aea0457627f1582"
   }
 }

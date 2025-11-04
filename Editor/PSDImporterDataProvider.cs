@@ -59,7 +59,7 @@ namespace UnityEditor.U2D.PSD
 
         public Texture2D GetReadableTexture2D()
         {
-            if (m_ReadableTexture == null)
+            if (m_ReadableTexture == null && texture != null)
             {
                 m_ReadableTexture = InternalEditorBridge.CreateTemporaryDuplicate(texture, texture.width, texture.height);
                 if (m_ReadableTexture != null)

@@ -497,7 +497,7 @@ namespace UnityEditor.U2D.PSD
                         importSetting = new PSDLayerImportSetting()
                         {
                             flatten = c.flatten,
-                            importLayer = layer.Visible || m_ImportHiddenLayers,
+                            importLayer = layer.ShouldImport(m_ImportHiddenLayers),
                         };
                     }
 
@@ -509,7 +509,7 @@ namespace UnityEditor.U2D.PSD
                     importSetting = new PSDLayerImportSetting()
                     {
                         flatten = false,
-                        importLayer = layer.Visible || m_ImportHiddenLayers,
+                        importLayer = layer.ShouldImport(m_ImportHiddenLayers),
                     };
                 }
 

@@ -59,7 +59,7 @@ namespace UnityEditor.U2D.PSD
              label.EnableFolderIcon(item.icon);
              label.SetEnabled(!item.disable);
              if (item.disable)
-                 label.tooltip = Tooltips.layerHiddenToolTip;
+                 label.tooltip = item.layer.IsEmpty ? Tooltips.layerEmptyToolTip : Tooltips.layerHiddenToolTip;
              else
                  label.tooltip = "";
          }

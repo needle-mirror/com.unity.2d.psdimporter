@@ -1,5 +1,13 @@
 # Changelog
 
+## [9.1.1] - 2025-11-04
+### Changed
+- Exclude empty layers from import.
+
+### Fixed
+- Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)
+- Correct layer mask position relative to its layer. (DANB-1177)
+
 ## [9.1.0] - 2025-05-26
 ### Fixed
 - Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)

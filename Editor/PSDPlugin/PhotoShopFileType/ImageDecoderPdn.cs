@@ -113,10 +113,19 @@ namespace PaintDotNet.Data.PhotoshopFileType
             {
                 Mask = mask;
 
+                // layerContext.Rectangle has been transformed to be relative to the layer,
+                // so adjust the mask position accordingly.
+                Rectangle maskRect = mask.Rect;
+                maskRect.Offset(
+                    layerContext.Rectangle.X - Mask.Layer.Rect.X,
+                    layerContext.Rectangle.Y - Mask.Layer.Rect.Y
+                );
+                Mask.Rect = maskRect;
+
                 // The PositionVsLayer flag is documented to indicate a position
                 // relative to the layer, but Photoshop treats the position as
                 // absolute.  So that's what we do, too.
-                Rectangle = mask.Rect.IntersectWith(layerContext.Rectangle);
+                Rectangle = Mask.Rect.IntersectWith(layerContext.Rectangle);
             }
 
             public bool IsRowEmpty(int row)
