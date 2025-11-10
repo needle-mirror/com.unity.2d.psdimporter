@@ -201,8 +201,8 @@ namespace UnityEditor.U2D.PSD
             set => m_LayerSizeOnFile = value;
         }
 
+        public bool IsEmpty => !(layerSizeOnFile.x > 0 && layerSizeOnFile.y > 0);
     }
-
 
     /// <summary>
     /// Data for extracting layers and colors from PSD

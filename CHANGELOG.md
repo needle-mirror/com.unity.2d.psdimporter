@@ -1,5 +1,13 @@
 # Changelog
 
+## [11.0.2] - 2025-11-10
+### Changed
+- Exclude empty layers from import.
+
+### Fixed
+- Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)
+- Correct layer mask position relative to its layer. (DANB-1177)
+
 ## [11.0.1] - 2025-06-04
 ### Fixed
 - Replaced deprecated non-generic IMGUI TreeViewItem. (Case DANB-1004)
@@ -10,6 +18,7 @@
 - Update minimum Unity version.
 
 ### Fixed
+- Fixed case Layer Separation toggle icon is invisible when the icon state is "separated" with mousedown. (Case DANB-949)
 - Fixed case Layer Merging and Separation toggle icon is obscured in the Layer Management Panel of the PSD Importer (Case DANB-889)
 - Fixed case the Include Hidden Layers option in the PSD Importer's Layer Management Panel is not being toggled reliably (Case DANB-888)
 - Fixed a typo in settings. (Case DANB-891)

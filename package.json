@@ -1,6 +1,6 @@
 {
   "name": "com.unity.2d.psdimporter",
-  "version": "11.0.1",
+  "version": "11.0.2",
   "unity": "6000.2",
   "unityRelease": "0a10",
   "displayName": "2D PSD Importer",
@@ -17,7 +17,7 @@
     "com.unity.2d.tilemap": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.2d.psdimporter.tests": "11.0.1"
+    "com.unity.2d.psdimporter.tests": "11.0.2"
   },
   "samples": [
     {
@@ -27,15 +27,15 @@
     }
   ],
   "_upm": {
-    "changelog": "### Fixed\n- Replaced deprecated non-generic IMGUI TreeViewItem. (Case DANB-1004)\n- Fixed case Layer Separation toggle icon is invisible when the icon state is \"separated\" with mousedown. (Case DANB-949)"
+    "changelog": "### Changed\n- Exclude empty layers from import.\n\n### Fixed\n- Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)\n- Correct layer mask position relative to its layer. (DANB-1177)"
   },
   "upmCi": {
-    "footprint": "fede7b36b7359cdb6ad1cc56bf95b4371b651ebf"
+    "footprint": "bd4bbcba2840dd7b71de839ce9a6c827d7fb65e7"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@11.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/2d.git",
     "type": "git",
-    "revision": "baf565843471dd3cdc28af4c2a2aa0357ab1f9b1"
+    "revision": "f3e71802c8fda959b3c171e2d19010c1af6647f2"
   }
 }

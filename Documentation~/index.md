@@ -9,6 +9,7 @@ The different versions of the PSD Importer package are supported by the followin
 
 Package version  | Unity Editor version
 --|--
+11.x.x |  6000.2
 10.x.x |  6000.1
 9.x.x  |  2023.1 up to 6000.0
 8.x.x  |  2022.2
