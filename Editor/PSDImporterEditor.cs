@@ -607,26 +607,6 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         protected override void Apply()
         {
-            // Send analytics first while the SerializedObject is still valid
-            FileStream fileStream = new FileStream(((AssetImporter)target).assetPath, FileMode.Open, FileAccess.Read);
-            PsdFile doc = PaintDotNet.Data.PhotoshopFileType.PsdLoad.Load(fileStream, ELoadFlag.Header | ELoadFlag.ColorMode);
-
-            PSDApplyEvent evt = new PSDApplyEvent()
-            {
-                instance_id = target.GetEntityId(),
-                texture_type = m_TextureType.intValue,
-                sprite_mode = m_SpriteMode.intValue,
-                mosaic_layer = m_MosaicLayers.boolValue,
-                import_hidden_layer = m_ImportHiddenLayers.boolValue,
-                character_mode = m_CharacterMode.boolValue,
-                generate_go_hierarchy = m_GenerateGOHierarchy.boolValue,
-                reslice_from_layer = m_ResliceFromLayer.boolValue,
-                is_character_rigged = IsCharacterRigged(),
-                is_psd = IsPSD(doc),
-                color_mode = FileColorMode(doc)
-            };
-            doc.Cleanup();
-            AnalyticFactory.analytics.SendApplyEvent(evt);
             InternalEditorBridge.ApplySpriteEditorWindow();
             base.Apply();
             PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter)target).assetPath;
