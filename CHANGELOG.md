@@ -1,8 +1,10 @@
 # Changelog
 
+## [14.0.1] - 2026-02-10
+### Changed
+- Remove automatically added tangents from vertex attributes of sprites with bones.
+
 ## [14.0.0] - 2026-01-20
-
-
 ### Changed
 - Update Unity min version for package.
 
