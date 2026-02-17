@@ -1,5 +1,7 @@
 # Changelog
 
+## [14.0.2] - 2026-02-17
+
 ## [14.0.1] - 2026-02-10
 ### Changed
 - Remove automatically added tangents from vertex attributes of sprites with bones.
