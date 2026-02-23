@@ -1,5 +1,9 @@
 # Changelog
 
+## [13.0.2] - 2026-02-23
+### Changed
+- Remove the analytics features in 2D Animation and PSDImporter
+
 ## [13.0.1] - 2025-10-30
 ### Fixed
 - Fix null reference exception occurs when importing psd without visible layers. (DANB-1155)

@@ -30,11 +30,6 @@
         },
         {
             "name": "Unity",
-            "expression": "2023.2.0a22",
-            "define": "USE_NEW_EDITOR_ANALYTICS"
-        },
-        {
-            "name": "Unity",
             "expression": "6000.1.0a2",
             "define": "USE_SPRITE_FRAME_CAPABILITY"
         }
