@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.0.3] - 2026-04-14
+### Fixed
+- Package Manager Samples section title now displays "PSD Importer" consistently. (UUM-135396)
+
+### Changed
+- Align online documentation URLs: package docs to @13.0; Unity Manual/Script Reference links to Unity 6000.4.
+
 ## [13.0.2] - 2026-02-23
 ### Changed
 - Remove the analytics features in 2D Animation and PSDImporter
