@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.0.2] - 2026-04-29
+### Fixed
+- Package Manager Samples section title now displays "PSD Importer" consistently. (UUM-135396)
+
+### Changed
+- Align online documentation URLs: package docs to @12.0; Unity Manual/Script Reference links to Unity 6000.3.
+
 ## [12.0.1] - 2025-11-12
 ### Changed
 - Exclude empty layers from import.
