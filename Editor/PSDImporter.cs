@@ -33,7 +33,7 @@ namespace UnityEditor.U2D.PSD
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000, 6000.5 -> 60500000
     [ScriptedImporter(60500000, new string[] { "psb" }, new[] { "psd" }, AllowCaching = true)]
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@latest")]
+    [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@14.0")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
     {

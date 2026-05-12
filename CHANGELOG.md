@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.0.3] - 2026-05-12
+### Fixed
+- Package Manager Samples section title now displays "PSD Importer" consistently. (UUM-135396)
+
+### Changed
+- Align online documentation URLs to package docs @14.0.
+
 ## [14.0.2] - 2026-02-17
 
 ## [14.0.1] - 2026-02-10
