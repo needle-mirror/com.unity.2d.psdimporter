@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.1.2] - 2026-07-22
+### Changed
+- Align online documentation URLs: package docs to @9.1; Unity Manual/Script Reference links to Unity 6000.0.
+
 ## [9.1.1] - 2025-11-04
 ### Changed
 - Exclude empty layers from import.
