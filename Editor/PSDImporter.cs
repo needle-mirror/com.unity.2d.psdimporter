@@ -477,19 +477,24 @@ namespace UnityEditor.U2D.PSD
             return output;
         }
 
-        void SetDocumentImportData(IEnumerable<BitmapLayer> layers, PSDExtractLayerData[] extractData, IPSDLayerMappingStrategy mappingStrategy, List<PSDLayer> psdLayers, PSDExtractLayerData parent = null)
+        void SetDocumentImportData(IEnumerable<BitmapLayer> layers, PSDExtractLayerData[] extractData, IPSDLayerMappingStrategy mappingStrategy, List<PSDLayer> psdLayers, HashSet<PSDLayerImportSetting> mappedImportSettings, HashSet<PSDLayer> mappedPsdLayers, PSDExtractLayerData parent = null)
         {
             for (var i = 0; i < layers.Count(); ++i)
             {
                 var layer = layers.ElementAt(i);
                 PSDLayerImportSetting importSetting = null;
+                // Layers sharing an identifier, e.g. duplicated layer names, pair one to one with the
+                // previous import data in document order so that each layer keeps its own Sprite ID.
                 if (m_PSDLayerImportSetting != null && m_PSDLayerImportSetting.Length > 0)
                 {
-                    importSetting = m_PSDLayerImportSetting.FirstOrDefault(x => mappingStrategy.Compare(x, layer));
+                    importSetting = m_PSDLayerImportSetting.FirstOrDefault(x => !mappedImportSettings.Contains(x) && mappingStrategy.Compare(x, layer));
+                    if (importSetting != null)
+                        mappedImportSettings.Add(importSetting);
                 }
-                var c = psdLayers?.FirstOrDefault(x => mappingStrategy.Compare(x, layer));
+                var c = psdLayers?.FirstOrDefault(x => !mappedPsdLayers.Contains(x) && mappingStrategy.Compare(x, layer));
                 if (c != null)
                 {
+                    mappedPsdLayers.Add(c);
                     if(c.spriteID.Empty())
                         c.spriteID = importSetting != null ? importSetting.spriteId : GUID.Generate();
                     if (importSetting == null)
@@ -523,7 +528,7 @@ namespace UnityEditor.U2D.PSD
                 if (layer.ChildLayer != null)
                 {
                     childrenExtractData = new PSDExtractLayerData[layer.ChildLayer.Count()];
-                    SetDocumentImportData(layer.ChildLayer, childrenExtractData, mappingStrategy, psdLayers, extractData[i]);
+                    SetDocumentImportData(layer.ChildLayer, childrenExtractData, mappingStrategy, psdLayers, mappedImportSettings, mappedPsdLayers, extractData[i]);
                 }
 
                 extractData[i].children = childrenExtractData;
@@ -535,7 +540,7 @@ namespace UnityEditor.U2D.PSD
             var oldPsdLayers = GetPSDLayers();
             var mappingStrategy = GetLayerMappingStrategy();
             m_ExtractData = new PSDExtractLayerData[doc.Layers.Count];
-            SetDocumentImportData(doc.Layers, m_ExtractData, mappingStrategy, oldPsdLayers);
+            SetDocumentImportData(doc.Layers, m_ExtractData, mappingStrategy, oldPsdLayers, new HashSet<PSDLayerImportSetting>(), new HashSet<PSDLayer>());
         }
 
         TextureGenerationOutput ImportFlattenImage(Document doc, AssetImportContext ctx)
@@ -591,27 +596,38 @@ namespace UnityEditor.U2D.PSD
                 {
                     Debug.LogWarning(layerUnique,this);
                 }
-                var removedLayersSprite = oldPsdLayers.Where(x => psdLayers.FirstOrDefault(y => mappingStrategy.Compare(y, x)) == null).Select(z => z.spriteID).ToArray();
                 var hasNewLayer = false;
+                // Pair one to one in document order so that layers sharing an identifier, e.g.
+                // duplicated layer names, do not all inherit the name and mosaic position of the
+                // same previous layer.
+                var pairedOldPsdLayers = new PSDLayer[psdLayers.Count];
+                var mappedOldPsdLayers = new HashSet<PSDLayer>();
                 for (var i = 0; i < psdLayers.Count; ++i)
                 {
-                    var j = 0;
                     var psdLayer = psdLayers[i];
-                    for (; j < oldPsdLayers.Count; ++j)
+                    var match = oldPsdLayers.FirstOrDefault(x => !mappedOldPsdLayers.Contains(x) && mappingStrategy.Compare(psdLayer, x));
+                    if (match != null)
                     {
-                        if (mappingStrategy.Compare(psdLayer, oldPsdLayers[j]))
-                        {
-                            psdLayer.spriteName = oldPsdLayers[j].spriteName;
-                            psdLayer.mosaicPosition = oldPsdLayers[j].mosaicPosition;
-                            if (psdLayer.isImported != oldPsdLayers[j].isImported)
-                                hasNewLayer = true;
-                            break;
-                        }
+                        pairedOldPsdLayers[i] = match;
+                        mappedOldPsdLayers.Add(match);
                     }
-
-                    if(j >= oldPsdLayers.Count)
-                        hasNewLayer = true;
                 }
+                for (var i = 0; i < psdLayers.Count; ++i)
+                {
+                    var psdLayer = psdLayers[i];
+                    var oldPsdLayer = pairedOldPsdLayers[i];
+                    if (oldPsdLayer == null)
+                        hasNewLayer = true;
+                    else
+                    {
+                        psdLayer.spriteName = oldPsdLayer.spriteName;
+                        psdLayer.mosaicPosition = oldPsdLayer.mosaicPosition;
+                        if (psdLayer.isImported != oldPsdLayer.isImported)
+                            hasNewLayer = true;
+                    }
+                }
+                // A previous layer no one paired with no longer exists in the file.
+                var removedLayersSprite = oldPsdLayers.Where(x => !mappedOldPsdLayers.Contains(x)).Select(z => z.spriteID).ToArray();
 
                 var layerBuffers = new List<NativeArray<Color32>>();
                 var layerWidth = new List<int>();
@@ -712,7 +728,7 @@ namespace UnityEditor.U2D.PSD
                     {
                         var i = layerIndex[k];
                         var spriteSheet = spriteImportData.FirstOrDefault(x => x.spriteID == psdLayers[i].spriteID);
-                        var inOldLayer = oldPsdLayers.FindIndex(x => mappingStrategy.Compare(x,psdLayers[i])) != -1;
+                        var inOldLayer = pairedOldPsdLayers[i] != null;
                         if (spriteSheet == null && !inOldLayer)
                         {
                             spriteSheet = new SpriteMetaData();

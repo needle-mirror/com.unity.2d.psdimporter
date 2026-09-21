@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.1.3] - 2026-09-21
+### Fixed
+- Fixed layers with duplicated names losing their Sprite ID and Sprite rect when Layer Mapping is set to Use Layer Name. (UUM-150011)
+
 ## [9.1.2] - 2026-07-22
 ### Changed
 - Align online documentation URLs: package docs to @9.1; Unity Manual/Script Reference links to Unity 6000.0.

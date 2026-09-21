@@ -98,7 +98,6 @@ namespace UnityEditor.U2D.PSD
     {
         [SerializeField]
         string m_SpriteId;
-        GUID m_SpriteIDGUID;
 
         public string name;
         public int layerId;
@@ -115,19 +114,11 @@ namespace UnityEditor.U2D.PSD
             get
             {
                 if (string.IsNullOrEmpty(m_SpriteId))
-                {
-                    m_SpriteIDGUID = GUID.Generate();
-                    m_SpriteId = m_SpriteIDGUID.ToString();
-                }
+                    m_SpriteId = GUID.Generate().ToString();
 
-                return m_SpriteIDGUID;
-
+                return new GUID(m_SpriteId);
             }
-            set
-            {
-                m_SpriteIDGUID = value;
-                m_SpriteId = m_SpriteIDGUID.ToString();
-            }
+            set => m_SpriteId = value.ToString();
         }
     }
 
