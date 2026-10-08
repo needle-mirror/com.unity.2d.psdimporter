@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [16.0.1] - 2026-10-08
+### Fixed
+- Added correct .buginfo file.
+
 ## [16.0.0] - 2026-09-02
 ### Changed
 - Internal refactor to isolate code that does meta writing.
