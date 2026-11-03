@@ -4,10 +4,6 @@ Discover new features and improvements in the latest updates to PSD Importer.
 
 For more information, refer to the [changelog](../changelog/CHANGELOG.html).
 
-## Version 16.0.0
-
-[TBC]
-
 ## Version 14.0.1
 
 ### Importer removes tangent data from sprites with bones

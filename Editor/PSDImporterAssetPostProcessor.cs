@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 
 namespace UnityEditor.U2D.PSD
 {
     class PSDImporterAssetPostProcessor : AssetPostprocessor
     {
+        [NoAutoStaticsCleanup]
         static List<PSDImporter> s_AssetImporter;
         public override int GetPostprocessOrder() => int.MinValue;
 

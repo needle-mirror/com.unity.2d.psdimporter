@@ -1,13 +1,21 @@
 # Changelog
 
 
+## [16.0.2] - 2026-11-03
+### Fixed
+- Fixed an error being logged to the Console when applying PSD Importer settings in the Inspector while the Sprite Editor has unapplied changes for the same asset. (UUM-154708)
+
 ## [16.0.1] - 2026-10-08
 ### Fixed
 - Added correct .buginfo file.
 
+### Changed
+- Pin hosted package documentation links to com.unity.2d.psdimporter@16.0 and align Unity Manual and Script Reference links to Unity 6000.7.
+
 ## [16.0.0] - 2026-09-02
 ### Changed
 - Internal refactor to isolate code that does meta writing.
+- Pin hosted package documentation links to com.unity.2d.psdimporter@16.0 and align Unity Manual and Script Reference links to Unity 6000.7.
 
 ### Fixed
 - Fix Custom Outline and Custom Physics Outline not being saved when Sprite Mode is set to Single or Polygon. (UUM-150014)

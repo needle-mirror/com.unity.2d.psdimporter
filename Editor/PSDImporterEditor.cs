@@ -12,6 +12,7 @@ using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.UIElements;
+using Unity.Scripting.LifecycleManagement;
 
 #if ENABLE_2D_ANIMATION
 using UnityEngine.U2D.Animation;
@@ -1118,19 +1119,28 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public override void SaveChanges()
         {
-            if (m_SpriteSizePreviousSize != m_SpriteSizeExpand.uintValue)
+            // Defers the Sprite Editor's reimport in Apply() so it cannot destroy this editor mid-save.
+            AssetDatabase.StartAssetEditing();
+            try
             {
-                m_SpriteSizeExpandChanged.boolValue = true;
+                if (m_SpriteSizePreviousSize != m_SpriteSizeExpand.uintValue)
+                {
+                    m_SpriteSizeExpandChanged.boolValue = true;
+                    serializedObject.ApplyModifiedProperties();
+                    extraDataSerializedObject.ApplyModifiedProperties();
+                    m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
+                }
+
+                ApplyTexturePlatformSettings();
+
                 serializedObject.ApplyModifiedProperties();
                 extraDataSerializedObject.ApplyModifiedProperties();
-                m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
+                base.SaveChanges();
             }
-
-            ApplyTexturePlatformSettings();
-
-            serializedObject.ApplyModifiedProperties();
-            extraDataSerializedObject.ApplyModifiedProperties();
-            base.SaveChanges();
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
         }
 
         void ApplyTexturePlatformSettings()
@@ -1860,6 +1870,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        [NoAutoStaticsCleanup]
         static Styles m_Styles;
 
         internal static Styles styles

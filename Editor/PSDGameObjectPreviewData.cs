@@ -7,7 +7,7 @@ namespace UnityEditor.U2D.PSD
 {
     internal class PSDGameObjectPreviewData : IDisposable
     {
-        static int s_SliderHash = "PSDGameObjectPreviewData_Slider".GetHashCode();
+        static readonly int s_SliderHash = "PSDGameObjectPreviewData_Slider".GetHashCode();
         Texture m_Texture;
         bool m_Disposed;
         PreviewRenderUtility m_RenderUtility;
