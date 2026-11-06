@@ -31,6 +31,7 @@ namespace UnityEditor.U2D.PSD
         ISpritePhysicsOutlineDataProvider physicsOutlineDataProvider { get; }
         Vector2Int canvasSize { get; }
         IReadOnlyList<SpriteMetaData> spriteMetaData { get; }
+        IReadOnlyList<SpriteMetaData> importedSpriteMetaData { get; }
         PSDImporter.ELayerMappingOption layerMappingOption { get; }
         Action<LogType, string> logger { get; }
         SpriteAlignment singleModeSpriteAlignment { get; }
@@ -44,13 +45,7 @@ namespace UnityEditor.U2D.PSD
 
         IReadOnlyList<PSDExtractLayerData> extractedLayerData { get; }
 
-        bool resliceFromLayer { get; }
-
         IReadOnlyList<PSDLayer> obsoletePsdLayers { get; }
-        bool shouldResliceFromLayer { get; }
-
-        bool spriteSizeExpandChanged { get; }
-
         bool inCharacterMode { get; }
 
         bool generateGOHierarchy { get; }
@@ -79,10 +74,11 @@ namespace UnityEditor.U2D.PSD
         bool IImportConfigProvider.generatePhysicsShape => m_GeneratePhysicsShape;
         ISpritePhysicsOutlineDataProvider IImportConfigProvider.physicsOutlineDataProvider => GetDataProvider<ISpritePhysicsOutlineDataProvider>();
         IReadOnlyList<SpriteMetaData> IImportConfigProvider.spriteMetaData => GetStoredSpriteRectData();
+        IReadOnlyList<SpriteMetaData> IImportConfigProvider.importedSpriteMetaData => importData.spriteRects;
         Action<LogType, string> IImportConfigProvider.logger => Logger;
         SpriteAlignment IImportConfigProvider.singleModeSpriteAlignment => (SpriteAlignment)m_TextureImporterSettings.spriteAlignment;
         Vector2 IImportConfigProvider.singleModeSpritePivot => m_TextureImporterSettings.spritePivot;
-        bool IImportConfigProvider.keepDuplicateSpriteName => m_KeepDupilcateSpriteName;
+        bool IImportConfigProvider.keepDuplicateSpriteName => m_KeepDuplicateSpriteName;
 
         bool IImportConfigProvider.RequireSquarePOT(AssetImportContext ctx)
         {
@@ -120,12 +116,7 @@ namespace UnityEditor.U2D.PSD
 
         IReadOnlyList<PSDExtractLayerData> IImportConfigProvider.extractedLayerData => m_ExtractData;
 
-        bool IImportConfigProvider.resliceFromLayer => m_ResliceFromLayer;
         IReadOnlyList<PSDLayer> IImportConfigProvider.obsoletePsdLayers => GetPSDLayers();
-
-        // TODO for V2 this will always return true
-        bool IImportConfigProvider.shouldResliceFromLayer => shouldResliceFromLayer;
-        bool IImportConfigProvider.spriteSizeExpandChanged => m_SpriteSizeExpandChanged;
         bool IImportConfigProvider.inCharacterMode => inCharacterMode;
         bool IImportConfigProvider.generateGOHierarchy => m_GenerateGOHierarchy;
 #if ENABLE_2D_ANIMATION

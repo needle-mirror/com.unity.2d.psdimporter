@@ -47,9 +47,9 @@ namespace PhotoshopFile
             }
         }
 
-        private static int positionVsLayerBit = BitVector32.CreateMask();
-        private static int disabledBit = BitVector32.CreateMask(positionVsLayerBit);
-        private static int invertOnBlendBit = BitVector32.CreateMask(disabledBit);
+        private static readonly int positionVsLayerBit = BitVector32.CreateMask();
+        private static readonly int disabledBit = BitVector32.CreateMask(positionVsLayerBit);
+        private static readonly int invertOnBlendBit = BitVector32.CreateMask(disabledBit);
 
         private BitVector32 flags;
         public BitVector32 Flags { get { return flags; } }
@@ -103,10 +103,10 @@ namespace PhotoshopFile
     /// </summary>
     internal class MaskInfo
     {
-        private static int s_UserMaskDensityBit = BitVector32.CreateMask();
-        private static int s_UserMaskFeatherBit = BitVector32.CreateMask(s_UserMaskDensityBit);
-        private static int s_VectorMaskDensityBit = BitVector32.CreateMask(s_UserMaskFeatherBit);
-        private static int s_VectorMaskFeatherBit = BitVector32.CreateMask(s_VectorMaskDensityBit);
+        private static readonly int s_UserMaskDensityBit = BitVector32.CreateMask();
+        private static readonly int s_UserMaskFeatherBit = BitVector32.CreateMask(s_UserMaskDensityBit);
+        private static readonly int s_VectorMaskDensityBit = BitVector32.CreateMask(s_UserMaskFeatherBit);
+        private static readonly int s_VectorMaskFeatherBit = BitVector32.CreateMask(s_VectorMaskDensityBit);
 
         public Mask LayerMask { get; set; }
 

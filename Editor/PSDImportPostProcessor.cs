@@ -1,9 +1,11 @@
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
     internal class PSDImportPostProcessor : AssetPostprocessor
     {
+        [NoAutoStaticsCleanup]
         private static string s_CurrentApplyAssetPath = null;
 
         public static string currentApplyAssetPath

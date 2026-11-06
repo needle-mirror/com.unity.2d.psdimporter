@@ -210,10 +210,10 @@ namespace UnityEditor.U2D.PSD
 #if USE_SPRITE_FRAME_CAPABILITY
     internal class SpriteFrameEditCapabilityDataProvider : PSDDataProvider, ISpriteFrameEditCapability
     {
-        static EditCapability s_MosaicEditCapability = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
-        static EditCapability s_SpriteSheetCapabilities = new EditCapability(EEditCapability.All);
-        static EditCapability s_NonMultipleCapabilities = new EditCapability(EEditCapability.None);
-        static EditCapability s_SingleModeCapabilities = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
+        static readonly EditCapability s_MosaicEditCapability = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
+        static readonly EditCapability s_SpriteSheetCapabilities = new EditCapability(EEditCapability.All);
+        static readonly EditCapability s_NonMultipleCapabilities = new EditCapability(EEditCapability.None);
+        static readonly EditCapability s_SingleModeCapabilities = new EditCapability(EEditCapability.EditPivot | EEditCapability.EditBorder);
 
         public EditCapability GetEditCapability()
         {

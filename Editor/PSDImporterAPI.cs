@@ -376,7 +376,7 @@ namespace UnityEditor.U2D.PSD
         /// <summary>
         /// Sets the padding between each Sprites in the mosaic texture.
         /// </summary>
-        public uint mosiacPadding
+        public uint mosaicPadding
         {
             get => (uint)m_Padding;
             set
@@ -384,6 +384,16 @@ namespace UnityEditor.U2D.PSD
                 m_Padding = (int)value;
                 SetDirty();
             }
+        }
+
+        /// <summary>
+        /// (Obsolete) Sets the padding between each Sprites in the mosaic texture. Use <see cref="mosaicPadding"/> instead.
+        /// </summary>
+        [Obsolete("mosiacPadding has been renamed to mosaicPadding. (UnityUpgradable) -> mosaicPadding")]
+        public uint mosiacPadding
+        {
+            get => mosaicPadding;
+            set => mosaicPadding = value;
         }
 
         /// <summary>
@@ -395,7 +405,6 @@ namespace UnityEditor.U2D.PSD
             set
             {
                 m_SpriteSizeExpand = value;
-                m_SpriteSizeExpandChanged = true;
                 SetDirty();
             }
         }

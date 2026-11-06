@@ -12,6 +12,7 @@ using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.UIElements;
+using Unity.Scripting.LifecycleManagement;
 
 #if ENABLE_2D_ANIMATION
 using UnityEngine.U2D.Animation;
@@ -73,17 +74,15 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_ConvertToNormalMap;
         SerializedProperty m_MosaicLayers;
         SerializedProperty m_ImportHiddenLayers;
-        SerializedProperty m_ResliceFromLayer;
         SerializedProperty m_CharacterMode;
         SerializedProperty m_DocumentPivot;
         SerializedProperty m_DocumentAlignment;
         SerializedProperty m_GenerateGOHierarchy;
-        SerializedProperty m_KeepDupilcateSpriteName;
+        SerializedProperty m_KeepDuplicateSpriteName;
         SerializedProperty m_GeneratePhysicsShape;
         SerializedProperty m_LayerMappingOption;
         SerializedProperty m_Padding;
         SerializedProperty m_SpriteSizeExpand;
-        SerializedProperty m_SpriteSizeExpandChanged;
 
 #if ENABLE_2D_TILEMAP_EDITOR
         SerializedProperty m_GenerateTileAssets;
@@ -100,8 +99,6 @@ namespace UnityEditor.U2D.PSD
         SerializedProperty m_PaperDollMode;
         SerializedProperty m_SkeletonAssetReferenceID;
 #endif
-
-        uint m_SpriteSizePreviousSize;
 
         readonly int[] m_FilterModeOptions = (int[])(Enum.GetValues(typeof(FilterMode)));
         static readonly int s_SwizzleFieldHash = "SwizzleField".GetHashCode();
@@ -143,18 +140,15 @@ namespace UnityEditor.U2D.PSD
             base.OnEnable();
             m_MosaicLayers = serializedObject.FindProperty("m_MosaicLayers");
             m_ImportHiddenLayers = serializedObject.FindProperty("m_ImportHiddenLayers");
-            m_ResliceFromLayer = serializedObject.FindProperty("m_ResliceFromLayer");
             m_CharacterMode = serializedObject.FindProperty("m_CharacterMode");
             m_DocumentPivot = serializedObject.FindProperty("m_DocumentPivot");
             m_DocumentAlignment = serializedObject.FindProperty("m_DocumentAlignment");
             m_GenerateGOHierarchy = serializedObject.FindProperty("m_GenerateGOHierarchy");
-            m_KeepDupilcateSpriteName = serializedObject.FindProperty("m_KeepDupilcateSpriteName");
+            m_KeepDuplicateSpriteName = serializedObject.FindProperty("m_KeepDuplicateSpriteName");
             m_GeneratePhysicsShape = serializedObject.FindProperty("m_GeneratePhysicsShape");
             m_LayerMappingOption = serializedObject.FindProperty("m_LayerMappingOption");
             m_Padding = serializedObject.FindProperty("m_Padding");
             m_SpriteSizeExpand = serializedObject.FindProperty("m_SpriteSizeExpand");
-            m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
-            m_SpriteSizeExpandChanged = serializedObject.FindProperty("m_SpriteSizeExpandChanged");
             m_Pipeline = serializedObject.FindProperty("m_Pipeline");
 
             SerializedProperty textureImporterSettingsSP = serializedObject.FindProperty("m_TextureImporterSettings");
@@ -935,11 +929,6 @@ namespace UnityEditor.U2D.PSD
                 }
             }
             EditorGUILayout.PropertyField(m_GeneratePhysicsShape, styles.generatePhysicsShape);
-            EditorGUILayout.PropertyField(m_ResliceFromLayer, styles.resliceFromLayer);
-            if (m_ResliceFromLayer.boolValue)
-            {
-                EditorGUILayout.HelpBox(styles.resliceFromLayerWarning.text, MessageType.Info, true);
-            }
 
             DoOpenSpriteEditorButton();
         }
@@ -954,7 +943,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     using (new EditorGUI.DisabledScope(m_MosaicLayers.boolValue == false))
                     {
-                        EditorGUILayout.PropertyField(m_KeepDupilcateSpriteName, styles.keepDuplicateSpriteName);
+                        EditorGUILayout.PropertyField(m_KeepDuplicateSpriteName, styles.keepDuplicateSpriteName);
 
                         using (new EditorGUI.DisabledScope(!m_MosaicLayers.boolValue || !m_CharacterMode.boolValue))
                         {
@@ -1118,19 +1107,20 @@ namespace UnityEditor.U2D.PSD
         /// </summary>
         public override void SaveChanges()
         {
-            if (m_SpriteSizePreviousSize != m_SpriteSizeExpand.uintValue)
+            // Defers the Sprite Editor's reimport in Apply() so it cannot destroy this editor mid-save.
+            AssetDatabase.StartAssetEditing();
+            try
             {
-                m_SpriteSizeExpandChanged.boolValue = true;
+                ApplyTexturePlatformSettings();
+
                 serializedObject.ApplyModifiedProperties();
                 extraDataSerializedObject.ApplyModifiedProperties();
-                m_SpriteSizePreviousSize = m_SpriteSizeExpand.uintValue;
+                base.SaveChanges();
             }
-
-            ApplyTexturePlatformSettings();
-
-            serializedObject.ApplyModifiedProperties();
-            extraDataSerializedObject.ApplyModifiedProperties();
-            base.SaveChanges();
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
         }
 
         void ApplyTexturePlatformSettings()
@@ -1740,7 +1730,6 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent applyButtonLabel = new GUIContent("Apply");
             public readonly GUIContent cancelButtonLabel = new GUIContent("Cancel");
             public readonly GUIContent spriteEditorButtonLabel = new GUIContent("Open Sprite Editor");
-            public readonly GUIContent resliceFromLayerWarning = new GUIContent("This will reinitialize and recreate all Sprites based on the file’s layer data. Existing Sprite metadata from previously generated Sprites are copied over.");
             public readonly GUIContent alphaIsTransparency = new GUIContent("Alpha Is Transparency", "If the provided alpha channel is transparency, enable this to pre-filter the color to avoid texture filtering artifacts. This is not supported for HDR textures.");
 
             public readonly GUIContent advancedHeaderText = new GUIContent("Advanced", "Show advanced settings.");
@@ -1777,7 +1766,6 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent mosaicLayers = EditorGUIUtility.TrTextContent("Import Mode", "Layers will be imported as individual Sprites.");
             public readonly GUIContent characterMode = EditorGUIUtility.TrTextContent("Use as Rig", "Enable to support 2D Animation character rigging.");
             public readonly GUIContent layerGroupLabel = EditorGUIUtility.TrTextContent("Use Layer Group", "GameObjects are grouped according to source file layer grouping.");
-            public readonly GUIContent resliceFromLayer = EditorGUIUtility.TrTextContent("Automatic Reslice", "Recreate Sprite rects from file.");
             public readonly GUIContent paperDollMode = EditorGUIUtility.TrTextContent("Paper Doll Mode", "Special mode to generate a Prefab for Paper Doll use case.");
             public readonly GUIContent keepDuplicateSpriteName = EditorGUIUtility.TrTextContent("Keep Duplicate Names", "Keep Sprite name same as Layer Name even if there are duplicated Layer Name.");
             public readonly GUIContent mainSkeletonName = EditorGUIUtility.TrTextContent("Main Skeleton", "Main Skeleton to use for Rigging.");
@@ -1860,6 +1848,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        [NoAutoStaticsCleanup]
         static Styles m_Styles;
 
         internal static Styles styles

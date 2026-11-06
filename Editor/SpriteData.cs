@@ -51,6 +51,9 @@ namespace UnityEditor.U2D.PSD
             spritePosition = sr.spritePosition;
         }
 
+        // Unlike Copy, keeps every field as is, including the stored pivot and the SpriteRect fields Copy skips.
+        public SpriteMetaData Clone() => (SpriteMetaData)MemberwiseClone();
+
         public static Vector2 GetPivotValue(SpriteAlignment alignment, Vector2 customOffset)
         {
             switch (alignment)

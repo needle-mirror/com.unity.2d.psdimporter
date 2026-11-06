@@ -64,39 +64,12 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
             else
             {
-                psdFile.VerifyLayerSections();
-                ApplyLayerSections(psdFile.Layers);
-
-                //var pdnLayers = psdFile.Layers.AsParallel().AsOrdered()
-                //  .Select(psdLayer => psdLayer.DecodeToPdnLayer())
-                //  .ToList();
-                //document.Layers.AddRange(pdnLayers);
-                /*
-                        foreach (var l in psdFile.Layers)
-                {
-                    document.Layers.Add(l.DecodeToPdnLayer());
-                }
-                */
-                BitmapLayer parent = null;
                 JobHandle jobHandle = default(JobHandle);
-                foreach (PhotoshopFile.Layer l in Enumerable.Reverse(psdFile.Layers))
+                AddLayerTree(document, psdFile, l =>
                 {
-                    if (l.IsEndGroupMarker)
-                    {
-                        parent = parent != null ? parent.ParentLayer : null;
-                        continue;
-                    }
-                    BitmapLayer b = null;
-                    jobHandle = l.DecodeToPdnLayer(jobHandle, out b);
-                    b.ParentLayer = parent;
-                    if (parent != null)
-                        parent.AddChildLayer(b);
-                    else
-                        document.Layers.Add(b);
-
-                    if (b.IsGroup)
-                        parent = b;
-                }
+                    jobHandle = l.DecodeToPdnLayer(jobHandle, out BitmapLayer b);
+                    return b;
+                });
                 jobHandle.Complete();
             }
             SetPdnResolutionInfo(psdFile, document);
@@ -104,17 +77,69 @@ namespace PaintDotNet.Data.PhotoshopFileType
             return document;
         }
 
+        // Layers have no Surface; documents without layer records are loaded in full by reading the seekable input again.
+        public static Document LoadLayerRecords(System.IO.Stream input)
+        {
+            long startPosition = input.Position;
+            DocumentLoadContext loadContext = new DocumentLoadContext();
+            PsdFile psdFile = new PsdFile(input, loadContext, ELoadFlag.LayerRecords);
+            if (psdFile.ColorMode == PsdColorMode.Multichannel || psdFile.Layers.Count == 0)
+            {
+                input.Position = startPosition;
+                return Load(input);
+            }
+
+            Document document = new Document(psdFile.ColumnCount, psdFile.RowCount);
+            AddLayerTree(document, psdFile, l => CreatePdnLayer(l, allocateSurface: false));
+            SetPdnResolutionInfo(psdFile, document);
+            psdFile.Cleanup();
+            return document;
+        }
+
+        static void AddLayerTree(Document document, PsdFile psdFile, Func<PhotoshopFile.Layer, BitmapLayer> createLayer)
+        {
+            psdFile.VerifyLayerSections();
+            ApplyLayerSections(psdFile.Layers);
+
+            BitmapLayer parent = null;
+            foreach (PhotoshopFile.Layer l in Enumerable.Reverse(psdFile.Layers))
+            {
+                if (l.IsEndGroupMarker)
+                {
+                    parent = parent != null ? parent.ParentLayer : null;
+                    continue;
+                }
+
+                BitmapLayer b = createLayer(l);
+                b.ParentLayer = parent;
+                if (parent != null)
+                    parent.AddChildLayer(b);
+                else
+                    document.Layers.Add(b);
+
+                if (b.IsGroup)
+                    parent = b;
+            }
+        }
+
+        static BitmapLayer CreatePdnLayer(PhotoshopFile.Layer psdLayer, bool allocateSurface)
+        {
+            return new BitmapLayer(psdLayer.Rect, allocateSurface)
+            {
+                Name = psdLayer.Name,
+                Opacity = psdLayer.Opacity,
+                Visible = psdLayer.Visible,
+                IsGroup = psdLayer.IsGroup,
+                LayerID = psdLayer.LayerID,
+                BlendMode = BlendModeMapping.FromPsdBlendMode(psdLayer.BlendModeKey),
+            };
+        }
+
         internal static JobHandle DecodeToPdnLayer(this PhotoshopFile.Layer psdLayer, JobHandle inputDeps, out BitmapLayer pdnLayer)
         {
             psdLayer.CreateMissingChannels();
 
-            pdnLayer = new BitmapLayer(psdLayer.Rect);
-            pdnLayer.Name = psdLayer.Name;
-            pdnLayer.Opacity = psdLayer.Opacity;
-            pdnLayer.Visible = psdLayer.Visible;
-            pdnLayer.IsGroup = psdLayer.IsGroup;
-            pdnLayer.LayerID = psdLayer.LayerID;
-            pdnLayer.BlendMode = BlendModeMapping.FromPsdBlendMode(psdLayer.BlendModeKey);
+            pdnLayer = CreatePdnLayer(psdLayer, allocateSurface: true);
             return ImageDecoderPdn.DecodeImage(pdnLayer, psdLayer, inputDeps);
         }
 

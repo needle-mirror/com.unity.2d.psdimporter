@@ -7,6 +7,7 @@ using PDNWrapper;
 using Unity.Collections;
 using UnityEngine;
 using UnityEditor.AssetImporters;
+using UnityEditor.U2D.Common;
 
 
 #if ENABLE_2D_ANIMATION
@@ -85,43 +86,6 @@ namespace UnityEditor.U2D.PSD
         }
     }
 
-    static class LayerIdHash
-    {
-        /// <summary>
-        /// Layer ids are persisted in the importer's meta file and are used to map layers to
-        /// existing SpriteRects on reimport, so the hash has to stay stable forever and across
-        /// runtimes. <see cref="string.GetHashCode()"/> cannot be used for that: .NET Core
-        /// randomizes it per process, so every reimport would produce a different id and drop all
-        /// existing sprite references.
-        ///
-        /// This reproduces, bit for bit, the non-randomized string hash the Mono runtime used when
-        /// these ids were first written, including its behaviour of stopping at an embedded '\0'.
-        /// </summary>
-        public static int Compute(string str)
-        {
-            int hash1 = 5381;
-            int hash2 = hash1;
-            int length = str.Length;
-
-            for (int i = 0; i < length; i += 2)
-            {
-                int c = str[i];
-                if (c == 0)
-                    break;
-                hash1 = ((hash1 << 5) + hash1) ^ c;
-
-                if (i + 1 == length)
-                    break;
-                c = str[i + 1];
-                if (c == 0)
-                    break;
-                hash2 = ((hash2 << 5) + hash2) ^ c;
-            }
-
-            return hash1 + (hash2 * 1566083941);
-        }
-    }
-
     class GameObjectCreationFactory : UniqueNameGenerator
     {
         public GameObjectCreationFactory(IList<string> names)
@@ -186,7 +150,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     IEnumerable<PSDLayer> oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
                     if (oldLayers.Count() == 0)
-                        oldLayers = oldPsdLayer.Where(x => x.layerID == LayerIdHash.Compute(childBitmapLayer.Name));
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == StableStringHash.Compute(childBitmapLayer.Name));
                     // pick one that is not already on the list
                     foreach (PSDLayer ol in oldLayers)
                     {
@@ -205,7 +169,7 @@ namespace UnityEditor.U2D.PSD
                     layerName = uniqueNameGenerator.GetUniqueName(layerName);
                     if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
-                    childBitmapLayer.LayerID = LayerIdHash.Compute(layerName);
+                    childBitmapLayer.LayerID = StableStringHash.Compute(layerName);
                     Debug.LogWarning(importWarning, importer);
                 }
                 else
@@ -279,9 +243,9 @@ namespace UnityEditor.U2D.PSD
             return Vector2.zero;
         }
 
-        public static string GetUniqueSpriteName(string name, UniqueNameGenerator generator, bool keepDupilcateSpriteName)
+        public static string GetUniqueSpriteName(string name, UniqueNameGenerator generator, bool keepDuplicateSpriteName)
         {
-            if (keepDupilcateSpriteName)
+            if (keepDuplicateSpriteName)
                 return name;
             return generator.GetUniqueName(name);
         }
@@ -293,12 +257,6 @@ namespace UnityEditor.U2D.PSD
             if (psdLayer.parentIndex >= 0)
                 parentVisible = VisibleInHierarchy(psdGroup, psdLayer.parentIndex);
             return parentVisible && psdLayer.isVisible;
-        }
-
-        public static bool IsSpriteMetaDataDefault(SpriteMetaData metaData)
-        {
-            return metaData.spriteID == default ||
-                   metaData.rect == Rect.zero;
         }
 
         public static IPSDLayerMappingStrategy GetLayerMappingStrategy(PSDImporter.ELayerMappingOption option)

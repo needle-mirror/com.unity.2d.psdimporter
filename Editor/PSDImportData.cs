@@ -13,7 +13,6 @@ namespace UnityEditor.U2D.PSD
         bool Flatten { get; }
         bool IsGroup { get; }
         bool ImportLayer { get; }
-        GUID SpriteId { get; }
     }
 
     /// <summary>
@@ -181,9 +180,6 @@ namespace UnityEditor.U2D.PSD
     [Serializable]
     class PSDLayerImportSetting : IPSDLayerImportSettingRecord
     {
-        [SerializeField]
-        string m_SpriteId;
-
         public string name;
         public int layerId;
         public bool flatten;
@@ -193,24 +189,11 @@ namespace UnityEditor.U2D.PSD
         string IPSDLayerMappingStrategyComparable.name => name;
         bool IPSDLayerMappingStrategyComparable.isGroup => isGroup;
 
-        public GUID spriteId
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_SpriteId))
-                    m_SpriteId = GUID.Generate().ToString();
-
-                return new GUID(m_SpriteId);
-            }
-            set => m_SpriteId = value.ToString();
-        }
-
         public string Name => name;
         public int LayerId => layerId;
         public bool Flatten => flatten;
         public bool IsGroup => isGroup;
         public bool ImportLayer => importLayer;
-        public GUID SpriteId => spriteId;
 
         public PSDLayerImportSetting() { }
 
@@ -221,7 +204,6 @@ namespace UnityEditor.U2D.PSD
             flatten = record.Flatten;
             isGroup = record.IsGroup;
             importLayer = record.ImportLayer;
-            spriteId = record.SpriteId;
         }
     }
 
@@ -305,6 +287,7 @@ namespace UnityEditor.U2D.PSD
     {
         public BitmapLayer bitmapLayer;
         public PSDLayerImportSetting importSetting;
+        public GUID spriteId;
         public PSDExtractLayerData[] children;
     }
 }

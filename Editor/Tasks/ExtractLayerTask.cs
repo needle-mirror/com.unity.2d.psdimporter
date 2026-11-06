@@ -173,7 +173,7 @@ namespace UnityEditor.U2D.PSD
                 bool layerVisible = bitmapLayer.Visible && parentGroupVisible;
                 bool shouldImportLayer = bitmapLayer.ShouldImport(importHiddenLayer, parentGroupVisible);
 
-                RectInt layerRect = new RectInt(bitmapLayer.documentRect.X, bitmapLayer.documentRect.Y, bitmapLayer.Surface.width, bitmapLayer.Surface.height);
+                RectInt layerRect = new RectInt(bitmapLayer.documentRect.X, bitmapLayer.documentRect.Y, bitmapLayer.localRect.Width, bitmapLayer.localRect.Height);
 
                 if (!bitmapLayer.IsGroup)
                     layerRect.y = (canvasSize.y - layerRect.y - layerRect.height);
@@ -181,13 +181,14 @@ namespace UnityEditor.U2D.PSD
                 NativeArray<Color32> surface = default;
                 if (shouldImportLayer &&
                     importSettings.importLayer &&
+                    bitmapLayer.Surface != null &&
                     bitmapLayer.Surface.color.IsCreated &&
                     bitmapLayer.Surface.color.Length > 0)
                     surface = bitmapLayer.Surface.color;
 
                 PSDLayer extractedLayer = new PSDLayer(surface, parentGroupIndex, bitmapLayer.IsGroup, bitmapLayer.Name, layerRect.width, layerRect.height, bitmapLayer.LayerID, bitmapLayer.Visible)
                 {
-                    spriteID = inputLayer.importSetting.spriteId,
+                    spriteID = inputLayer.spriteId,
                     flatten = bitmapLayer.IsGroup && inputLayer.importSetting.flatten,
                     layerPosition = bitmapLayer.IsGroup ? Vector2.zero : layerRect.position
                 };

@@ -95,8 +95,6 @@ namespace UnityEditor.U2D.PSD
                         break;
                     case TextureImporterType.Sprite:
                         TextureSpriteSettings textureSpriteSettings = interfaces.ExtractTextureSpriteSettings();
-                        textureSpriteSettings.packingTag = interfaces.spritePackingTag;
-                        textureSpriteSettings.qualifyForPacking = !string.IsNullOrEmpty(interfaces.spritePackingTag);
                         textureSpriteSettings.spriteSheetData = new SpriteImportData[sprites.Count];
                         textureSettings.npotScale = TextureImporterNPOTScale.None;
                         textureSettings.secondaryTextures = interfaces.secondaryTextures;

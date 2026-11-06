@@ -46,7 +46,8 @@ namespace PhotoshopFile
             // ReadPascalString and ReadUnicodeString handle encoding explicitly.
             // BinaryReader.ReadString() is never called, so it is constructed with
             // ASCII encoding to make accidental usage obvious.
-            reader = new BinaryReader(stream, Encoding.ASCII);
+            // The caller owns the stream, so PsdLoad.LoadLayerRecords can read it again.
+            reader = new BinaryReader(stream, Encoding.ASCII, leaveOpen: true);
         }
 
         public byte ReadByte()

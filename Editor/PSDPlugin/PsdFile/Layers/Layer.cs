@@ -91,8 +91,8 @@ namespace PhotoshopFile
         /// </summary>
         public bool Clipping { get; set; }
 
-        private static int protectTransBit = BitVector32.CreateMask();
-        private static int visibleBit = BitVector32.CreateMask(protectTransBit);
+        private static readonly int protectTransBit = BitVector32.CreateMask();
+        private static readonly int visibleBit = BitVector32.CreateMask(protectTransBit);
         BitVector32 flags = new BitVector32();
 
         /// <summary>

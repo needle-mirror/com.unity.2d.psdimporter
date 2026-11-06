@@ -56,19 +56,21 @@ namespace UnityEditor.U2D.PSD
                     };
                 }
 
+                GUID spriteId = default;
                 int psdLayerDataIndex = importData.psdLayerData.FindIndex(x => !mappedPsdLayerData.Contains(x) && mappingStrategy.Compare(x, bitmapLayer));
                 if (psdLayerDataIndex >= 0)
                 {
                     //Debug.LogWarning($"Unable to find matching layer import setting for layer {bitmapLayer.Name} with id {bitmapLayer.LayerID}. This layer will be ignored during import. Please check your PSD Layer Import Settings.", null);
                     PSDLayerData psdLayerData = importData.psdLayerData[psdLayerDataIndex];
                     mappedPsdLayerData.Add(psdLayerData);
-                    importSetting.spriteId = psdLayerData.spriteID;
+                    spriteId = psdLayerData.spriteID;
                 }
 
                 extractData[i] = new PSDExtractLayerData()
                 {
                     bitmapLayer = bitmapLayer,
                     importSetting = importSetting,
+                    spriteId = spriteId,
                 };
 
                 if (bitmapLayer.ChildLayer != null)

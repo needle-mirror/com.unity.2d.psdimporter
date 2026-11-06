@@ -1,9 +1,26 @@
 # Changelog
 
 
-## [16.0.1] - 2026-10-08
+## [17.0.0] - 2026-11-06
+### Added
+- `PSDImporter.mosaicPadding`, which replaces the misspelled `PSDImporter.mosiacPadding`. (D2D-8325)
+
+### Deprecated
+- `PSDImporter.mosiacPadding` is deprecated and will be removed in a future release. Use `PSDImporter.mosaicPadding` instead. The API Updater offers to rewrite existing scripts automatically. (D2D-8325)
+
 ### Fixed
-- Added correct .buginfo file.
+- Fixed compiler warnings CS0414 and CS8524 in PSDImporter.cs being logged to the Console when creating a project from the Universal 2D template. (UUM-154768)
+- Fixed an error being logged to the Console when applying PSD Importer settings in the Inspector while the Sprite Editor has unapplied changes for the same asset. (UUM-154708)
+
+### Changed
+- Move string to hashcode to common package.
+- Pin hosted package documentation links to com.unity.2d.psdimporter@17.0 and align Unity Manual and Script Reference links to Unity 7000.0.
+- The PSD Importer no longer stores a Sprite ID in each layer import setting. The `spriteId` entries under `pSDLayerImportSetting` are removed from the .meta file the next time it is written.
+- The "Keep Duplicate Names" setting is now saved in .psd/.psb .meta files as `keepDuplicateSpriteName` instead of the misspelled `keepDupilcateSpriteName`. Existing values are read from the old key. (D2D-8420)
+
+### Removed
+- Removed the sprite and layer data fields deprecated in 9.0.0, and their automatic migration. Open projects last saved in Unity 2022.3 in Unity 6000.x before you upgrade. (D2D-8379)
+- Removed the **Automatic Reslice** option. In **Individual Sprites (Mosaic)** mode, the PSD Importer now always generates Sprite rects and names from the layers of the source file, and discards rects and names that were edited while the option was disabled. (D2D-8424)
 
 ## [16.0.0] - 2026-09-02
 ### Changed

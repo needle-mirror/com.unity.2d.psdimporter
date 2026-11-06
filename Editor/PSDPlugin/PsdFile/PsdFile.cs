@@ -31,7 +31,9 @@ namespace PhotoshopFile
         Header = 1,
         ColorMode = Header | 1 << 2,
         ImageData = ColorMode | 1 << 3,
-        All = Header | ColorMode | ImageData
+        All = Header | ColorMode | ImageData,
+        // Skips the pixel data of the layers and the merged image.
+        LayerRecords = ColorMode | 1 << 4,
     }
 
 
@@ -93,6 +95,7 @@ namespace PhotoshopFile
         private void Load(Stream stream, LoadContext loadContext, ELoadFlag loadFlag)
         {
             LoadContext = loadContext;
+            m_LoadFlag = loadFlag;
             PsdBinaryReader reader = new PsdBinaryReader(stream, loadContext.Encoding);
 
             if ((loadFlag & ELoadFlag.Header) == ELoadFlag.Header)
@@ -108,6 +111,11 @@ namespace PhotoshopFile
 
                 LoadImage(reader);
                 DecompressImages();
+            }
+            else if ((loadFlag & ELoadFlag.LayerRecords) == ELoadFlag.LayerRecords)
+            {
+                LoadImageResources(reader);
+                LoadLayerAndMaskInfo(reader);
             }
 
             reader.Dispose();
@@ -384,7 +392,7 @@ namespace PhotoshopFile
         ///////////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Load Layers Info section, including image data.
+        /// Load Layers Info section, including image data when the load flag includes ImageData.
         /// </summary>
         /// <param name="reader">PSD reader.</param>
         /// <param name="hasHeader">Whether the Layers Info section has a length header.</param>
@@ -433,13 +441,17 @@ namespace PhotoshopFile
             //-----------------------------------------------------------------------
 
             // Load image data for all channels.
+            bool loadPixelData = (m_LoadFlag & ELoadFlag.ImageData) == ELoadFlag.ImageData;
             foreach (Layer layer in Layers)
             {
                 Util.DebugMessage(reader.BaseStream,
                     "Load, Begin, Layer image, layer.Name");
                 foreach (Channel channel in layer.Channels)
                 {
-                    channel.LoadPixelData(reader);
+                    if (loadPixelData)
+                        channel.LoadPixelData(reader);
+                    else
+                        reader.BaseStream.Position += channel.Length;
                 }
                 Util.DebugMessage(reader.BaseStream,
                     "Load, End, Layer image, layer.Name");

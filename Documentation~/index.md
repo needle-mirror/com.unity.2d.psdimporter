@@ -1,14 +1,19 @@
 # Introduction to PSD Importer
-The **PSD Importer** is an [Asset importer](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/AssetImporter.html) that imports [Adobe Photoshop .psb](https://helpx.adobe.com/photoshop/using/file-formats.html#large_document_format_psb) files into Unity, and generates a [Prefab](https://docs.unity3d.com/6000.6/Documentation/Manual/Prefabs.html) of Sprites based on the imported source file. The .psb file format is functionally identical to the more common Adobe [.psd format](https://helpx.adobe.com/photoshop/using/file-formats.html#photoshop_format_psd), but supports much larger images than the .psd format (up to 300,000 pixels in any dimension). To convert existing artwork from .psd to .psb format, you can open them in Adobe Photoshop and then save them as .psb files.
+The **PSD Importer** is an [Asset importer](https://docs.unity3d.com/7000.0/Documentation/ScriptReference/AssetImporter.html) that imports [Adobe Photoshop .psb](https://helpx.adobe.com/photoshop/using/file-formats.html#large_document_format_psb) files into Unity, and generates a [Prefab](https://docs.unity3d.com/7000.0/Documentation/Manual/Prefabs.html) of Sprites based on the imported source file. The .psb file format is functionally identical to the more common Adobe [.psd format](https://helpx.adobe.com/photoshop/using/file-formats.html#photoshop_format_psd), but supports much larger images than the .psd format (up to 300,000 pixels in any dimension). To convert existing artwork from .psd to .psb format, you can open them in Adobe Photoshop and then save them as .psb files.
 
 Importing .psb files with the PSD Importer allows you to use features such as [Mosaic](PSD-importer-properties.md#Mosaic) (to automatically generate a Sprite sheet from the imported layers) and [Character Rig](PSD-importer-properties.md#Rig) (to reassemble the Sprites of a character as they are arranged in their source files).
 
-The PSD Importer currently only supports two [Texture Modes](https://docs.unity3d.com/6000.6/Documentation/Manual/class-TextureImporter-type-and-shape.html):[ Default](https://docs.unity3d.com/6000.6/Documentation/Manual/texture-type-default.html) and[ Sprite](https://docs.unity3d.com/6000.6/Documentation/Manual/texture-type-sprite.html).
+The PSD Importer currently only supports two [Texture Modes](https://docs.unity3d.com/7000.0/Documentation/Manual/class-TextureImporter-type-and-shape.html):[ Default](https://docs.unity3d.com/7000.0/Documentation/Manual/texture-type-default.html) and[ Sprite](https://docs.unity3d.com/7000.0/Documentation/Manual/texture-type-sprite.html).
 
 The different versions of the PSD Importer package are supported by the following versions of Unity respectively:
 
 Package version  | Unity Editor version
 --|--
+17.x.x |  7000.0
+16.x.x |  6000.7
+15.x.x |  6000.6
+14.x.x |  6000.5
+13.x.x |  6000.4
 12.x.x |  6000.3
 11.x.x |  6000.2
 10.x.x |  6000.1
@@ -35,4 +40,4 @@ The PSD Importer does not support all of Photoshop’s layer and visual effects 
 - Layer Opacity
 - Effects
 
-If you want to add visual effects to the generated Sprites, you can add additional Textures to the Sprites with the [Sprite Editor's Secondary Textures](https://docs.unity3d.com/6000.6/Documentation/Manual/SpriteEditor-SecondaryTextures.html) module. Shaders can sample these Secondary Textures to apply additional effects to the Sprite, such as normal mapping. Refer to the [Sprite Editor: Secondary Textures](https://docs.unity3d.com/6000.6/Documentation/Manual/SpriteEditor-SecondaryTextures.html) documentation for more information.
+If you want to add visual effects to the generated Sprites, you can add additional Textures to the Sprites with the [Sprite Editor's Secondary Textures](https://docs.unity3d.com/7000.0/Documentation/Manual/sprite/sprite-editor/secondary-textures-editor-reference.html) module. Shaders can sample these Secondary Textures to apply additional effects to the Sprite, such as normal mapping. Refer to the [Sprite Editor: Secondary Textures](https://docs.unity3d.com/7000.0/Documentation/Manual/sprite/sprite-editor/secondary-textures-editor-reference.html) documentation for more information.
