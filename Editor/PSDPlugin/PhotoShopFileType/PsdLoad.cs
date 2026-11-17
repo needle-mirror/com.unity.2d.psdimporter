@@ -77,25 +77,6 @@ namespace PaintDotNet.Data.PhotoshopFileType
             return document;
         }
 
-        // Layers have no Surface; documents without layer records are loaded in full by reading the seekable input again.
-        public static Document LoadLayerRecords(System.IO.Stream input)
-        {
-            long startPosition = input.Position;
-            DocumentLoadContext loadContext = new DocumentLoadContext();
-            PsdFile psdFile = new PsdFile(input, loadContext, ELoadFlag.LayerRecords);
-            if (psdFile.ColorMode == PsdColorMode.Multichannel || psdFile.Layers.Count == 0)
-            {
-                input.Position = startPosition;
-                return Load(input);
-            }
-
-            Document document = new Document(psdFile.ColumnCount, psdFile.RowCount);
-            AddLayerTree(document, psdFile, l => CreatePdnLayer(l, allocateSurface: false));
-            SetPdnResolutionInfo(psdFile, document);
-            psdFile.Cleanup();
-            return document;
-        }
-
         static void AddLayerTree(Document document, PsdFile psdFile, Func<PhotoshopFile.Layer, BitmapLayer> createLayer)
         {
             psdFile.VerifyLayerSections();
@@ -122,9 +103,9 @@ namespace PaintDotNet.Data.PhotoshopFileType
             }
         }
 
-        static BitmapLayer CreatePdnLayer(PhotoshopFile.Layer psdLayer, bool allocateSurface)
+        static BitmapLayer CreatePdnLayer(PhotoshopFile.Layer psdLayer)
         {
-            return new BitmapLayer(psdLayer.Rect, allocateSurface)
+            return new BitmapLayer(psdLayer.Rect)
             {
                 Name = psdLayer.Name,
                 Opacity = psdLayer.Opacity,
@@ -139,7 +120,7 @@ namespace PaintDotNet.Data.PhotoshopFileType
         {
             psdLayer.CreateMissingChannels();
 
-            pdnLayer = CreatePdnLayer(psdLayer, allocateSurface: true);
+            pdnLayer = CreatePdnLayer(psdLayer);
             return ImageDecoderPdn.DecodeImage(pdnLayer, psdLayer, inputDeps);
         }
 

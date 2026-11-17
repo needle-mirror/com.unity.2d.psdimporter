@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AssetImporters;
 using UnityEditor.U2D.Sprites;
@@ -141,11 +142,7 @@ namespace UnityEditor.U2D.PSD
         internal SpriteRect[] GetSpriteRects()
         {
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
-            {
-                if (inMosaicMode)
-                    return m_LayeredSpriteImportData.Select(x => new SpriteMetaData(x) as SpriteRect).ToArray();
-                return m_MultiSpriteImportData.Select(x => new SpriteMetaData(x) as SpriteRect).ToArray();
-            }
+                return GetSpriteImportData().Select(x => new SpriteMetaData(x) as SpriteRect).ToArray();
 
             return new[] { GetSingleSpriteImportData() };
         }
@@ -161,39 +158,46 @@ namespace UnityEditor.U2D.PSD
 
         internal void SetSpriteRects(SpriteRect[] spriteRects)
         {
-            System.Collections.Generic.List<SpriteMetaData> spriteImportData = GetSpriteImportData();
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
             {
-                spriteImportData.RemoveAll(data => spriteRects.FirstOrDefault(x => x.spriteID == data.spriteID) == null);
+                IReadOnlyList<SpriteMetaData> spriteImportData = GetSpriteImportData();
+                List<SpriteMetaData> newSpriteImportData = new List<SpriteMetaData>(spriteRects.Length);
                 foreach (SpriteRect sr in spriteRects)
                 {
                     SpriteMetaData importData = spriteImportData.FirstOrDefault(x => x.spriteID == sr.spriteID);
                     if (importData == null)
-                        spriteImportData.Add(new SpriteMetaData(sr));
+                    {
+                        // In mosaic mode the layers decide which Sprites exist.
+                        if (inMosaicMode)
+                            continue;
+                        importData = new SpriteMetaData(sr);
+                    }
                     else
                     {
-                        importData.name = sr.name;
+                        // In mosaic mode the name and the rect come from the layer (see ISpriteFrameEditCapability).
+                        if (!inMosaicMode)
+                        {
+                            importData.name = sr.name;
+                            importData.rect = sr.rect;
+                        }
                         importData.alignment = sr.alignment;
                         importData.border = sr.border;
                         importData.pivot = sr.pivot;
-                        importData.rect = sr.rect;
                     }
+                    newSpriteImportData.Add(importData);
                 }
+                // The rects cover only imported layers; keep the data of layers that are hidden or removed for now.
+                WriteToSpriteImportData(newSpriteImportData, !inMosaicMode);
             }
             else if (spriteRects.Length == 1 && (spriteImportModeToUse == SpriteImportMode.Single || spriteImportModeToUse == SpriteImportMode.Polygon))
             {
-                if (spriteImportData[0].spriteID == spriteRects[0].spriteID)
+                // The single Sprite takes its name and rect from the asset, so only the texture settings change.
+                if (GetSingleSpriteImportData().spriteID == spriteRects[0].spriteID)
                 {
-                    spriteImportData[0].name = spriteRects[0].name;
-                    spriteImportData[0].alignment = spriteRects[0].alignment;
+                    RecordLastImport();
                     m_TextureImporterSettings.spriteAlignment = (int)spriteRects[0].alignment;
-                    m_TextureImporterSettings.spriteBorder = spriteImportData[0].border = spriteRects[0].border;
-                    m_TextureImporterSettings.spritePivot = spriteImportData[0].pivot = spriteRects[0].pivot;
-                    spriteImportData[0].rect = spriteRects[0].rect;
-                }
-                else
-                {
-                    spriteImportData[0] = new SpriteMetaData(spriteRects[0]);
+                    m_TextureImporterSettings.spriteBorder = spriteRects[0].border;
+                    m_TextureImporterSettings.spritePivot = spriteRects[0].pivot;
                 }
             }
         }

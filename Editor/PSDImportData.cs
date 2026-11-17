@@ -91,6 +91,7 @@ namespace UnityEditor.U2D.PSD
             m_PsdLayerData = layerData.ToArray();
         }
 
+        // A matching layer inherits the Sprite ID recorded on the importer, which changes only when the user applies.
         public void MapLayerToPreviousImport(PSDImporter.ELayerMappingOption layerMappingOption, IReadOnlyList<PSDLayer> previousPSDLayer)
         {
             mappingOption = layerMappingOption;
@@ -134,6 +135,22 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
+        // Packing trims the layers by their pixels, so only the import knows the placement and the generated name.
+        public void SetImportedLayers(IReadOnlyList<PSDLayer> importedLayers)
+        {
+            Dictionary<GUID, PSDLayer> importedBySpriteId = new Dictionary<GUID, PSDLayer>(importedLayers.Count);
+            foreach (PSDLayer imported in importedLayers)
+            {
+                importedBySpriteId.TryAdd(imported.spriteID, imported);
+            }
+
+            foreach (PSDLayerData layer in m_PsdLayerData)
+            {
+                if (importedBySpriteId.TryGetValue(layer.spriteID, out PSDLayer imported))
+                    PSDLayer.CopyImportResult(imported, layer);
+            }
+        }
+
         void CreatePSDLayerData(BitmapLayer layer, List<PSDLayerData> layerData, int parentIndex = -1)
         {
             layerData.Add(new PSDLayerData()
@@ -163,8 +180,15 @@ namespace UnityEditor.U2D.PSD
                 m_SpriteRects = new SpriteMetaData[value.Count];
                 for (int i = 0; i < m_SpriteRects.Length; ++i)
                     m_SpriteRects[i] = value[i];
+                m_SpriteRectsGenerated = true;
             }
         }
+
+        // Tells an import that generated no Sprites from an import that has not generated them yet. Artifacts
+        // cached before this field existed count once they have Sprites.
+        [SerializeField]
+        bool m_SpriteRectsGenerated;
+        public bool spriteRectsGenerated => m_SpriteRectsGenerated || m_SpriteRects.Length > 0;
     }
 
     // Struct to keep track of GOs and bone
@@ -211,7 +235,7 @@ namespace UnityEditor.U2D.PSD
     /// PSDLayer data for PSDImportData for last import state
     /// </summary>
     [Serializable]
-    class PSDLayerData : IPSDLayerMappingStrategyComparable
+    class PSDLayerData : IPSDLayerMappingStrategyComparable, IPSDLayerImportResult
     {
         [SerializeField]
         string m_Name;
@@ -259,6 +283,30 @@ namespace UnityEditor.U2D.PSD
         {
             get => m_IsImported;
             set => m_IsImported = value;
+        }
+
+        [SerializeField]
+        bool m_Flatten;
+        public bool flatten
+        {
+            get => m_Flatten;
+            set => m_Flatten = value;
+        }
+
+        [SerializeField]
+        Vector2Int m_MosaicPosition;
+        public Vector2Int mosaicPosition
+        {
+            get => m_MosaicPosition;
+            set => m_MosaicPosition = value;
+        }
+
+        [SerializeField]
+        string m_SpriteName;
+        public string spriteName
+        {
+            get => m_SpriteName;
+            set => m_SpriteName = value;
         }
 
         [SerializeField]

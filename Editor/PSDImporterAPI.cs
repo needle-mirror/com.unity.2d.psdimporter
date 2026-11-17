@@ -130,7 +130,7 @@ namespace UnityEditor.U2D.PSD
             get => m_TextureImporterSettings.mipmapFadeDistanceStart;
             set
             {
-                m_TextureImporterSettings.mipmapFadeDistanceEnd = value;
+                m_TextureImporterSettings.mipmapFadeDistanceStart = value;
                 SetDirty();
             }
         }

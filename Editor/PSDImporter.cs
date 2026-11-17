@@ -33,7 +33,7 @@ namespace UnityEditor.U2D.PSD
     /// ScriptedImporter to import Photoshop files
     /// </summary>
     // Version using unity release + 5 digit padding for future upgrade. Eg 2021.2 -> 21200000, 6000.5 -> 60500000
-    [ScriptedImporter(60500000, new string[] { "psb" }, new[] { "psd" }, AllowCaching = true)]
+    [ScriptedImporter(70000000, new string[] { "psb" }, new[] { "psd" }, AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@17.0")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
     public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, ISerializationCallbackReceiver
@@ -111,9 +111,9 @@ namespace UnityEditor.U2D.PSD
             swizzleA = TextureImporterSwizzle.A,
         };
 
-        [SerializeField] List<SpriteMetaData> m_SingleSpriteImportData = new List<SpriteMetaData>(1) { new SpriteMetaData() };
-        [SerializeField] List<SpriteMetaData> m_MultiSpriteImportData = new List<SpriteMetaData>();
-        [SerializeField] List<SpriteMetaData> m_LayeredSpriteImportData = new List<SpriteMetaData>();
+        [SerializeField, ExcludeFromPreset] List<SpriteMetaData> m_SingleSpriteImportData = new List<SpriteMetaData>(1) { new SpriteMetaData() };
+        [SerializeField, ExcludeFromPreset] List<SpriteMetaData> m_MultiSpriteImportData = new List<SpriteMetaData>();
+        [SerializeField, ExcludeFromPreset] List<SpriteMetaData> m_LayeredSpriteImportData = new List<SpriteMetaData>();
 
         void ISerializationCallbackReceiver.OnBeforeSerialize() { }
 
@@ -129,9 +129,9 @@ namespace UnityEditor.U2D.PSD
 
 #if ENABLE_2D_ANIMATION
         // CharacterData for shared rig mode
-        [SerializeField] CharacterData m_SharedRigCharacterData = new CharacterData();
+        [SerializeField, ExcludeFromPreset] CharacterData m_SharedRigCharacterData = new CharacterData();
         // CharacterData for Rig mode
-        [SerializeField] CharacterData m_CharacterData = new CharacterData();
+        [SerializeField, ExcludeFromPreset] CharacterData m_CharacterData = new CharacterData();
 #endif
 
         [SerializeField]
@@ -211,13 +211,16 @@ namespace UnityEditor.U2D.PSD
         string m_PipelineVersion;
 
 #if ENABLE_2D_ANIMATION
-        [SerializeField]
+        [SerializeField, ExcludeFromPreset]
         SpriteCategoryList m_SpriteCategoryList = new SpriteCategoryList() { categories = new List<SpriteCategory>() };
 #endif
 
         GameObjectCreationFactory m_GameObjectFactory = new GameObjectCreationFactory(null);
 
         PSDImportData m_ImportData;
+
+        // Lets RecordLastImport do its work once per import.
+        Hash128 m_RecordedState;
 
         internal PSDImportData importData
         {
@@ -251,14 +254,14 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         string m_SpritePackingTag = "";
 
-        [SerializeField]
+        [SerializeField, ExcludeFromPreset]
         PSDLayerImportSetting[] m_PSDLayerImportSetting;
 
-        [SerializeField]
+        [SerializeField, ExcludeFromPreset]
         List<PSDLayer> m_PsdLayers = new List<PSDLayer>();
 
         // Use for inspector to check if the file node is checked
-        [SerializeField]
+        [SerializeField, ExcludeFromPreset]
 #pragma warning disable 169, 414
         bool m_ImportFileNodeState = true;
 
@@ -270,19 +273,32 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         bool m_GenerateGOHierarchy = false;
 
-        [SerializeField]
+        // Old PSD Importer versions used these as the identifiers of the imported objects.
+        // They are read until an Apply pins the IDs of those objects to the default identifiers and clears them.
+        [Obsolete("Only kept to preserve the identifier of the texture imported by old PSD Importer versions")]
+        [SerializeField, ExcludeFromPreset]
         string m_TextureAssetName = null;
 
-        [SerializeField]
+        [Obsolete("Only kept to preserve the identifier of the prefab imported by old PSD Importer versions")]
+        [SerializeField, ExcludeFromPreset]
         string m_PrefabAssetName = null;
 
-        [SerializeField]
+        [Obsolete("Only kept to preserve the identifier of the Sprite Library Asset imported by old PSD Importer versions")]
+        [SerializeField, ExcludeFromPreset]
         string m_SpriteLibAssetName = null;
 
-        [SerializeField]
+        [Obsolete("Only kept to preserve the identifier of the skeleton asset imported by old PSD Importer versions")]
+        [SerializeField, ExcludeFromPreset]
         string m_SkeletonAssetName = null;
 
-        [SerializeField]
+        const string k_TextureIdentifier = "Texture";
+        const string k_PrefabIdentifier = "Prefab";
+        const string k_PrefabRootIdentifier = "root";
+        const string k_PrefabRootNameSuffix = "_GO";
+        const string k_SpriteLibAssetIdentifier = "SpriteLibAsset";
+        const string k_SkeletonAssetIdentifier = "SkeletonAsset";
+
+        [SerializeField, ExcludeFromPreset]
         SecondarySpriteTexture[] m_SecondarySpriteTextures;
 
         PSDExtractLayerData[] m_ExtractData;
@@ -368,7 +384,9 @@ namespace UnityEditor.U2D.PSD
 
             Document doc = null;
 
+            // A new instance keeps the result independent of the previous import.
             m_ImportData = ScriptableObject.CreateInstance<PSDImportData>();
+            m_RecordedState = default;
             m_ImportData.hideFlags = HideFlags.HideInHierarchy;
 
             PSDImportOutput output = null;
@@ -403,19 +421,8 @@ namespace UnityEditor.U2D.PSD
                     importData.textureActualHeight = output.textureGenerationOutput.actualTextureHeight;
                 }
 
-                {
-                    // TODO this will be remove in V2
-                    List<PSDLayer> oldPsdLayers = GetPSDLayers();
-                    foreach (PSDLayer l in oldPsdLayers)
-                        l.Dispose();
-                    oldPsdLayers.Clear();
-
-                    oldPsdLayers.AddRange(output.psdLayers);
-                    List<SpriteMetaData> spriteRects = GetSpriteImportData();
-                    spriteRects.Clear();
-                    spriteRects.AddRange(output.spriteRects);
-                }
-
+                importData.SetImportedLayers(output.psdLayers);
+                importData.spriteRects = output.spriteRects;
 
                 Texture2D texture = output.textureGenerationOutput.GetTexture(ctx, this);
                 Sprite[] sprites = output.textureGenerationOutput.GetSprites(ctx, this);
@@ -423,7 +430,6 @@ namespace UnityEditor.U2D.PSD
 
                 importData.importedTextureWidth = texture?.width ?? importData.textureActualWidth;
                 importData.importedTextureHeight = texture?.height ?? importData.textureActualHeight;
-                importData.spriteRects = output.spriteRects;
 
                 if (texture != null && sprites != null)
                     SetPhysicsOutline(GetDataProvider<ISpritePhysicsOutlineDataProvider>(), sprites, definitionScale, pixelsPerUnit, m_GeneratePhysicsShape);
@@ -432,15 +438,20 @@ namespace UnityEditor.U2D.PSD
                 producedAsset.texture = texture;
                 producedAsset.thumbNail = thumbNail;
                 producedAsset.sprites = sprites;
-                producedAsset.textureAssetName = string.IsNullOrEmpty(m_TextureAssetName) ? "Texture" : m_TextureAssetName;
-                producedAsset.spriteLibAssetName = string.IsNullOrEmpty(m_SpriteLibAssetName) ? "SpriteLibAsset" : m_SpriteLibAssetName;
+                // Suppressing Obsolete warning, as the asset name containers keep the identifiers of objects imported by old versions.
+#pragma warning disable 0618
+                producedAsset.textureAssetName = OrDefault(m_TextureAssetName, k_TextureIdentifier);
+                producedAsset.spriteLibAssetName = OrDefault(m_SpriteLibAssetName, k_SpriteLibAssetIdentifier);
+#pragma warning restore 0618
                 producedAsset.importData = importData;
 
                 string assetName = System.IO.Path.GetFileNameWithoutExtension(ctx.assetPath);
 
 #if ENABLE_2D_ANIMATION
                 {
-                    producedAsset.skeletonAssetName = string.IsNullOrEmpty(m_SkeletonAssetName) ? "SkeletonAsset" : m_SkeletonAssetName;
+#pragma warning disable 0618
+                    producedAsset.skeletonAssetName = OrDefault(m_SkeletonAssetName, k_SkeletonAssetIdentifier);
+#pragma warning restore 0618
 
                     if (sprites != null)
                     {
@@ -463,10 +474,12 @@ namespace UnityEditor.U2D.PSD
 #endif
 
                 // do this after spritelib since the prefab uses it
-                producedAsset.prefabAssetName = string.IsNullOrEmpty(m_PrefabAssetName) ? "Prefab" : m_PrefabAssetName;
+#pragma warning disable 0618
+                producedAsset.prefabAssetName = OrDefault(m_PrefabAssetName, k_PrefabIdentifier);
                 if (sprites != null)
                 {
-                    string prefabRootNameId = string.IsNullOrEmpty(m_TextureAssetName) ? "root" : m_TextureAssetName;
+                    string prefabRootNameId = OrDefault(m_TextureAssetName, k_PrefabRootIdentifier);
+#pragma warning restore 0618
                     producedAsset.prefabRoot = ((IImportConfigProvider)this).producePrefabMode switch
                     {
                         ProducePrefabMode.None => null,
@@ -528,7 +541,6 @@ namespace UnityEditor.U2D.PSD
                 if (doc != null)
                     doc.Dispose();
                 UnityEngine.Profiling.Profiler.EndSample();
-                EditorUtility.SetDirty(this);
             }
 
         }
@@ -742,7 +754,7 @@ namespace UnityEditor.U2D.PSD
 
         static void RegisterTextureAsset(AssetImportContext ctx, ProducedAsset producedAsset, string assetName, ref UnityEngine.Object mainAsset)
         {
-            string registerTextureNameId = string.IsNullOrEmpty(producedAsset.textureAssetName) ? "Texture" : producedAsset.textureAssetName;
+            string registerTextureNameId = OrDefault(producedAsset.textureAssetName, k_TextureIdentifier);
 
             producedAsset.texture.name = assetName;
             ctx.AddObjectToAsset(registerTextureNameId, producedAsset.texture, producedAsset.thumbNail);
@@ -754,7 +766,7 @@ namespace UnityEditor.U2D.PSD
 #if ENABLE_2D_ANIMATION
             if (producedAsset.spriteLibraryAsset != null)
             {
-                string spriteLibAssetNameId = string.IsNullOrEmpty(producedAsset.spriteLibAssetName) ? "SpriteLibAsset" : producedAsset.spriteLibAssetName;
+                string spriteLibAssetNameId = OrDefault(producedAsset.spriteLibAssetName, k_SpriteLibAssetIdentifier);
                 ctx.AddObjectToAsset(spriteLibAssetNameId, producedAsset.spriteLibraryAsset);
             }
 #endif
@@ -935,7 +947,7 @@ namespace UnityEditor.U2D.PSD
             if (sprites != null && sprites.Count > 0)
             {
                 root = new GameObject();
-                root.name = assetName + "_GO";
+                root.name = assetName + k_PrefabRootNameSuffix;
 
 #if ENABLE_2D_ANIMATION
                 IReadOnlyList<SpriteMetaData> spriteImportData = config.importedSpriteMetaData;
@@ -1011,7 +1023,7 @@ namespace UnityEditor.U2D.PSD
                 IReadOnlyList<SpriteMetaData> spriteImportData = config.importedSpriteMetaData;
                 root = new GameObject();
                 root.transform.SetSiblingIndex(0);
-                root.name = assetname + "_GO";
+                root.name = assetname + k_PrefabRootNameSuffix;
 
 #if ENABLE_2D_ANIMATION
                 CharacterData currentCharacterData = config.characterData;
@@ -1106,8 +1118,271 @@ namespace UnityEditor.U2D.PSD
             return root;
         }
 
+        // Import never writes to the importer, so this runs right before a user action writes the .meta.
+        // Once the record is current it does nothing, so edits written after it are kept.
+        internal void RecordLastImport()
+        {
+            // Sprite postprocessors reach the data providers while the asset imports.
+            if (PSDImporterAssetPostProcessor.ContainsImporter(this) || string.IsNullOrEmpty(assetPath))
+                return;
+
+            PinLegacyAssetIdentifiers();
+
+            // A data provider calls this once per Sprite it writes, so record and normalize only once per import.
+            Hash128 state = ComputeRecordState();
+            if (state.isValid && state == m_RecordedState)
+                return;
+
+            List<PSDLayer> layers = ComputeLayersToRecord();
+            if (layers == null)
+                return;
+
+            // Removed layers drop out of the record, and NormalizeStoredMosaicSprites drops their Sprite data.
+            if (!IsRecorded(layers))
+            {
+                m_PsdLayers.Clear();
+                m_PsdLayers.AddRange(layers);
+            }
+
+            NormalizeStoredMosaicSprites();
+            m_RecordedState = ComputeRecordState();
+        }
+
+        // The import ignores stored mosaic rects and names and warns about edited ones, so align them with the import.
+        void NormalizeStoredMosaicSprites()
+        {
+            if (!inMosaicMode)
+                return;
+
+            HashSet<GUID> layerSpriteIds = new HashSet<GUID>(m_PsdLayers.Select(x => x.spriteID));
+            m_LayeredSpriteImportData.RemoveAll(x => !layerSpriteIds.Contains(x.spriteID));
+            foreach (SpriteMetaData stored in m_LayeredSpriteImportData)
+            {
+                SpriteMetaData imported = importData.spriteRects.FirstOrDefault(x => x.spriteID == stored.spriteID);
+                if (imported == null)
+                    continue;
+
+                stored.name = imported.name;
+                stored.rect = imported.rect;
+                stored.spritePosition = imported.spritePosition;
+                stored.uvTransform = imported.uvTransform;
+            }
+        }
+
+        // Pins the IDs of the objects that the obsolete asset name containers identify to the default identifiers,
+        // so that the containers can be cleared without changing the ID of any imported object.
+        void PinLegacyAssetIdentifiers()
+        {
+#pragma warning disable 0618
+            string textureId = m_TextureAssetName;
+            string prefabId = m_PrefabAssetName;
+            string spriteLibId = m_SpriteLibAssetName;
+            string skeletonId = m_SkeletonAssetName;
+#pragma warning restore 0618
+            if (string.IsNullOrEmpty(textureId) &&
+                string.IsNullOrEmpty(prefabId) &&
+                string.IsNullOrEmpty(spriteLibId) &&
+                string.IsNullOrEmpty(skeletonId))
+                return;
+#if !ENABLE_2D_ANIMATION
+            // The Sprite Library Asset, the skeleton and the rig of the prefab need 2D Animation to have IDs to pin.
+            if (inCharacterMode)
+                return;
+#endif
+
+            // The IDs come from the imported objects, so wait for an import that produced them.
+            Texture2D texture = null;
+            UnityEngine.Object spriteLib = null;
+            UnityEngine.Object skeleton = null;
+            GameObject prefabRoot = null;
+            int prefabRootCount = 0;
+            foreach (UnityEngine.Object importedObject in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+            {
+                if (texture == null && importedObject is Texture2D importedTexture)
+                    texture = importedTexture;
+#if ENABLE_2D_ANIMATION
+                else if (spriteLib == null && importedObject is SpriteLibraryAsset)
+                    spriteLib = importedObject;
+                else if (skeleton == null && importedObject is SkeletonAsset)
+                    skeleton = importedObject;
+#endif
+                // The import renames the prefab root to the asset name, and the tile palette root has a Grid.
+                else if (importedObject is GameObject gameObject &&
+                    gameObject.transform.parent == null &&
+                    gameObject.GetComponent<Grid>() == null)
+                {
+                    prefabRoot = gameObject;
+                    ++prefabRootCount;
+                }
+            }
+            if (texture == null)
+                return;
+
+            IdentifierPins pins = new IdentifierPins();
+            if (!string.IsNullOrEmpty(textureId))
+                pins.Add(texture, k_TextureIdentifier);
+            if (!string.IsNullOrEmpty(spriteLibId))
+                pins.Add(spriteLib, k_SpriteLibAssetIdentifier);
+            if (!string.IsNullOrEmpty(skeletonId))
+                pins.Add(skeleton, k_SkeletonAssetIdentifier);
+
+            // The prefab objects are registered by their path under the prefab identifier and the root name,
+            // which comes from the texture asset name.
+            if (!string.IsNullOrEmpty(prefabId) || !string.IsNullOrEmpty(textureId))
+            {
+                if (prefabRootCount > 1)
+                    return;
+                if (prefabRoot != null)
+                {
+                    if (!string.IsNullOrEmpty(prefabId))
+                    {
+                        int prefabTypeId = InternalEditorBridge.GetPersistentTypeId("PrefabInstance");
+                        pins.Add(InternalEditorBridge.GetPrefabAssetHandle(prefabRoot), prefabTypeId, k_PrefabIdentifier);
+                    }
+                    pins.AddHierarchy(prefabRoot, $"{k_PrefabIdentifier}/{k_PrefabRootIdentifier}{k_PrefabRootNameSuffix}");
+                }
+            }
+
+            SerializedObject serializedImporter = new SerializedObject(this);
+            if (!pins.WriteTo(serializedImporter.FindProperty("m_InternalIDToNameTable")))
+                return;
+
+            serializedImporter.ApplyModifiedPropertiesWithoutUndo();
+#pragma warning disable 0618
+            m_TextureAssetName = null;
+            m_PrefabAssetName = null;
+            m_SpriteLibAssetName = null;
+            m_SkeletonAssetName = null;
+#pragma warning restore 0618
+        }
+
+        static string OrDefault(string identifier, string defaultIdentifier)
+        {
+            return string.IsNullOrEmpty(identifier) ? defaultIdentifier : identifier;
+        }
+
+        // Keeps the IDs of imported objects for new identifiers in the internal ID table of the importer.
+        class IdentifierPins
+        {
+            readonly List<(int typeId, long id, string identifier)> m_Pins = new List<(int, long, string)>();
+            bool m_Valid = true;
+
+            // An object that the last import did not produce has no ID to keep.
+            public void Add(UnityEngine.Object importedObject, string identifier)
+            {
+                if (importedObject == null)
+                    return;
+
+                if (InternalEditorBridge.TryGetImportedObjectType(importedObject, out int typeId, out _))
+                    Add(importedObject, typeId, identifier);
+                else
+                    m_Valid = false;
+            }
+
+            public void Add(UnityEngine.Object importedObject, int typeId, string identifier)
+            {
+                if (importedObject != null &&
+                    typeId != 0 &&
+                    AssetDatabase.TryGetGUIDAndLocalFileIdentifier(importedObject, out string _, out long id))
+                    m_Pins.Add((typeId, id, identifier));
+                else
+                    m_Valid = false;
+            }
+
+            // Follows how the asset pipeline names the GameObjects and components of an imported prefab.
+            public void AddHierarchy(GameObject gameObject, string path)
+            {
+                Add(gameObject, path);
+                foreach (Component component in gameObject.GetComponents<Component>())
+                {
+                    if (component == null ||
+                        !InternalEditorBridge.TryGetImportedObjectType(component, out int typeId, out string typeName))
+                    {
+                        m_Valid = false;
+                        return;
+                    }
+
+                    string name = component is MonoBehaviour ? $"{typeName}-{component.GetType().FullName}" : typeName;
+                    Add(component, typeId, $"{path}/{name}");
+                }
+
+                foreach (Transform child in gameObject.transform)
+                {
+                    AddHierarchy(child.gameObject, $"{path}/{child.name}");
+                }
+            }
+
+            // Writes nothing unless every object has an ID. An entry that already holds an ID is renamed.
+            public bool WriteTo(SerializedProperty table)
+            {
+                if (!m_Valid)
+                    return false;
+
+                int storedCount = table.arraySize;
+                foreach ((int typeId, long id, string identifier) in m_Pins)
+                {
+                    SerializedProperty entry = FindEntry(table, storedCount, typeId, id);
+                    if (entry == null)
+                    {
+                        ++table.arraySize;
+                        entry = table.GetArrayElementAtIndex(table.arraySize - 1);
+                        entry.FindPropertyRelative("first.first").intValue = typeId;
+                        entry.FindPropertyRelative("first.second").longValue = id;
+                    }
+                    entry.FindPropertyRelative("second").stringValue = identifier;
+                }
+                return true;
+            }
+
+            static SerializedProperty FindEntry(SerializedProperty table, int count, int typeId, long id)
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    SerializedProperty entry = table.GetArrayElementAtIndex(i);
+                    if (entry.FindPropertyRelative("first.first").intValue == typeId &&
+                        entry.FindPropertyRelative("first.second").longValue == id)
+                        return entry;
+                }
+                return null;
+            }
+        }
+
+        // The dependency hash changes with the source file and the .meta, so an importer held across a reimport sees it.
+        Hash128 ComputeRecordState()
+        {
+            Hash128 state = AssetDatabase.GetAssetDependencyHash(assetPath);
+            if (!state.isValid)
+                return default;
+
+            foreach (PSDLayer layer in m_PsdLayers)
+            {
+                layer.AppendRecord(ref state);
+            }
+            return state;
+        }
+
+        // The last import already paired its layers with the record and placed them, so record them as they are.
+        List<PSDLayer> ComputeLayersToRecord()
+        {
+            return importData.psdLayerData?.Select(x => new PSDLayer(x)).ToList();
+        }
+
+        bool IsRecorded(IReadOnlyList<PSDLayer> layers)
+        {
+            if (m_PsdLayers.Count != layers.Count)
+                return false;
+            for (int i = 0; i < layers.Count; ++i)
+            {
+                if (!layers[i].IsSameRecord(m_PsdLayers[i]))
+                    return false;
+            }
+            return true;
+        }
+
         internal void Apply()
         {
+            RecordLastImport();
+
             // Do this so that asset change save dialog will not show
             bool originalValue = EditorPrefs.GetBool("VerifySavingAssets", false);
             EditorPrefs.SetBool("VerifySavingAssets", false);
@@ -1122,48 +1397,87 @@ namespace UnityEditor.U2D.PSD
 
         internal List<PSDLayer> GetPSDLayers() => m_PsdLayers;
 
-        List<SpriteMetaData> GetSpriteImportData()
+        // In mosaic mode the rects and the names come from the last import. Returns copies, so write changes
+        // back through WriteToSpriteImportData.
+        IReadOnlyList<SpriteMetaData> GetSpriteImportData()
         {
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
             {
-                if (inMosaicMode)
-                    return m_LayeredSpriteImportData;
-                return m_MultiSpriteImportData;
+                if (!inMosaicMode)
+                    return CopySpriteMetaData(m_MultiSpriteImportData);
+                // Sprite preprocessors run before the import generates the Sprites.
+                if (!importData.spriteRectsGenerated)
+                    return CopySpriteMetaData(m_LayeredSpriteImportData);
+
+                return importData.spriteRects.Select(ToMosaicSprite).ToList();
             }
 
             return new List<SpriteMetaData> { GetSingleSpriteImportData() };
         }
 
-        internal SpriteMetaData[] GetSpriteMetaData()
+        SpriteMetaData ToMosaicSprite(SpriteMetaData imported)
         {
+            SpriteMetaData stored = m_LayeredSpriteImportData.FirstOrDefault(x => x.spriteID == imported.spriteID);
+            if (stored == null)
+                return imported.Clone();
+
+            SpriteMetaData sprite = stored.Clone();
+            sprite.name = imported.name;
+            sprite.rect = imported.rect;
+            sprite.spritePosition = imported.spritePosition;
+            sprite.uvTransform = imported.uvTransform;
+            return sprite;
+        }
+
+        internal SpriteMetaData[] GetSpriteMetaData() => GetSpriteImportData().ToArray();
+
+        // Without replace, the Sprites that are not given keep their data.
+        internal void WriteToSpriteImportData(IReadOnlyList<SpriteMetaData> sprites, bool replace)
+        {
+            // The Sprites written here refer to the layers of the last import.
+            RecordLastImport();
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
             {
-                if (inMosaicMode)
-                    return m_LayeredSpriteImportData.ToArray();
-                return m_MultiSpriteImportData.ToArray();
+                List<SpriteMetaData> stored = inMosaicMode ? m_LayeredSpriteImportData : m_MultiSpriteImportData;
+                if (replace)
+                    stored.Clear();
+                foreach (SpriteMetaData sprite in sprites)
+                {
+                    int index = stored.FindIndex(x => x.spriteID == sprite.spriteID);
+                    if (index < 0)
+                        stored.Add(sprite.Clone());
+                    else
+                        stored[index] = sprite.Clone();
+                }
             }
-
-            return new[] { GetSingleSpriteImportData() };
+            else if (sprites.Count > 0)
+            {
+                m_SingleSpriteImportData[0] = sprites[0].Clone();
+            }
         }
 
         internal SpriteRect GetSpriteData(GUID guid)
         {
             if (spriteImportModeToUse == SpriteImportMode.Multiple)
             {
-                if (inMosaicMode)
-                    return m_LayeredSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
-                return m_MultiSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
+                if (inMosaicMode && importData.spriteRectsGenerated)
+                {
+                    SpriteMetaData imported = importData.spriteRects.FirstOrDefault(x => x.spriteID == guid);
+                    return imported != null ? ToMosaicSprite(imported) : null;
+                }
+
+                List<SpriteMetaData> stored = inMosaicMode ? m_LayeredSpriteImportData : m_MultiSpriteImportData;
+                return stored.FirstOrDefault(x => x.spriteID == guid)?.Clone();
             }
 
-            // Data providers write authored data through this, so hand out the serialized instance.
-            // GetSingleSpriteImportData returns a derived copy, which would discard those writes.
-            return m_SingleSpriteImportData[0];
+            // GetSingleSpriteImportData derives the rect and the pivot from the settings, so read the serialized data.
+            return m_SingleSpriteImportData[0].Clone();
         }
 
         SpriteMetaData GetSingleSpriteImportData()
         {
-            SpriteMetaData spriteMetaData = new SpriteMetaData();
-            spriteMetaData.Copy(m_SingleSpriteImportData[0]);
+            // Clone, because reading spriteID generates a random one when none is stored.
+            SpriteMetaData spriteMetaData = m_SingleSpriteImportData[0].Clone();
             spriteMetaData.spriteID = AssetDatabase.GUIDFromAssetPath(assetPath);
             if (assetPath != null)
                 spriteMetaData.name = System.IO.Path.GetFileNameWithoutExtension(assetPath) + "_1";

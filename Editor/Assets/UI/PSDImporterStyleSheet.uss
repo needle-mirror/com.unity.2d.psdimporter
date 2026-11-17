@@ -48,13 +48,6 @@ PSDImporterLayerManagementMultiColumnTreeView
 #LayerManagementTreeView
 {}
 
-#MultiSupportForLayerManagementNotSupported
-{
-    flex-grow: 1;
-    align-self: center;
-    margin-top: 20px;
-    height:40px;
-}
 #LayerManagementApplyRevertGUI
 {}
 

@@ -29,9 +29,13 @@ namespace UnityEditor.U2D.PSD
 
         public void SetBones(GUID guid, List<SpriteBone> bones)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            // The Skinning Editor also writes the Sprites of layers that are hidden or unchecked, which only the stored data has.
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid) ?? dataProvider.GetStoredSpriteRectData().FirstOrDefault(x => x.spriteID == guid)?.Clone();
             if (sprite != null)
-                ((SpriteMetaData)sprite).spriteBone = bones;
+            {
+                sprite.spriteBone = bones;
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
     }
 
@@ -99,9 +103,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).spriteOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
+            {
+                sprite.spriteOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
 
         public float GetTessellationDetail(GUID guid)
@@ -111,9 +118,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).tessellationDetail = value;
+            {
+                sprite.tessellationDetail = value;
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
     }
 
@@ -132,9 +142,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetOutlines(GUID guid, List<Vector2[]> data)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).spritePhysicsOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
+            {
+                sprite.spritePhysicsOutline = data.Select(x => new SpriteOutline() { outline = x }).ToList();
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
 
         public float GetTessellationDetail(GUID guid)
@@ -144,9 +157,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetTessellationDetail(GUID guid, float value)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).tessellationDetail = value;
+            {
+                sprite.tessellationDetail = value;
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
     }
 
@@ -165,9 +181,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetVertices(GUID guid, Vertex2DMetaData[] vertices)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).vertices = vertices.ToList();
+            {
+                sprite.vertices = vertices.ToList();
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
 
         public int[] GetIndices(GUID guid)
@@ -183,9 +202,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetIndices(GUID guid, int[] indices)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).indices = indices;
+            {
+                sprite.indices = indices;
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
 
         public Vector2Int[] GetEdges(GUID guid)
@@ -201,9 +223,12 @@ namespace UnityEditor.U2D.PSD
 
         public void SetEdges(GUID guid, Vector2Int[] edges)
         {
-            SpriteRect sprite = dataProvider.GetSpriteData(guid);
+            SpriteMetaData sprite = (SpriteMetaData)dataProvider.GetSpriteData(guid);
             if (sprite != null)
-                ((SpriteMetaData)sprite).edges = edges;
+            {
+                sprite.edges = edges;
+                dataProvider.WriteToSpriteImportData(new[] { sprite }, false);
+            }
         }
     }
 
@@ -238,6 +263,10 @@ namespace UnityEditor.U2D.PSD
 #if ENABLE_2D_ANIMATION
     internal class CharacterDataProvider : PSDDataProvider, ICharacterDataProvider
     {
+        // PSD Importer does not depend on a 2D Animation version, and older Skinning Editors fail on a part whose Sprite they did not load.
+        static readonly bool s_SkinningEditorKeepsUnloadedParts =
+            typeof(ICharacterDataProvider).Assembly.GetType("UnityEditor.U2D.Animation.UnloadedCharacterPart") != null;
+
         int ParentGroupInFlatten(Dictionary<int, int> groupDictIndex, List<CharacterGroup> groups, int parentIndex, List<PSDLayer> psdLayers)
         {
             if (parentIndex < 0)
@@ -268,9 +297,24 @@ namespace UnityEditor.U2D.PSD
             return psdLayers[index].isGroup && !psdLayers[index].flatten && parentGroup;
         }
 
+        // The record can be older than the last import, so use the imported layers.
+        static List<PSDLayer> GetImportedLayers(PSDImporter importer)
+        {
+            PSDLayerData[] layerData = importer.importData.psdLayerData;
+            if (layerData == null || layerData.Length == 0)
+                return importer.GetPSDLayers();
+
+            List<PSDLayer> layers = new List<PSDLayer>(layerData.Length);
+            foreach (PSDLayerData data in layerData)
+            {
+                layers.Add(new PSDLayer(data));
+            }
+            return layers;
+        }
+
         public CharacterData GetCharacterData()
         {
-            List<PSDLayer> psdLayers = dataProvider.GetPSDLayers();
+            List<PSDLayer> psdLayers = GetImportedLayers(dataProvider);
             Dictionary<int, int> groupDictionaryIndex = new Dictionary<int, int>();
             List<CharacterGroup> groups = new List<CharacterGroup>();
 
@@ -278,7 +322,13 @@ namespace UnityEditor.U2D.PSD
             cd.pivot = dataProvider.GetDocumentPivot();
             List<CharacterPart> parts = cd.parts == null ? new List<CharacterPart>() : cd.parts.ToList();
             SpriteMetaData[] spriteRects = dataProvider.GetSpriteMetaData();
-            parts.RemoveAll(x => Array.FindIndex(spriteRects, y => y.spriteID == new GUID(x.spriteId)) == -1);
+            // Keep the parts of layers that are hidden or unchecked, so the Skinning Editor writes them back with the rest.
+            HashSet<GUID> layerSpriteIds = s_SkinningEditorKeepsUnloadedParts ? new HashSet<GUID>(psdLayers.Select(x => x.spriteID)) : new HashSet<GUID>();
+            parts.RemoveAll(x =>
+            {
+                GUID spriteId = new GUID(x.spriteId);
+                return !layerSpriteIds.Contains(spriteId) && Array.FindIndex(spriteRects, y => y.spriteID == spriteId) == -1;
+            });
             foreach (SpriteMetaData spriteMetaData in spriteRects)
             {
                 int srIndex = parts.FindIndex(x => new GUID(x.spriteId) == spriteMetaData.spriteID);

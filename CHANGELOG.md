@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [17.0.1] - 2026-11-17
+### Changed
+- The PSD Importer no longer writes to the .meta file of a .psb or .psd file while importing it. The layers it pairs Sprite IDs with are recorded when you apply changes in the Inspector or the Sprite Editor.
+- In Individual Sprites (Mosaic) mode, applying any change to a .psb or .psd file removes the Sprite rects and names edited in an earlier version from its .meta file, which the importer no longer uses, and stops the warning about them.
+- In Individual Sprites (Mosaic) mode, `ISpriteEditorDataProvider.SetSpriteRects` takes only the alignment, pivot and border of existing Sprites. It ignores name and rect changes and added rects, which the importer generates from the layers.
+- PSD Importer Presets no longer save or apply data that belongs to the source file, such as Sprite rects, layers, rig data and Sprite Library categories.
+- Applying changes to a .psb or .psd file imported by an early PSD Importer version moves the identifiers of its texture, prefab, Sprite Library Asset and skeleton asset into the internal ID table of its .meta file. The IDs of the imported objects do not change.
+
+### Fixed
+- Reimporting a .psb or .psd file could log that the importer generated an inconsistent result, because the import depended on the previous import.
+- Setting `PSDImporter.mipmapFadeDistanceStart` no longer overwrites `PSDImporter.mipmapFadeDistanceEnd`. (UUM-161204)
+- Applying in the Skinning Editor no longer drops the bones of Sprites whose layers are hidden or unchecked. (UUM-161627)
+
 ## [17.0.0] - 2026-11-06
 ### Added
 - `PSDImporter.mosaicPadding`, which replaces the misspelled `PSDImporter.mosiacPadding`. (D2D-8325)

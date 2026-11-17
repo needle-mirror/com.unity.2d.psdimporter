@@ -181,7 +181,6 @@ namespace UnityEditor.U2D.PSD
                 NativeArray<Color32> surface = default;
                 if (shouldImportLayer &&
                     importSettings.importLayer &&
-                    bitmapLayer.Surface != null &&
                     bitmapLayer.Surface.color.IsCreated &&
                     bitmapLayer.Surface.color.Length > 0)
                     surface = bitmapLayer.Surface.color;

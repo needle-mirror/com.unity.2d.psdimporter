@@ -4,8 +4,17 @@ using UnityEngine;
 
 namespace UnityEditor.U2D.PSD
 {
+    // The layer fields only an import can compute, kept by both the importer record and the last import's data.
+    interface IPSDLayerImportResult
+    {
+        bool isImported { get; set; }
+        bool flatten { get; set; }
+        Vector2Int mosaicPosition { get; set; }
+        string spriteName { get; set; }
+    }
+
     [Serializable]
-    class PSDLayer : IPSDLayerMappingStrategyComparable
+    class PSDLayer : IPSDLayerMappingStrategyComparable, IPSDLayerImportResult
     {
         [SerializeField]
         string m_Name;
@@ -65,6 +74,49 @@ namespace UnityEditor.U2D.PSD
             width = layer.width;
             height = layer.height;
             texture = layer.texture;
+        }
+
+        public PSDLayer(PSDLayerData data)
+        {
+            m_Name = data.name;
+            m_IsGroup = data.isGroup;
+            m_ParentIndex = data.parentIndex;
+            m_SpriteID = data.spriteID.ToString();
+            m_LayerID = data.layerID;
+            m_IsVisible = data.isVisible;
+            CopyImportResult(data, this);
+        }
+
+        public static void CopyImportResult(IPSDLayerImportResult source, IPSDLayerImportResult destination)
+        {
+            destination.isImported = source.isImported;
+            destination.flatten = source.flatten;
+            destination.mosaicPosition = source.mosaicPosition;
+            destination.spriteName = source.spriteName;
+        }
+
+        // Compares every field the .meta keeps for a layer.
+        public bool IsSameRecord(PSDLayer other)
+        {
+            return spriteID == other.spriteID && m_LayerID == other.m_LayerID && m_Name == other.m_Name &&
+                m_IsGroup == other.m_IsGroup && m_ParentIndex == other.m_ParentIndex && m_IsVisible == other.m_IsVisible &&
+                m_IsImported == other.m_IsImported && m_Flatten == other.m_Flatten &&
+                m_MosaicPosition == other.m_MosaicPosition && m_SpriteName == other.m_SpriteName;
+        }
+
+        public void AppendRecord(ref Hash128 hash)
+        {
+            hash.Append(m_SpriteID ?? string.Empty);
+            hash.Append(m_LayerID);
+            hash.Append(m_Name ?? string.Empty);
+            hash.Append(m_MosaicPosition.x);
+            hash.Append(m_MosaicPosition.y);
+            hash.Append(m_SpriteName ?? string.Empty);
+            hash.Append(m_ParentIndex);
+            hash.Append(m_IsGroup ? 1 : 0);
+            hash.Append(m_IsVisible ? 1 : 0);
+            hash.Append(m_IsImported ? 1 : 0);
+            hash.Append(m_Flatten ? 1 : 0);
         }
 
         public bool isVisible => m_IsVisible;

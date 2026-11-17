@@ -30,21 +30,17 @@ namespace PDNWrapper
 
         public void Dispose()
         {
-            Surface?.Dispose();
+            Surface.Dispose();
             foreach (BitmapLayer layer in m_ChildLayers)
                 layer.Dispose();
         }
 
         public BitmapLayer(Rectangle documentRect)
-            : this(documentRect, true) { }
-
-        public BitmapLayer(Rectangle documentRect, bool allocateSurface)
         {
             localRect = new Rectangle(0, 0, documentRect.Width, documentRect.Height);
             this.documentRect = documentRect;
 
-            if (allocateSurface)
-                Surface = new Surface(localRect.Width, localRect.Height);
+            Surface = new Surface(localRect.Width, localRect.Height);
 
             m_ChildLayers = new List<BitmapLayer>();
             IsGroup = false;

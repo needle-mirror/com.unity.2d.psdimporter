@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using PhotoshopFile;
 using UnityEditor.AssetImporters;
+using UnityEditor.Presets;
 using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
@@ -121,6 +122,7 @@ namespace UnityEditor.U2D.PSD
         IMGUIContainer m_ApplyRevertGUIVisualElement;
         VisualElement m_InspectorSettingsView;
         VisualElement m_MultiSupportForLayerManagementNotSupported;
+        VisualElement m_PresetLayerManagementNotSupported;
         VisualElement m_RootVisualElement;
         IMGUIContainer m_ToolbarContainer;
         ScrollView m_InspectorScrollView;
@@ -297,28 +299,39 @@ namespace UnityEditor.U2D.PSD
 
         void OnLayerManagementViewActivated()
         {
-            if (serializedObject.isEditingMultipleObjects)
+            bool editingMultipleObjects = serializedObject.isEditingMultipleObjects;
+
+            // A Preset carries no layer records, see [ExcludeFromPreset] in PSDImporter
+            bool editingPreset = !editingMultipleObjects && Preset.IsEditorTargetAPreset(target);
+
+            m_MultiSupportForLayerManagementNotSupported.SetHiddenFromLayout(!editingMultipleObjects);
+            m_PresetLayerManagementNotSupported.SetHiddenFromLayout(!editingPreset);
+            m_LayerManagementTreeView.SetHiddenFromLayout(editingMultipleObjects || editingPreset);
+
+            // Include Hidden Layers is shared by Presets, so this block stays for them
+            m_LayerManagementSettingsContainer.SetHiddenFromLayout(editingMultipleObjects);
+        }
+
+        static HelpBox CreateLayerManagementNotice(string name, string text)
+        {
+            return new HelpBox(text, HelpBoxMessageType.Info)
             {
-                m_MultiSupportForLayerManagementNotSupported.SetHiddenFromLayout(false);
-                m_LayerManagementTreeView.SetHiddenFromLayout(true);
-                m_LayerManagementSettingsContainer.SetHiddenFromLayout(true);
-            }
-            else
-            {
-                m_MultiSupportForLayerManagementNotSupported.SetHiddenFromLayout(true);
-                m_LayerManagementTreeView.SetHiddenFromLayout(false);
-                m_LayerManagementSettingsContainer.SetHiddenFromLayout(false);
-            }
+                name = name,
+                style =
+                {
+                    marginTop = 4,
+                    marginBottom = 4,
+                    marginLeft = 4,
+                    marginRight = 4
+                }
+            };
         }
 
         VisualElement CreateLayerManagementUI()
         {
             VisualElement ve = new VisualElement();
-            m_MultiSupportForLayerManagementNotSupported = new Label()
-            {
-                name = "MultiSupportForLayerManagementNotSupported",
-                text = styles.multiEditLayerManagementNotSupported.text
-            };
+            m_MultiSupportForLayerManagementNotSupported = CreateLayerManagementNotice("MultiSupportForLayerManagementNotSupported", styles.multiEditLayerManagementNotSupported.text);
+            m_PresetLayerManagementNotSupported = CreateLayerManagementNotice("PresetLayerManagementNotSupported", styles.presetLayerManagementNotSupported.text);
             m_LayerManagementSettingsContainer = new IMGUIContainer(DoLayerManagementUI)
             {
                 name = "LayerManagementSettings",
@@ -347,6 +360,7 @@ namespace UnityEditor.U2D.PSD
             m_ApplyRevertGUIVisualElement.RegisterCallback<GeometryChangedEvent>(OnUpdateLayerTreeViewHeight);
             ve.Add(m_MultiSupportForLayerManagementNotSupported);
             ve.Add(m_LayerManagementSettingsContainer);
+            ve.Add(m_PresetLayerManagementNotSupported);
             ve.Add(m_LayerManagementTreeView);
             ve.Add(m_ApplyRevertGUIVisualElement);
             return ve;
@@ -602,6 +616,13 @@ namespace UnityEditor.U2D.PSD
         protected override void Apply()
         {
             InternalEditorBridge.ApplySpriteEditorWindow();
+            // Import never writes to the importer, so record the last import into the .meta this Apply writes.
+            foreach (UnityEngine.Object t in targets)
+            {
+                PSDImporter importer = (PSDImporter)t;
+                importer.RecordLastImport();
+                EditorUtility.SetDirty(importer);
+            }
             base.Apply();
             PSDImportPostProcessor.currentApplyAssetPath = ((PSDImporter)target).assetPath;
             if (m_PreviewRenderUtility != null)
@@ -1773,6 +1794,7 @@ namespace UnityEditor.U2D.PSD
             public readonly GUIContent layerImportHeaderText = EditorGUIUtility.TrTextContent("Layer Import", "Layer Import settings.");
             public readonly GUIContent textureHeaderText = EditorGUIUtility.TrTextContent("Texture", "Texture settings.");
             public readonly GUIContent multiEditLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Multi editing in Layer Management is not supported.", "");
+            public readonly GUIContent presetLayerManagementNotSupported = EditorGUIUtility.TrTextContent("Layer Import Settings cannot be edited in a Preset. They belong to the file they were imported from and are not saved in a Preset.", "");
             public readonly GUIContent characterRigHeaderText = EditorGUIUtility.TrTextContent("Character Rig", "Character Rig settings.");
 
             public readonly GUIContent tilePaletteHeaderText = EditorGUIUtility.TrTextContent("Tile Palette", "Tile Palette settings.");
